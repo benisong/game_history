@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(dotnet test *)",
-      "Bash(python -c \"import sys; print\\(sys.executable\\)\")"
+      "Bash(python -c \"import sys; print\\(sys.executable\\)\")",
+      "Bash(xxd)",
+      "Bash(python3 \"C:/Users/beni3/opencode/donghan/fix_cn.py\")",
+      "Bash(python \"C:/Users/beni3/opencode/donghan/fix_cn.py\")"
     ]
   }
 }

@@ -101,7 +101,7 @@ public class GameEngine
             moraleDelta = -25;
             loyaltyDelta = -15;
             imperialPowerDelta = -3;
-            narrativeFeedback = $"将士们看到手里的那几枚铜钱，个个咬牙切齿。西园新军愤怒地瞪着在台上督办的【{officer.Name}】，低沉的骂声在军营中蔓延：\u201c昏君奸臣！拨了这么多钱，到我们手里就剩这点！\u201d";
+            narrativeFeedback = $"将士们看到手里的那几枚铜钱，个个咬牙切齿。西园新军愤怒地瞪着在台上督办的【{officer.Name}】，低沉的骂声在军营中蔓延：\"昏君奸臣！拨了这么多钱，到我们手里就剩这点！\"";
         }
         else if (premiumRatio < 0.2)
         {
@@ -272,8 +272,9 @@ public class GameEngine
         _state.PrivateTreasury = Math.Clamp(_state.PrivateTreasury + amountToPrivate, 0, 999999);
 
         // 4. 没收大贪官浮财，铲除国贼，极大地鼓舞天下民心！
-        // 民心提升度：直接取决于没收的真实赃款总额。每约 333 万钱，民心跃升 +1 (最高提升 15 点)！
-        int supportDelta = Math.Clamp(rawWealth / 333, 1, 15);
+        // 民心提升度：指数衰减曲线，小贪已得民心振奋，大贪趋近上限 15 点
+        int supportDelta = (int)Math.Round(15.0 * (1.0 - Math.Exp(-rawWealth / 3000.0)));
+        supportDelta = Math.Clamp(supportDelta, 1, 15);
 
         // 5. 判定党羽抗议弹劾政治反噬
         bool cliqueBacklash = (target.Power >= 60);
@@ -396,6 +397,48 @@ public class GameEngine
         return result;
     }
 
+    public TurnResult ResolveEdictAction(string edictId, int optionIndex)
+    {
+        var result = new TurnResult();
+        var edict = _state.ActiveEdicts.Find(e => e.Id == edictId);
+        if (edict == null) throw new ArgumentException("无此奏折！");
+        if (optionIndex < 0 || optionIndex >= edict.Options.Count) throw new ArgumentException("无效的御批选项！");
+
+        var option = edict.Options[optionIndex];
+
+        // 基础数值结算
+        _state.ApplyNumericalDelta(option.ImperialPowerDelta, option.TreasuryDelta, option.HealthDelta);
+        _state.PrivateTreasury = Math.Clamp(_state.PrivateTreasury + option.PrivateTreasuryDelta, 0, 999999);
+        _state.PopularSupport = Math.Clamp(_state.PopularSupport + option.PopularSupportDelta, 0, 100);
+
+        string promoBacklashText = "";
+
+        if (!string.IsNullOrEmpty(edict.TargetNpcId) && _state.Npcs.TryGetValue(edict.TargetNpcId, out var targetNpc))
+        {
+            targetNpc.Power = Math.Clamp(targetNpc.Power + option.TargetNpcPowerDelta, 0, 100);
+            targetNpc.Favorability = Math.Clamp(targetNpc.Favorability + option.TargetNpcFavorabilityDelta, 0, 100);
+
+            // 处理跨级提拔反噬
+            if (option.GrantedTitleTierDelta > 0)
+            {
+                targetNpc.TitleTier = Math.Clamp(targetNpc.TitleTier + option.GrantedTitleTierDelta, 0, 4);
+                
+                if (option.GrantedTitleTierDelta >= 2)
+                {
+                    int backlash = 5 * (option.GrantedTitleTierDelta - 1);
+                    _state.ImperialPower = Math.Clamp(_state.ImperialPower - backlash, 0, 100);
+                    promoBacklashText = $"\n[color=red]● 跨级拔擢反噬：朝野非议，皇权暴跌 -{backlash}点！[/color]";
+                }
+            }
+        }
+
+        _state.ActiveEdicts.Remove(edict);
+        _state.AddToChronicle($"【御批】天子批阅《{edict.Title}》，决断：{option.Description}");
+        
+        result.StoryText = $"【政务决断】\n\n陛下朱批已下。\n{promoBacklashText}";
+        return result;
+    }
+
     public async Task NextXunAsync()
     {
         _state.Xun++;
@@ -407,6 +450,7 @@ public class GameEngine
             {
                 _state.Month = 1;
                 _state.Year++;
+                _state.ReignYear++;
             }
         }
 
@@ -414,6 +458,33 @@ public class GameEngine
 
         // 异步后台演进官员想法与天灾日常
         await _scheduler.OrchestrateXunUpdateAsync(_state);
+
+        // 奏折过期与流产判定
+        var expiredEdicts = new List<ImperialEdict>();
+        foreach (var edict in _state.ActiveEdicts)
+        {
+            edict.ExpiryXun--;
+            if (edict.ExpiryXun <= 0)
+            {
+                expiredEdicts.Add(edict);
+            }
+        }
+
+        foreach (var expired in expiredEdicts)
+        {
+            _state.ActiveEdicts.Remove(expired);
+            // 流产惩罚：如果是急报，民心暴跌
+            if (expired.Type == EdictType.UrgentCrisis)
+            {
+                _state.PopularSupport = Math.Clamp(_state.PopularSupport - 15, 0, 100);
+                _state.AddToChronicle($"【国难】《{expired.Title}》留中不发，导致灾情/兵变恶化，民心大跌！");
+            }
+            else
+            {
+                _state.ImperialPower = Math.Clamp(_state.ImperialPower - 2, 0, 100);
+                _state.AddToChronicle($"【怠政】《{expired.Title}》过期未批，朝堂议论天子怠政。");
+            }
+        }
     }
 
     public string StartGrandCourtSync()
@@ -454,7 +525,7 @@ public class GameEngine
             new RitualStageInfo {
                 StageIndex = 3,
                 Title = "【第三仪：静鞭鸣磬】",
-                Narrative = "\u201c圣上驾到！\u201d 黄门侍郎高呼，殿上铜磬齐鸣。殿前御史高唱\u201c肃静\u201d，静鞭三响，回音绕梁。满朝文武屏息整肃，面向御台朱漆龙椅深揖，静候陛下驾临御极。"
+                Narrative = "\"圣上驾到！\" 黄门侍郎高呼，殿上铜磬齐鸣。殿前御史高唱\"肃静\"，静鞭三响，回音绕梁。满朝文武屏息整肃，面向御台朱漆龙椅深揖，静候陛下驾临御极。"
             }
         };
     }
@@ -513,7 +584,6 @@ public class GameEngine
 
         string story = await _narrator.RenderStoryAsync(playerInput, triggeredEvent, dialogues, _state);
 
-        if (_state.Chronicle.Count % 5 == 0) _state.ReignYear++;
 
         return new TurnResult { StoryText = story, TriggeredEvent = triggeredEvent, Dialogues = dialogues };
     }

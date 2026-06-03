@@ -11,6 +11,8 @@ public class MockScheduler : IAIScheduler
 {
     public INpcLifecycleManager NpcManager { get; } = new NpcLifecycleManager(new NpcRegistry());
 
+    public bool ShouldAddEdicts { get; set; } = true;
+
     public Task<AIOrchestrationResult> OrchestrateGrandCourtAsync(string playerInput, string activeOfficerId, GameState state)
     {
         var result = new AIOrchestrationResult
@@ -45,7 +47,12 @@ public class MockScheduler : IAIScheduler
     public Task OrchestrateXunUpdateAsync(GameState state)
     {
         state.IntelReports.Add("【群臣密录】：大将军何进正暗中调兵，意图夺取洛阳西园防权。");
-        state.ActiveEdicts.Add("【冀州急折】：冀州干旱，求赐赈米。");
+        if (ShouldAddEdicts)
+        {
+            state.ActiveEdicts.Add(new ImperialEdict {
+                Title = "冀州急折", Type = EdictType.UrgentCrisis, NarrativeContent = "冀州干旱，求赐赈米。"
+            });
+        }
         return Task.CompletedTask;
     }
 }
@@ -351,7 +358,7 @@ public class EngineTests
         Assert.Equal(1, state.Xun);
         // 验证 AI 调度员在旬更时，是否成功派发了日常情报与政务
         Assert.Contains("【群臣密录】：大将军何进正暗中调兵", state.IntelReports[0]);
-        Assert.Contains("【冀州急折】：冀州干旱", state.ActiveEdicts[0]);
+        Assert.Contains("冀州急折", state.ActiveEdicts[0].Title);
     }
 
     [Fact]
@@ -481,5 +488,86 @@ public class EngineTests
         Assert.Equal("割据军阀", dongZhuo.Faction);
         Assert.Contains("孔武有力", dongZhuo.Traits);
         Assert.Equal(100, dongZhuo.Health); // 初始健康的满额 100 状态
+    }
+
+    [Fact]
+    public void Test_Edicts_ResolutionAndPromoBacklash()
+    {
+        // Arrange
+        var state = new GameState();
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // 1. 创建一封邀功赏赐折，赏赐曹操 (初始 TitleTier = 1: 议郎)
+        var edict = new ImperialEdict
+        {
+            Id = "merit_cao_cao",
+            Title = "平叛邀功折",
+            Type = EdictType.Merit,
+            TargetNpcId = "cao_cao",
+            NarrativeContent = "议郎曹操大破乱军，前来讨赏。"
+        };
+
+        // 选项 A：赏千金（无晋升）
+        edict.Options.Add(new EdictOption
+        {
+            Description = "赏千金",
+            TreasuryDelta = -100,
+            TargetNpcFavorabilityDelta = 10
+        });
+
+        // 选项 B：跨级超升（跨 2 级，直接封为九卿 3 级）
+        edict.Options.Add(new EdictOption
+        {
+            Description = "拜为九卿（九卿为3级，曹操初始为1级，跃升2级）",
+            GrantedTitleTierDelta = 2,
+            TargetNpcPowerDelta = 30,
+            TargetNpcFavorabilityDelta = 30
+        });
+
+        state.ActiveEdicts.Add(edict);
+
+        // Act & Assert 1: 选择 B，触发跨级提拔皇权反噬
+        int initialImperialPower = state.ImperialPower;
+        int initialCaoCaoTier = state.Npcs["cao_cao"].TitleTier; // 1
+
+        var result = engine.ResolveEdictAction("merit_cao_cao", 1);
+
+        // 断言：曹操成功连升 2 级，TitleTier 变为 1 + 2 = 3
+        Assert.Equal(initialCaoCaoTier + 2, state.Npcs["cao_cao"].TitleTier);
+        // 断言：因连跃 2 级，触发朝野反噬，皇权暴跌 5 * (2 - 1) = 5 点
+        Assert.Equal(initialImperialPower - 5, state.ImperialPower);
+        Assert.Contains("跨级拔擢反噬", result.StoryText);
+        Assert.Empty(state.ActiveEdicts); // 批阅完后自动出栈移除
+    }
+
+    [Fact]
+    public async Task Test_Edicts_ExpiryCrisis()
+    {
+        // Arrange
+        var state = new GameState();
+        var scheduler = new MockScheduler { ShouldAddEdicts = false };
+        var engine = new GameEngine(state, scheduler, new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // 创建一封 3 旬寿命的 UrgentCrisis 折
+        var edict = new ImperialEdict
+        {
+            Id = "crisis_hb",
+            Title = "并州兵变急折",
+            Type = EdictType.UrgentCrisis,
+            NarrativeContent = "并州胡兵叛乱，十万火急！",
+            ExpiryXun = 3
+        };
+        state.ActiveEdicts.Add(edict);
+
+        int initialSupport = state.PopularSupport;
+
+        // Act：流逝 3 旬 (1 个月)
+        await engine.NextXunAsync(); // Xun 2
+        await engine.NextXunAsync(); // Xun 3
+        await engine.NextXunAsync(); // Xun 1 (跨月，此时第 3 次流逝，保质期归 0 触发流产惩罚)
+
+        // Assert：折子应该因留中不发而被彻底剔除，且急报流产，民心大悲暴跌 -15
+        Assert.DoesNotContain(state.ActiveEdicts, e => e.Id == "crisis_hb");
+        Assert.Equal(initialSupport - 15, state.PopularSupport);
     }
 }

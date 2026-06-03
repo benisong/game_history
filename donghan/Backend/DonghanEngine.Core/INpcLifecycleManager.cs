@@ -87,14 +87,10 @@ public class NpcLifecycleManager : INpcLifecycleManager
         }
     }
 
-    public async Task ProcessLifecycleStepAsync(GameState state, bool useHighTokenAi)
+    public Task ProcessLifecycleStepAsync(GameState state, bool useHighTokenAi)
     {
-        if (useHighTokenAi)
-        {
-            // 多 Token 纯 AI 版：此接口留给 AI 调度员在接入 LLM 后，根据朝局自由生发事件
-            // 目前轻量实现由 Scheduler 编排传递指令，此处可作为一个扩展点
-            await Task.Delay(10); // 模拟 AI 耗时
-        }
+        // AI 调度扩展点：预留 LLM 驱动的自由事件生发接口
+        // useHighTokenAi 模式下由外部调度器接管，此处仅执行启发式衰老逻辑
 
         // 统一启发式衰老机制：
         // 每过一年（1月·上旬），所有大臣年龄增长 1 岁
@@ -104,7 +100,7 @@ public class NpcLifecycleManager : INpcLifecycleManager
             // 如果在同一旬内已经处理过结算，直接拦截退出，防止频繁调度导致官员瞬间变老或老死
             if (currentTimestamp <= state.LastNpcProcessedTimestamp)
             {
-                return;
+                return Task.CompletedTask;
             }
             state.LastNpcProcessedTimestamp = currentTimestamp;
 
@@ -144,6 +140,8 @@ public class NpcLifecycleManager : INpcLifecycleManager
                 _registry.DeregisterNpc(removeInfo.Id, removeInfo.Reason, state);
             }
         }
+
+        return Task.CompletedTask;
     }
 
     private static readonly List<NpcState> _hardcodedFallbackList = new()
@@ -151,13 +149,13 @@ public class NpcLifecycleManager : INpcLifecycleManager
         new NpcState { Id = "dong_zhuo", Name = "董卓", Title = "并州刺史/河东太守", BirthYear = 139, BaseLongevity = 53, Traits = new() { "孔武有力", "拥兵自重" }, Personality = "残暴", Style = "拥兵自重", Faction = "割据军阀" },
         new NpcState { Id = "yuan_shao", Name = "袁绍", Title = "中军校尉/渤海太守", BirthYear = 154, BaseLongevity = 48, Traits = new() { "老谋深算", "门阀世家", "手下有兵" }, Personality = "外宽内忌", Style = "结党营私", Faction = "清流派" },
         new NpcState { Id = "liu_bei", Name = "刘备", Title = "平原县令", BirthYear = 161, BaseLongevity = 62, Traits = new() { "经天纬地", "爱民如子" }, Personality = "宽厚", Style = "明哲保身", Faction = "清流派" },
-        new NpcState { Id = "cao_cao_fallback", Name = "曹操", Title = "议郎/典军校尉", BirthYear = 155, BaseLongevity = 65, Traits = new() { "经天纬地", "老谋深算", "清正廉洁" }, Personality = "深沉", Style = "雷厉风行", Faction = "清流派" },
+        new NpcState { Id = "cao_cao", Name = "曹操", Title = "议郎/典军校尉", BirthYear = 155, BaseLongevity = 65, Traits = new() { "经天纬地", "老谋深算" }, Personality = "深沉", Style = "雷厉风行", Faction = "清流派" },
         new NpcState { Id = "sun_jian", Name = "孙坚", Title = "长沙太守/破虏将军", BirthYear = 155, BaseLongevity = 37, Traits = new() { "孔武有力", "治军严整" }, Personality = "勇烈", Style = "刚直不阿", Faction = "割据军阀" },
         new NpcState { Id = "gongsun_zan", Name = "公孙瓒", Title = "奋武将军/蓟侯", BirthYear = 153, BaseLongevity = 46, Traits = new() { "孔武有力", "懂点兵法" }, Personality = "刚烈", Style = "保皇尽忠", Faction = "割据军阀" },
         new NpcState { Id = "wang_yun", Name = "王允", Title = "司徒/尚书令", BirthYear = 137, BaseLongevity = 55, Traits = new() { "刚直不阿", "经天纬地" }, Personality = "刚直", Style = "雷厉风行", Faction = "清流派" },
         new NpcState { Id = "li_ru", Name = "李儒", Title = "郎中令/董卓谋主", BirthYear = 150, BaseLongevity = 45, Traits = new() { "老谋深算", "有些心计" }, Personality = "阴险", Style = "结党营私", Faction = "割据军阀" },
-        new NpcState { Id = "he_jin_fallback", Name = "何进", Title = "大将军", BirthYear = 135, BaseLongevity = 44, Traits = new() { "拥兵自重", "手下有兵" }, Personality = "平庸", Style = "优柔寡断", Faction = "外戚派" },
-        new NpcState { Id = "zhang_rang_fallback", Name = "张让", Title = "十常侍之首", BirthYear = 130, BaseLongevity = 60, Traits = new() { "贪得无厌", "谄媚专权" }, Personality = "阴险", Style = "谄媚专权", Faction = "阉党派" },
+        new NpcState { Id = "he_jin", Name = "何进", Title = "大将军", BirthYear = 135, BaseLongevity = 44, Traits = new() { "拥兵自重", "手下有兵" }, Personality = "平庸", Style = "优柔寡断", Faction = "外戚派" },
+        new NpcState { Id = "zhang_rang", Name = "张让", Title = "十常侍之首", BirthYear = 130, BaseLongevity = 60, Traits = new() { "贪得无厌", "谄媚专权" }, Personality = "阴险", Style = "谄媚专权", Faction = "阉党派" },
         new NpcState { Id = "huangfu_song", Name = "皇甫嵩", Title = "左车骑将军/槐里侯", BirthYear = 130, BaseLongevity = 60, Traits = new() { "治军严整", "爱兵如子", "刚直不阿" }, Personality = "忠勇", Style = "雷厉风行", Faction = "清流派" },
         new NpcState { Id = "xun_yu", Name = "荀彧", Title = "尚书令/侍中", BirthYear = 163, BaseLongevity = 50, Traits = new() { "经天纬地", "擅长民政", "清正廉洁" }, Personality = "睿智", Style = "明哲保身", Faction = "清流派" },
         new NpcState { Id = "lu_zhi", Name = "卢植", Title = "北中郎将/尚书", BirthYear = 139, BaseLongevity = 53, Traits = new() { "治军严整", "擅长民政", "刚直不阿" }, Personality = "刚正", Style = "刚直不阿", Faction = "清流派" },
