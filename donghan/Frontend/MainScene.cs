@@ -144,6 +144,19 @@ public partial class MainScene : Control
     private Button? _caoCaoButton;
     private Button? _jianShuoButton;
 
+    // 物理器物按钮
+    private Button? _btnAffairsBox;      // 雕龙漆木匣 (政务)
+    private Button? _btnIntelToken;      // 漆木密札 (情报)
+    private Button? _btnCourtSeal;       // 天子玉玺 (朝会)
+    private Button? _btnPleasureCenser;  // 铜制博山炉 (娱乐)
+
+    // 辅助面板层
+    private Control? _panelAffairs;
+
+    // 大朝仪转场遮罩
+    private ColorRect? _transitionMask;
+    private RichTextLabel? _ritualTextLabel;
+
     // 场景专属 Action 节点引用
     private Label? _actionLabel;
     private Button? _sellOfficeButton;
@@ -177,6 +190,25 @@ public partial class MainScene : Control
 
         // 2. 注册窗口管理器节点到场景中
         AddChild(_windowManager);
+
+        // 获取并绑定四个物理器物按钮（兼容旧版测试节点）
+        _btnAffairsBox = GetNodeOrNull<Button>("UI_Layer/Desk/BtnAffairsBox") ?? new Button();
+        _btnIntelToken = GetNodeOrNull<Button>("UI_Layer/Desk/BtnIntelToken") ?? new Button();
+        _btnCourtSeal = GetNodeOrNull<Button>("UI_Layer/Desk/BtnCourtSeal") ?? new Button();
+        _btnPleasureCenser = GetNodeOrNull<Button>("UI_Layer/Desk/BtnPleasureCenser") ?? new Button();
+
+        _btnAffairsBox.Pressed += OnAffairsBoxPressed;
+        _btnIntelToken.Pressed += OnIntelTokenPressed;
+        _btnCourtSeal.Pressed += OnCourtSealPressed;
+        _btnPleasureCenser.Pressed += OnPleasureCenserPressed;
+
+        _panelAffairs = GetNodeOrNull<Control>("UI_Layer/PanelAffairs");
+        _transitionMask = GetNodeOrNull<ColorRect>("UI_Layer/TransitionMask");
+        if (_transitionMask != null)
+        {
+            _ritualTextLabel = _transitionMask.GetNodeOrNull<RichTextLabel>("RitualTextLabel");
+            _transitionMask.Hide();
+        }
 
         // 3. 获取 UI 节点引用
         _reignLabel = GetNodeOrNull<Label>("LeftPanel/VBoxContainer/ReignLabel");
@@ -515,11 +547,11 @@ public partial class MainScene : Control
         {
             string officerId = "jian_shuo"; // 默认蹇硕（西园上军校尉）
             
-            if (_gameState.Ministers.TryGetValue("cao_cao", out var cao) && cao.Favorability > 50)
+            if (_gameState.Npcs.TryGetValue("cao_cao", out var cao) && cao.Favorability > 50)
             {
                 officerId = "cao_cao";
             }
-            else if (_gameState.Ministers.TryGetValue("zhang_rang", out var zhang) && zhang.Power > 75)
+            else if (_gameState.Npcs.TryGetValue("zhang_rang", out var zhang) && zhang.Power > 75)
             {
                 officerId = "zhang_rang";
             }
@@ -602,7 +634,7 @@ public partial class MainScene : Control
     {
         if (_gameState == null || _ministerPanel == null) return;
 
-        if (_gameState.Ministers.TryGetValue(ministerId, out var minister))
+        if (_gameState.Npcs.TryGetValue(ministerId, out var minister))
         {
             _currentDetailsMinisterId = ministerId; // 记录当前正在查看的大臣ID，用于抄家指令
 
@@ -658,6 +690,32 @@ public partial class MainScene : Control
         catch (Exception ex)
         {
             GD.PrintErr(ex.Message);
+        }
+    }
+
+    private void OnAffairsBoxPressed()
+    {
+        GD.Print("【互动】打开雕龙漆木匣，翻开奏折...");
+        if (_panelAffairs != null) _panelAffairs.Show();
+    }
+
+    private void OnIntelTokenPressed()
+    {
+        GD.Print("【互动】拿起漆木密札，黄门暗探呈上竹简...");
+    }
+
+    private void OnCourtSealPressed()
+    {
+        GD.Print("【互动】拿起天子玉玺...");
+    }
+
+    private void OnPleasureCenserPressed()
+    {
+        GD.Print("【互动】点燃博山炉，紫烟升起，起驾后宫/西园...");
+        if (_gameEngine != null)
+        {
+            _gameEngine.TravelToLocation("后宫");
+            UpdateUI();
         }
     }
 }
