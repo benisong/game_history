@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="DonghanEngine.Core/DonghanEngine.Core.csproj" />
+  <Project Path="DonghanEngine.Tests/DonghanEngine.Tests.csproj" />
+</Solution>

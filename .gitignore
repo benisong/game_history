@@ -1,0 +1,23 @@
+# Root .gitignore for game_history project
+
+# Exclude other sub-projects we do not want to track at the root level
+wuxia-inheritance/
+xiuxian-game/
+武侠/
+
+# Inherit standard ignore rules for donghan subproject compilation artifacts
+donghan/Backend/DonghanEngine.Core/bin/
+donghan/Backend/DonghanEngine.Core/obj/
+donghan/Backend/DonghanEngine.Tests/bin/
+donghan/Backend/DonghanEngine.Tests/obj/
+donghan/Frontend/.godot/
+donghan/Frontend/bin/
+donghan/Frontend/obj/
+donghan/Frontend/*.import
+
+# System files
+.DS_Store
+Thumbs.db
+.vs/
+.idea/
+.vscode/

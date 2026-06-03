@@ -1,0 +1,476 @@
+[gd_scene load_steps=2 format=3 uid="uid://dg1234567890a"]
+
+[ext_resource type="Script" path="res://MainScene.cs" id="1_xxxxx"]
+
+[node name="MainScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_xxxxx")
+
+[node name="LeftPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 300.0
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="LeftPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 15.0
+offset_top = 15.0
+offset_right = -15.0
+offset_bottom = -15.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "大汉宣政殿 · 局势"
+
+[node name="ReignLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+text = "年号: 光和 七年"
+
+[node name="ImperialPowerLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+text = "皇权值: 50 / 100"
+
+[node name="TreasuryLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+text = "国库资金: 15000 万钱"
+
+[node name="PrivateTreasuryLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+text = "西园私库: 2000 万钱"
+
+[node name="HealthLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+text = "皇帝健康: 100 / 100"
+
+[node name="PopularSupportLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+text = "天下民心: 40 / 100"
+
+[node name="ArmyTitleLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.3, 0.3, 1)
+text = "—— 西园军势 ——"
+
+[node name="ArmySizeLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+text = "建制人数: 8000"
+
+[node name="ArmyMoraleLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+text = "军心士气: 55 / 100"
+
+[node name="ArmyLoyaltyLabel" type="Label" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+text = "天子忠诚: 50 / 100"
+
+[node name="ChronicleTitle" type="Label" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+text = "—— 帝王起居注 ——"
+
+[node name="ChronicleLog" type="RichTextLabel" parent="LeftPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+scroll_following = true
+
+[node name="CenterPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 13
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_right = 260.0
+offset_bottom = -80.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StoryOutput" type="RichTextLabel" parent="CenterPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+text = "汉灵帝光和七年。外戚专权，宦官秉政，百姓疾苦。大汉江山风雨铺展，陛下当如何执掌朝政？"
+
+[node name="RightPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -300.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="Ministers" type="VBoxContainer" parent="RightPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 15.0
+offset_top = 15.0
+offset_right = -15.0
+offset_bottom = -15.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="SceneTitle" type="Label" parent="RightPanel/Ministers"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "当前：宣政殿"
+
+[node name="InteractiveLabel" type="Label" parent="RightPanel/Ministers"]
+layout_mode = 2
+text = "【召见群臣】"
+
+[node name="HeJinButton" type="Button" parent="RightPanel/Ministers"]
+layout_mode = 2
+text = "大将军 何进"
+
+[node name="ZhangRangButton" type="Button" parent="RightPanel/Ministers"]
+layout_mode = 2
+text = "十常侍 张让"
+
+[node name="DisasterReliefButton" type="Button" parent="RightPanel/Ministers"]
+layout_mode = 2
+text = "🌊 旨准开仓赈灾"
+
+[node name="CaoCaoButton" type="Button" parent="RightPanel/Ministers"]
+visible = false
+layout_mode = 2
+text = "典军校尉 曹操"
+
+[node name="JianShuoButton" type="Button" parent="RightPanel/Ministers"]
+visible = false
+layout_mode = 2
+text = "上军校尉 蹇硕"
+
+[node name="ActionLabel" type="Label" parent="RightPanel/Ministers"]
+visible = false
+layout_mode = 2
+text = "【西园专属执掌】"
+
+[node name="SellOfficeButton" type="Button" parent="RightPanel/Ministers"]
+visible = false
+layout_mode = 2
+text = "💰 卖官鬻爵 (+私库 -皇权)"
+
+[node name="DrillArmyButton" type="Button" parent="RightPanel/Ministers"]
+visible = false
+layout_mode = 2
+text = "⚔️ 阅兵练兵 (+皇权 -私库)"
+
+[node name="HaremActionLabel" type="Label" parent="RightPanel/Ministers"]
+visible = false
+layout_mode = 2
+text = "【后宫专属休养】"
+
+[node name="HaremRestButton" type="Button" parent="RightPanel/Ministers"]
+visible = false
+layout_mode = 2
+text = "🌸 临幸调理 (+健康)"
+
+[node name="TravelButton" type="Button" parent="RightPanel/Ministers"]
+layout_mode = 2
+size_flags_vertical = 10
+theme_override_colors/font_color = Color(1, 0.843137, 0, 1)
+text = "🗺️ 起驾 / 移驾"
+
+[node name="BottomPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 300.0
+offset_top = -80.0
+offset_right = -300.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="PlayerInputEdit" type="LineEdit" parent="BottomPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -120.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+placeholder_text = "陛下，请在此朱批..."
+
+[node name="SubmitButton" type="Button" parent="BottomPanel"]
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -100.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 2
+text = "下旨"
+
+[node name="MinisterOverlayPanel" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -100.0
+offset_right = 150.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="MinisterOverlayPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MinisterTitle" type="Label" parent="MinisterOverlayPanel/VBox"]
+layout_mode = 2
+text = "大臣信息"
+
+[node name="MinisterFavor" type="Label" parent="MinisterOverlayPanel/VBox"]
+layout_mode = 2
+text = "好感度: 50/100"
+
+[node name="MinisterPower" type="Label" parent="MinisterOverlayPanel/VBox"]
+layout_mode = 2
+text = "权力值: 50/100"
+
+[node name="MinisterCorruption" type="Label" parent="MinisterOverlayPanel/VBox"]
+layout_mode = 2
+text = "官员贪腐度: 20/100"
+
+[node name="MinisterWealth" type="Label" parent="MinisterOverlayPanel/VBox"]
+layout_mode = 2
+text = "私蓄赃款: 0 万钱"
+
+[node name="HBox" type="HBoxContainer" parent="MinisterOverlayPanel/VBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="ConfiscateTreasuryBtn" type="Button" parent="MinisterOverlayPanel/VBox/HBox"]
+layout_mode = 2
+text = "⚖️ 籍没赃款入国库"
+
+[node name="ConfiscatePrivateBtn" type="Button" parent="MinisterOverlayPanel/VBox/HBox"]
+layout_mode = 2
+text = "💎 籍没入西园私库"
+
+[node name="CloseButton" type="Button" parent="MinisterOverlayPanel/VBox"]
+layout_mode = 2
+text = "退下"
+
+[node name="DisasterReliefPopupPanel" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -160.0
+offset_right = 220.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="DisasterReliefPopupPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="DisasterReliefPopupPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "宣政殿 · 旨准开仓赈灾"
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="DisasterReliefPopupPanel/VBox"]
+layout_mode = 2
+text = "饥荒蔓延，请陛下决定拨发朝廷国库预算："
+horizontal_alignment = 1
+
+[node name="ReliefAmountInput" type="LineEdit" parent="DisasterReliefPopupPanel/VBox"]
+layout_mode = 2
+placeholder_text = "输入赈灾拨发资金 (万钱)..."
+
+[node name="Desc2" type="Label" parent="DisasterReliefPopupPanel/VBox"]
+layout_mode = 2
+text = "请指派经办赈灾的钦差大臣："
+horizontal_alignment = 1
+
+[node name="HBox" type="HBoxContainer" parent="DisasterReliefPopupPanel/VBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 10
+
+[node name="ReliefCaoButton" type="Button" parent="DisasterReliefPopupPanel/VBox/HBox"]
+layout_mode = 2
+text = "曹操 (贪腐 5%)"
+
+[node name="ReliefHeButton" type="Button" parent="DisasterReliefPopupPanel/VBox/HBox"]
+layout_mode = 2
+text = "何进 (贪腐 45%)"
+
+[node name="ReliefZhangButton" type="Button" parent="DisasterReliefPopupPanel/VBox/HBox"]
+layout_mode = 2
+text = "张让 (贪腐 90%)"
+
+[node name="CancelReliefButton" type="Button" parent="DisasterReliefPopupPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 10
+text = "暂缓决策"
+
+[node name="ArmyDrillPopupPanel" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -120.0
+offset_right = 180.0
+offset_bottom = 120.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="ArmyDrillPopupPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="ArmyDrillPopupPanel/VBox"]
+layout_mode = 2
+text = "西园阅兵 · 犒赏三军"
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="ArmyDrillPopupPanel/VBox"]
+layout_mode = 2
+text = "基础军饷：120 万钱
+请陛下定夺拨发私库额度："
+
+[node name="PayInput" type="LineEdit" parent="ArmyDrillPopupPanel/VBox"]
+layout_mode = 2
+placeholder_text = "输入赏赐额度(万钱)..."
+
+[node name="ConfirmPayButton" type="Button" parent="ArmyDrillPopupPanel/VBox"]
+layout_mode = 2
+text = "拨发军饷！"
+
+[node name="CancelPayButton" type="Button" parent="ArmyDrillPopupPanel/VBox"]
+layout_mode = 2
+text = "暂缓"
+
+[node name="TravelOverlayPanel" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="TravelOverlayPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 25.0
+offset_top = 25.0
+offset_right = -25.0
+offset_bottom = -25.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="TravelOverlayPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "—— 帝驾起驾巡幸 ——"
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="TravelOverlayPanel/VBox"]
+layout_mode = 2
+text = "请天子选择起驾巡幸之所，移步理政："
+horizontal_alignment = 1
+
+[node name="GoCourtButton" type="Button" parent="TravelOverlayPanel/VBox"]
+layout_mode = 2
+text = "🏛️ 宣政殿 (批阅天下奏折、总揽大权)"
+
+[node name="GoHaremButton" type="Button" parent="TravelOverlayPanel/VBox"]
+layout_mode = 2
+text = "🌸 临幸后宫 (调养龙体健康、开枝散叶)"
+
+[node name="GoGardenButton" type="Button" parent="TravelOverlayPanel/VBox"]
+layout_mode = 2
+text = "⚔️ 西园精舍 (强军阅兵、敛聚帝王私库)"
+
+[node name="CancelTravelButton" type="Button" parent="TravelOverlayPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 10
+text = "龙辇免起"
