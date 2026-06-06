@@ -26,6 +26,16 @@ public class NpcState
     public int BaseLongevity { get; set; } = 65;         // 期望寿命上限
     public bool IsActive { get; set; } = true;            // 是否活跃于朝堂
     public string DeathReason { get; set; } = string.Empty; // 死亡/退场因由
+
+    // === 五维基本属性 (0-100) ===
+    public int Martial    { get; set; } = 40;  // 武力
+    public int Leadership { get; set; } = 40;  // 统帅
+    public int Politics   { get; set; } = 40;  // 政治
+    public int Charisma   { get; set; } = 40;  // 魅力
+    public int Ambition   { get; set; } = 40;  // 野心
+
+    // === 地方治理 ===
+    public string? GovernedProvinceId { get; set; } = null; // 正在治理的郡 ID
 }
 
 public class ArmyState
@@ -50,6 +60,7 @@ public class GameState
 
     public System.Collections.Generic.Dictionary<string, NpcState> Npcs { get; set; } = new();
     public ArmyState WestGardenArmy { get; set; } = new(); // 西园八校尉新军
+    public System.Collections.Generic.Dictionary<string, Province> Provinces { get; set; } = new();
     
     public List<string> Chronicle { get; set; } = new();
 
@@ -75,29 +86,41 @@ public class GameState
         Npcs["he_jin"] = new NpcState { 
             Id = "he_jin", Name = "何进", Title = "大将军", TitleTier = 4,
             Favorability = 35, Power = 80, Corruption = 45, StashedWealth = 1500, BirthYear = 135,
-            Traits = new() { "拥兵自重" }, Personality = "平庸", Style = "优柔寡断", Faction = "外戚派"
+            Traits = new() { TraitNames.YongBingZiZhong }, Personality = "平庸", Style = "优柔寡断", Faction = "外戚派",
+            Martial = 40, Leadership = 35, Politics = 30, Charisma = 40, Ambition = 60
         };
         
         // 十常侍张让：历史极度贪婪，擅权夺利。初始私蓄 6000！张让权势 75，好感 65。Traits：[“贪得无厌”]
         Npcs["zhang_rang"] = new NpcState { 
             Id = "zhang_rang", Name = "张让", Title = "十常侍之首", TitleTier = 3,
             Favorability = 65, Power = 75, Corruption = 90, StashedWealth = 6000, BirthYear = 130,
-            Traits = new() { "贪得无厌" }, Personality = "阴险", Style = "谄媚专权", Faction = "阉党派"
+            Traits = new() { TraitNames.TanDeWuYan }, Personality = "阴险", Style = TraitNames.ChanMeiZhuanQuan, Faction = "阉党派",
+            Martial = 10, Leadership = 15, Politics = 55, Charisma = 60, Ambition = 85
         };
         
         // 青年曹操：廉洁。初始私蓄 50。曹操权势为 15，好感 45。Traits：[“经天纬地”, “老谋深算”]
         Npcs["cao_cao"] = new NpcState { 
             Id = "cao_cao", Name = "曹操", Title = "议郎/典军校尉", TitleTier = 1,
             Favorability = 45, Power = 15, Corruption = 5, StashedWealth = 50, BirthYear = 155,
-            Traits = new() { "经天纬地", "老谋深算" }, Personality = "深沉", Style = "雷厉风行", Faction = "清流派"
+            Traits = new() { TraitNames.JingTianWeiDi, TraitNames.LaoMouShenSuan }, Personality = "深沉", Style = "雷厉风行", Faction = "清流派",
+            Martial = 72, Leadership = 90, Politics = 85, Charisma = 80, Ambition = 75
         };
         
         // 蹇硕：天子亲信。初始私蓄 300。蹇硕权势 30，好感 80。Traits：[“孔武有力”]
         Npcs["jian_shuo"] = new NpcState { 
             Id = "jian_shuo", Name = "蹇硕", Title = "西园上军校尉", TitleTier = 2,
             Favorability = 80, Power = 30, Corruption = 25, StashedWealth = 300, BirthYear = 145,
-            Traits = new() { "孔武有力" }, Personality = "刚直", Style = "保皇尽忠", Faction = "阉党派"
+            Traits = new() { TraitNames.KongWuYouLi }, Personality = "刚直", Style = "保皇尽忠", Faction = "阉党派",
+            Martial = 65, Leadership = 45, Politics = 20, Charisma = 30, Ambition = 40
         };
+
+        // === 大汉十三州（当前开放 6 郡）===
+        Provinces["sili"] = new Province { Id = "sili", Name = "司隶", Distance = 0, LocalSupport = 50, Garrison = 5000, Wealth = 5000, DefenseLevel = 80, Neighbors = new() { "jizhou", "yanzhou", "yuzhou" } };
+        Provinces["jizhou"] = new Province { Id = "jizhou", Name = "冀州", Distance = 3, LocalSupport = 18, Garrison = 2000, Wealth = 3000, DefenseLevel = 30, Neighbors = new() { "sili", "yanzhou", "bingzhou" } };
+        Provinces["bingzhou"] = new Province { Id = "bingzhou", Name = "并州", Distance = 4, LocalSupport = 30, Garrison = 3000, Wealth = 2500, DefenseLevel = 40, Neighbors = new() { "jizhou", "yanzhou" } };
+        Provinces["yanzhou"] = new Province { Id = "yanzhou", Name = "兖州", Distance = 2, LocalSupport = 35, Garrison = 2500, Wealth = 3500, DefenseLevel = 35, Neighbors = new() { "sili", "jizhou", "yuzhou" } };
+        Provinces["yuzhou"] = new Province { Id = "yuzhou", Name = "豫州", Distance = 1, LocalSupport = 45, Garrison = 2000, Wealth = 4000, DefenseLevel = 40, Neighbors = new() { "sili", "yanzhou" } };
+        Provinces["jingzhou"] = new Province { Id = "jingzhou", Name = "荆州", Distance = 5, LocalSupport = 50, Garrison = 3000, Wealth = 6000, DefenseLevel = 50, Neighbors = new() { "yuzhou" } };
     }
 
     public void ApplyNumericalDelta(int imperialPowerDelta, int treasuryDelta, int healthDelta)
@@ -145,4 +168,24 @@ public class RitualStageInfo
     public int StageIndex { get; set; } // 1, 2, 3
     public string Title { get; set; } = string.Empty;
     public string Narrative { get; set; } = string.Empty;
+}
+
+public class Province
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string? GovernorId { get; set; } = null;
+    public int Distance { get; set; } = 2;
+    public List<string> Neighbors { get; set; } = new();
+
+    public bool IsRebelling { get; set; } = false;
+    public int RebellionMonths { get; set; } = 0;
+    public string RebelFaction { get; set; } = string.Empty;
+
+    public int LocalSupport { get; set; } = 30;
+    public int Wealth { get; set; } = 2000;
+    public int Garrison { get; set; } = 2000;
+    public int DefenseLevel { get; set; } = 30;
+
+    public int LowSupportStreakMonths { get; set; } = 0;
 }

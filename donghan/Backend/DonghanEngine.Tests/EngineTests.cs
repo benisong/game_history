@@ -433,7 +433,7 @@ public class EngineTests
         var liuBei = new NpcState
         {
             Id = "liu_bei", Name = "刘备", Title = "平原相",
-            BirthYear = 161, BaseLongevity = 62, Traits = new() { "经天纬地" },
+            BirthYear = 161, BaseLongevity = 62, Traits = new() { TraitNames.JingTianWeiDi },
             Corruption = 0, Power = 10, Favorability = 90
         };
         registry.RegisterNpc(liuBei, state);
@@ -451,6 +451,8 @@ public class EngineTests
         // 4. 验证文学词汇 [老谋深算] 降低抄家反噬
         // 曹操 (Traits 包含老谋深算) 诬陷抄家张让（张让 Power 75 触发党羽反噬）
         // 反噬降低：曹操办案，皇权仅降 10 点 (原 base 15 * 0.7 = 10点)
+        // 排除刘备干扰（其 Corruption=0 < 曹操的5，新钦差选择规则会优先选最低贪腐度）
+        state.Npcs["liu_bei"].Favorability = 30; // 降至门槛以下，确保曹操当选
         state.Npcs["cao_cao"].Favorability = 90;
         int initialPower = state.ImperialPower;
         engine.ExecuteConfiscationAction("zhang_rang", "国库");
@@ -458,20 +460,26 @@ public class EngineTests
 
         // 5. 验证 Traits 累乘共存：刘备同时拥有 [经天纬地] 1.20x 与 [爱民如子] 1.15x
         // 累计系数：1.20 * 1.15 = 1.38x
-        liuBei.Traits.Add("爱民如子");
+        liuBei.Traits.Add(TraitNames.AiMinRuZi);
         int secondarySupport = state.PopularSupport;
         // 再次赈灾 1000万，基础 supportDelta = 12 * (1000 / 1000) = 12点
         // 复合提振：12 * 1.38 = 16.56 -> 16 点提振
         engine.ExecuteDisasterReliefAction(1000, "liu_bei");
         Assert.Equal(secondarySupport + 16, state.PopularSupport);
 
-        // 6. 验证调度师手动调用管理 NPC 的衰老机制（每年一月上旬触发）
+        // 6. 验证衰老机制 + 确定性随机（seeded Random）
         state.Month = 1;
         state.Xun = 1;
-        state.Npcs["he_jin"].BirthYear = 100; // 84岁，超过期望寿命 65
-        
-        await manager.ProcessLifecycleStepAsync(state, false);
-        // 刘备依然健康存活
+        state.Npcs["he_jin"].BirthYear = 100; // 84岁，超过期望寿命 44
+
+        // seed=14: Next(0,100) returns 4 (< 15 → death)，后续所有 Next(0,1000) ≥ 3 无人染病
+        var seededRng = new Random(14);
+        await manager.ProcessLifecycleStepAsync(state, false, seededRng);
+
+        // 何进 100% 确定死亡
+        Assert.False(state.Npcs.ContainsKey("he_jin"),
+            "何进 84岁超过期望寿命，应触发寿终判定死亡");
+        // 刘备依然存活（未超 BaseLongevity）
         Assert.True(state.Npcs.ContainsKey("liu_bei"));
 
         // 7. 验证按需惰性登场部署（DeployNpcToCourt）
@@ -486,7 +494,7 @@ public class EngineTests
         var dongZhuo = state.Npcs["dong_zhuo"];
         Assert.Equal("董卓", dongZhuo.Name);
         Assert.Equal("割据军阀", dongZhuo.Faction);
-        Assert.Contains("孔武有力", dongZhuo.Traits);
+        Assert.Contains(TraitNames.KongWuYouLi, dongZhuo.Traits);
         Assert.Equal(100, dongZhuo.Health); // 初始健康的满额 100 状态
     }
 
@@ -569,5 +577,139 @@ public class EngineTests
         // Assert：折子应该因留中不发而被彻底剔除，且急报流产，民心大悲暴跌 -15
         Assert.DoesNotContain(state.ActiveEdicts, e => e.Id == "crisis_hb");
         Assert.Equal(initialSupport - 15, state.PopularSupport);
+    }
+
+    [Fact]
+    public void Test_SellOffice_ShouldIncreasePrivateTreasuryAndReduceImperialPower()
+    {
+        // Arrange
+        var state = new GameState();
+        state.CurrentLocation = "西园";
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        int initialPrivateTreasury = state.PrivateTreasury;
+        int initialImperialPower = state.ImperialPower;
+
+        // Act
+        var result = engine.ExecuteQuickAction("sell_office");
+
+        // Assert
+        Assert.Equal(initialPrivateTreasury + 1000, state.PrivateTreasury);
+        Assert.Equal(initialImperialPower - 3, state.ImperialPower);
+        Assert.Contains("西园鬻官", result.StoryText);
+        Assert.Contains("1000 万钱", result.StoryText);
+    }
+
+    [Fact]
+    public void Test_HaremRest_ShouldRestoreHealth()
+    {
+        // Arrange
+        var state = new GameState();
+        state.CurrentLocation = "后宫";
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        int initialHealth = state.Health; // 35
+
+        // Act
+        var result = engine.ExecuteQuickAction("harem_rest");
+
+        // Assert
+        Assert.True(state.Health > initialHealth); // Health should increase by at least 10
+        Assert.Contains("后宫春深", result.StoryText);
+    }
+
+    [Fact]
+    public void Test_HaremRest_WithFlatteringOfficer_ShouldGetExtraHealthAndOfficerPowerBoost()
+    {
+        // Arrange
+        var state = new GameState();
+        state.CurrentLocation = "后宫";
+        // 给张让加上谄媚专权 trait
+        state.Npcs["zhang_rang"].Traits.Add(TraitNames.ChanMeiZhuanQuan);
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        int initialHealth = state.Health; // 35
+        int initialZhangRangPower = state.Npcs["zhang_rang"].Power;
+        int initialZhangRangFavorability = state.Npcs["zhang_rang"].Favorability;
+
+        // Act
+        engine.ExecuteQuickAction("harem_rest");
+
+        // Assert
+        // 基础 +10，谄媚专权额外 +5 = +15
+        Assert.Equal(initialHealth + 15, state.Health);
+        // 谄媚专权随驾：好感+15，权势+5
+        Assert.Equal(initialZhangRangFavorability + 15, state.Npcs["zhang_rang"].Favorability);
+        Assert.Equal(initialZhangRangPower + 5, state.Npcs["zhang_rang"].Power);
+    }
+
+    [Fact]
+    public void Test_SceneTravel_ShouldChangeLocation()
+    {
+        // Arrange
+        var state = new GameState();
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        Assert.Equal("宣政殿", state.CurrentLocation);
+
+        // Act
+        engine.TravelToLocation("西园");
+
+        // Assert
+        Assert.Equal("西园", state.CurrentLocation);
+
+        // Act
+        engine.TravelToLocation("后宫");
+
+        // Assert
+        Assert.Equal("后宫", state.CurrentLocation);
+    }
+
+    [Fact]
+    public void Test_SceneTravel_InvalidLocation_ShouldThrow()
+    {
+        var state = new GameState();
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        Assert.Throws<ArgumentException>(() => engine.TravelToLocation("洛阳城"));
+    }
+
+    [Fact]
+    public void Test_TraitEvaluator_ConflictingTraits_CompoundingMultiplier()
+    {
+        // 验证正负 traits 共存时的累乘行为
+        var officer = new NpcState
+        {
+            Id = "test", Name = "测试官",
+            Traits = new() { TraitNames.JingTianWeiDi, TraitNames.HaoSheWuDu } // 1.20 * 0.75 = 0.90
+        };
+
+        double multiplier = NpcTraitEvaluator.GetDisasterReliefSupportMultiplier(officer);
+        Assert.Equal(0.90, multiplier, 4);
+    }
+
+    [Fact]
+    public void Test_TraitEvaluator_Embezzlement_CleanVsCorrupt()
+    {
+        var cleanOfficer = new NpcState { Id = "c", Name = "清官", Traits = new() { TraitNames.QingZhengLianJie } };
+        var greedyOfficer = new NpcState { Id = "g", Name = "贪官", Traits = new() { TraitNames.TanDeWuYan } };
+
+        int siphon = 100;
+
+        Assert.Equal(0, NpcTraitEvaluator.ApplyEmbezzlementSiphon(cleanOfficer, siphon));
+        Assert.Equal(150, NpcTraitEvaluator.ApplyEmbezzlementSiphon(greedyOfficer, siphon));
+    }
+
+    [Fact]
+    public void Test_QuickAction_InvalidLocation_ShouldThrow()
+    {
+        var state = new GameState();
+        state.CurrentLocation = "宣政殿";
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // 在宣政殿不能卖官（只能在西园）
+        Assert.Throws<InvalidOperationException>(() => engine.ExecuteQuickAction("sell_office"));
+        // 在宣政殿不能后宫休息
+        Assert.Throws<InvalidOperationException>(() => engine.ExecuteQuickAction("harem_rest"));
     }
 }

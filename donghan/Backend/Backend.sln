@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DonghanEngine.Core", "DonghanEngine.Core\DonghanEngine.Core.csproj", "{B808E039-4804-4F50-A209-02A6F211129F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DonghanEngine.Tests", "DonghanEngine.Tests\DonghanEngine.Tests.csproj", "{6BA6AE50-A57C-407E-B96F-7B88605AAB46}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B808E039-4804-4F50-A209-02A6F211129F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B808E039-4804-4F50-A209-02A6F211129F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B808E039-4804-4F50-A209-02A6F211129F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B808E039-4804-4F50-A209-02A6F211129F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6BA6AE50-A57C-407E-B96F-7B88605AAB46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6BA6AE50-A57C-407E-B96F-7B88605AAB46}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6BA6AE50-A57C-407E-B96F-7B88605AAB46}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6BA6AE50-A57C-407E-B96F-7B88605AAB46}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

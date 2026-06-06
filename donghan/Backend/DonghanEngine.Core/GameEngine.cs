@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace DonghanEngine.Core;
 
-public class GameEngine
+public partial class GameEngine
 {
     private readonly GameState _state;
     private readonly IAIScheduler _scheduler;
@@ -485,6 +485,8 @@ public class GameEngine
                 _state.AddToChronicle($"【怠政】《{expired.Title}》过期未批，朝堂议论天子怠政。");
             }
         }
+
+        CheckRebellions();
     }
 
     public string StartGrandCourtSync()
@@ -587,4 +589,7 @@ public class GameEngine
 
         return new TurnResult { StoryText = story, TriggeredEvent = triggeredEvent, Dialogues = dialogues };
     }
+
+    // Defined in GameEngine.Rebellion.cs
+    partial void CheckRebellions();
 }
