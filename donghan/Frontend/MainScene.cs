@@ -191,16 +191,7 @@ public partial class MainScene : Control
         // 2. 注册窗口管理器节点到场景中
         AddChild(_windowManager);
 
-        // 获取并绑定四个物理器物按钮（兼容旧版测试节点）
-        _btnAffairsBox = GetNodeOrNull<Button>("UI_Layer/Desk/BtnAffairsBox") ?? new Button();
-        _btnIntelToken = GetNodeOrNull<Button>("UI_Layer/Desk/BtnIntelToken") ?? new Button();
-        _btnCourtSeal = GetNodeOrNull<Button>("UI_Layer/Desk/BtnCourtSeal") ?? new Button();
-        _btnPleasureCenser = GetNodeOrNull<Button>("UI_Layer/Desk/BtnPleasureCenser") ?? new Button();
-
-        _btnAffairsBox.Pressed += OnAffairsBoxPressed;
-        _btnIntelToken.Pressed += OnIntelTokenPressed;
-        _btnCourtSeal.Pressed += OnCourtSealPressed;
-        _btnPleasureCenser.Pressed += OnPleasureCenserPressed;
+        InitializeEmperorsDesk();
 
         _panelAffairs = GetNodeOrNull<Control>("UI_Layer/PanelAffairs");
         _transitionMask = GetNodeOrNull<ColorRect>("UI_Layer/TransitionMask");
@@ -395,12 +386,18 @@ public partial class MainScene : Control
         if (_sellOfficeButton != null) _sellOfficeButton.Pressed += () => DoQuickAction("sell_office");
         if (_haremRestButton != null) _haremRestButton.Pressed += () => DoQuickAction("harem_rest");
 
+        InitializeDynamicNpcList();
+        InitializeAffairsPanel();
+        InitializeIntelPanel();
+        InitializeCourtPanel();
+
         // 渲染初始界面状态
         UpdateUI();
         if (_storyOutput != null)
         {
-            _storyOutput.Text = "汉灵帝光和七年。外戚专权，宦官秉政，百姓疾苦。大汉江山风雨飘摇，陛下当如何执掌朝政？\n请输入朱批下达圣旨...";
+            _storyOutput.Text = "陛下已经驾临宣政殿，请在上方抚摩御案物理器物，或在下方朱批下旨，乾纲独断...";
         }
+        ShowOpeningOverlay();
     }
 
     private void UpdateUI()
@@ -415,18 +412,22 @@ public partial class MainScene : Control
         
         // 更新天下民心
         var supportLabel = GetNodeOrNull<Label>("LeftPanel/VBoxContainer/PopularSupportLabel");
-        if (supportLabel != null) supportLabel.Text = $"天下民心: {_gameState.PopularSupport} / 100";
+        if (supportLabel != null) supportLabel.Hide();
 
         if (_healthLabel != null) _healthLabel.Text = $"皇帝健康: {_gameState.Health} / 100";
 
         // 更新左侧西园军势
+        var armyTitleLabel = GetNodeOrNull<Label>("LeftPanel/VBoxContainer/ArmyTitleLabel");
+        if (armyTitleLabel != null) armyTitleLabel.Hide();
+
         var armySizeLabel = GetNodeOrNull<Label>("LeftPanel/VBoxContainer/ArmySizeLabel");
+        if (armySizeLabel != null) armySizeLabel.Hide();
+
         var armyMoraleLabel = GetNodeOrNull<Label>("LeftPanel/VBoxContainer/ArmyMoraleLabel");
+        if (armyMoraleLabel != null) armyMoraleLabel.Hide();
+
         var armyLoyaltyLabel = GetNodeOrNull<Label>("LeftPanel/VBoxContainer/ArmyLoyaltyLabel");
-        
-        if (armySizeLabel != null) armySizeLabel.Text = $"建制人数: {_gameState.WestGardenArmy.Size}";
-        if (armyMoraleLabel != null) armyMoraleLabel.Text = $"军心士气: {_gameState.WestGardenArmy.Morale} / 100";
-        if (armyLoyaltyLabel != null) armyLoyaltyLabel.Text = $"天子忠诚: {_gameState.WestGardenArmy.Loyalty} / 100";
+        if (armyLoyaltyLabel != null) armyLoyaltyLabel.Hide();
 
         // 更新起居注/编年史
         if (_chronicleLog != null)
@@ -440,6 +441,7 @@ public partial class MainScene : Control
 
         // 根据当前所在场景，动态控制右侧控制面板按钮的显示隐藏！
         UpdateSceneButtons();
+        UpdateNpcList();
     }
 
     // 动态控制右侧控制面板
@@ -656,6 +658,22 @@ public partial class MainScene : Control
                 wealthLabel.Text = $"私蓄赃款: {minister.StashedWealth} 万钱";
             }
 
+            // 新增或更新五维属性标签
+            var fiveAttributesLabel = _ministerPanel.GetNodeOrNull<Label>("VBox/FiveAttributes");
+            if (fiveAttributesLabel == null)
+            {
+                fiveAttributesLabel = new Label();
+                fiveAttributesLabel.Name = "FiveAttributes";
+                fiveAttributesLabel.HorizontalAlignment = HorizontalAlignment.Center;
+                _ministerPanel.GetNode<VBoxContainer>("VBox").AddChild(fiveAttributesLabel);
+                // 移动到 CloseButton 之前
+                _ministerPanel.GetNode<VBoxContainer>("VBox").MoveChild(fiveAttributesLabel, 5);
+            }
+            string govText = minister.GovernedProvinceId != null ? $"【外任 {_gameState.Provinces[minister.GovernedProvinceId].Name} 太守】\n" : "【在京闲置】\n";
+            fiveAttributesLabel.Text = govText +
+                $"武力: {minister.Martial,-3} | 统帅: {minister.Leadership,-3} | 政治: {minister.Politics,-3}\n" +
+                $"魅力: {minister.Charisma,-3} | 野心: {minister.Ambition,-3}";
+
             _windowManager.PushWindow(_ministerPanel);
         }
     }
@@ -693,20 +711,530 @@ public partial class MainScene : Control
         }
     }
 
+    private ScrollContainer? _npcScrollContainer;
+    private VBoxContainer? _npcListVBox;
+
+    private void InitializeDynamicNpcList()
+    {
+        var ministersVBox = GetNodeOrNull<VBoxContainer>("RightPanel/Ministers");
+        if (ministersVBox == null) return;
+
+        // 隐藏旧的硬编码按钮，防止并立冲突
+        if (_heJinButton != null) _heJinButton.Hide();
+        if (_zhangRangButton != null) _zhangRangButton.Hide();
+        if (_caoCaoButton != null) _caoCaoButton.Hide();
+        if (_jianShuoButton != null) _jianShuoButton.Hide();
+
+        _npcScrollContainer = new ScrollContainer();
+        _npcScrollContainer.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        _npcScrollContainer.CustomMinimumSize = new Vector2(0, 200);
+
+        _npcListVBox = new VBoxContainer();
+        _npcListVBox.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _npcScrollContainer.AddChild(_npcListVBox);
+
+        // 将动态滚动列表插入到 ministersVBox 中，位于 SceneTitle 和 InteractiveLabel 之后
+        ministersVBox.AddChild(_npcScrollContainer);
+    }
+
+    private void UpdateNpcList()
+    {
+        if (_npcListVBox == null || _gameState == null) return;
+
+        // 清理旧节点
+        foreach (Node child in _npcListVBox.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        // 动态载入当前在朝的所有活跃大臣
+        foreach (var npc in _gameState.Npcs.Values)
+        {
+            if (!npc.IsActive) continue;
+
+            string locationTag = npc.GovernedProvinceId != null ? $"【任{_gameState.Provinces[npc.GovernedProvinceId].Name}】" : "【在京】";
+            var btn = new Button();
+            btn.Text = $"[{npc.Faction}] {npc.Name} {locationTag}";
+            btn.Alignment = HorizontalAlignment.Left;
+            btn.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            
+            string npcId = npc.Id;
+            btn.Pressed += () => ShowMinisterDetails(npcId);
+            _npcListVBox.AddChild(btn);
+        }
+    }
+
+    private HBoxContainer? _deskContainer;
+
+    private void InitializeEmperorsDesk()
+    {
+        var centerPanel = GetNodeOrNull<Panel>("CenterPanel");
+        if (centerPanel == null) return;
+
+        _deskContainer = new HBoxContainer();
+        _deskContainer.Name = "EmperorsDesk";
+        _deskContainer.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _deskContainer.Alignment = BoxContainer.AlignmentMode.Center;
+        _deskContainer.CustomMinimumSize = new Vector2(0, 45);
+        _deskContainer.AddThemeConstantOverride("separation", 15);
+        
+        // 绝对定位在 CenterPanel 顶端，故事文本区上移
+        centerPanel.AddChild(_deskContainer);
+        centerPanel.MoveChild(_deskContainer, 0);
+
+        // 调整 StoryOutput，预留顶部 50 像素
+        if (_storyOutput != null)
+        {
+            _storyOutput.OffsetTop = 55;
+        }
+
+        // 创建四大按钮
+        _btnAffairsBox = CreateDeskButton("📜 雕龙漆木匣 (政务)", OnAffairsBoxPressed);
+        _btnIntelToken = CreateDeskButton("🗺️ 漆木密札 (情报)", OnIntelTokenPressed);
+        _btnCourtSeal = CreateDeskButton("👑 传国玉玺 (朝会)", OnCourtSealPressed);
+        _btnPleasureCenser = CreateDeskButton("💨 铜制博山炉 (巡幸)", OnPleasureCenserPressed);
+
+        _deskContainer.AddChild(_btnAffairsBox);
+        _deskContainer.AddChild(_btnIntelToken);
+        _deskContainer.AddChild(_btnCourtSeal);
+        _deskContainer.AddChild(_btnPleasureCenser);
+    }
+
+    private Button CreateDeskButton(string text, Action pressedCallback)
+    {
+        var btn = new Button();
+        btn.Text = text;
+        btn.CustomMinimumSize = new Vector2(135, 35);
+        btn.Pressed += pressedCallback;
+        return btn;
+    }
+
+    private Panel? _affairsPopup;
+    private ItemList? _edictsItemList;
+    private RichTextLabel? _edictContentLabel;
+    private VBoxContainer? _edictOptionsVBox;
+
+    private void InitializeAffairsPanel()
+    {
+        _affairsPopup = new Panel();
+        _affairsPopup.Name = "AffairsPopup";
+        _affairsPopup.Visible = false;
+        _affairsPopup.CustomMinimumSize = new Vector2(640, 420);
+        _affairsPopup.SetAnchorsPreset(Control.LayoutPreset.Center);
+
+        var hBox = new HBoxContainer();
+        hBox.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        hBox.OffsetLeft = 15; hBox.OffsetTop = 15; hBox.OffsetRight = -15; hBox.OffsetBottom = -15;
+        hBox.AddThemeConstantOverride("separation", 15);
+        _affairsPopup.AddChild(hBox);
+
+        // 左半边：奏折列表
+        var leftVBox = new VBoxContainer();
+        leftVBox.CustomMinimumSize = new Vector2(220, 0);
+        hBox.AddChild(leftVBox);
+
+        var listTitle = new Label();
+        listTitle.Text = "尚书台待批折子";
+        leftVBox.AddChild(listTitle);
+
+        _edictsItemList = new ItemList();
+        _edictsItemList.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        _edictsItemList.ItemSelected += OnEdictSelected;
+        leftVBox.AddChild(_edictsItemList);
+
+        var btnClose = new Button();
+        btnClose.Text = "合上卷宗";
+        btnClose.Pressed += _windowManager.PopWindow;
+        leftVBox.AddChild(btnClose);
+
+        // 右半边：奏折详情及选项
+        var rightVBox = new VBoxContainer();
+        rightVBox.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        hBox.AddChild(rightVBox);
+
+        _edictContentLabel = new RichTextLabel();
+        _edictContentLabel.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        _edictContentLabel.BbcodeEnabled = true;
+        rightVBox.AddChild(_edictContentLabel);
+
+        _edictOptionsVBox = new VBoxContainer();
+        _edictOptionsVBox.CustomMinimumSize = new Vector2(0, 150);
+        rightVBox.AddChild(_edictOptionsVBox);
+
+        AddChild(_affairsPopup);
+    }
+
     private void OnAffairsBoxPressed()
     {
-        GD.Print("【互动】打开雕龙漆木匣，翻开奏折...");
-        if (_panelAffairs != null) _panelAffairs.Show();
+        if (_gameState == null) return;
+        if (_gameState.CurrentLocation != "宣政殿")
+        {
+            if (_storyOutput != null)
+            {
+                _storyOutput.Text = "【太监急奏】\n\n“陛下，漆木折匣重器存放在宣政殿案上，请移驾宣政殿再行批阅批示！”";
+            }
+            return;
+        }
+
+        UpdateAffairsList();
+        _windowManager.PushWindow(_affairsPopup!);
+    }
+
+    private void UpdateAffairsList()
+    {
+        if (_edictsItemList == null || _gameState == null) return;
+        _edictsItemList.Clear();
+        _edictContentLabel!.Text = "请在左侧选择一封奏折进行批阅批示...";
+        foreach (Node opt in _edictOptionsVBox!.GetChildren()) opt.QueueFree();
+
+        foreach (var edict in _gameState.ActiveEdicts)
+        {
+            string typeTag = edict.Type switch
+            {
+                EdictType.UrgentCrisis => "[急报]",
+                EdictType.Impeachment => "[弹劾]",
+                EdictType.Merit => "[邀功]",
+                EdictType.Remonstrance => "[劝诫]",
+                _ => "[奏折]"
+            };
+            _edictsItemList.AddItem($"{typeTag} {edict.Title} (剩{edict.ExpiryXun}旬)");
+        }
+    }
+
+    private void OnEdictSelected(long index)
+    {
+        if (_gameState == null || index < 0 || index >= _gameState.ActiveEdicts.Count) return;
+        var edict = _gameState.ActiveEdicts[(int)index];
+
+        _edictContentLabel!.Text = $"[b]【{edict.Title}】[/b]\n\n{edict.NarrativeContent}";
+
+        // 清空选项
+        foreach (Node opt in _edictOptionsVBox!.GetChildren()) opt.QueueFree();
+
+        // 动态生成选项
+        for (int i = 0; i < edict.Options.Count; i++)
+        {
+            var option = edict.Options[i];
+            var btn = new Button();
+            btn.Text = $"朱批：{option.Description}";
+            btn.Alignment = HorizontalAlignment.Left;
+            btn.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            
+            int optIndex = i;
+            btn.Pressed += async () =>
+            {
+                _windowManager.PopWindow(); // 关闭尚书台弹窗
+                
+                string pInput = $"批阅奏折 {edict.Title} 选项 {optIndex + 1}";
+                
+                if (_storyOutput != null) _storyOutput.Text = "正在起草朱批，下达圣旨...";
+                var result = await _gameEngine!.ProcessPlayerTurnAsync(pInput);
+                if (_storyOutput != null) _storyOutput.Text = result.StoryText;
+                UpdateUI();
+            };
+            _edictOptionsVBox.AddChild(btn);
+        }
+    }
+
+    private Panel? _intelPopup;
+    private ItemList? _provinceItemList;
+    private RichTextLabel? _provinceDetailsLabel;
+    private VBoxContainer? _provinceActionsVBox;
+
+    private RichTextLabel? _intelGlobalStatsLabel;
+
+    private void InitializeIntelPanel()
+    {
+        _intelPopup = new Panel();
+        _intelPopup.Name = "IntelPopup";
+        _intelPopup.Visible = false;
+        _intelPopup.CustomMinimumSize = new Vector2(720, 450);
+        _intelPopup.SetAnchorsPreset(Control.LayoutPreset.Center);
+
+        var hBox = new HBoxContainer();
+        hBox.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        hBox.OffsetLeft = 15; hBox.OffsetTop = 15; hBox.OffsetRight = -15; hBox.OffsetBottom = -15;
+        hBox.AddThemeConstantOverride("separation", 15);
+        _intelPopup.AddChild(hBox);
+
+        // 左半边：大汉 6 州郡总览
+        var leftVBox = new VBoxContainer();
+        leftVBox.CustomMinimumSize = new Vector2(250, 0);
+        hBox.AddChild(leftVBox);
+
+        var listTitle = new Label();
+        listTitle.Text = "🗺️ 大汉十三州舆图情报";
+        leftVBox.AddChild(listTitle);
+
+        // 顶端天下全局态势大收纳
+        _intelGlobalStatsLabel = new RichTextLabel();
+        _intelGlobalStatsLabel.CustomMinimumSize = new Vector2(0, 65);
+        _intelGlobalStatsLabel.BbcodeEnabled = true;
+        leftVBox.AddChild(_intelGlobalStatsLabel);
+
+        _provinceItemList = new ItemList();
+        _provinceItemList.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        _provinceItemList.ItemSelected += OnProvinceSelected;
+        leftVBox.AddChild(_provinceItemList);
+
+        var btnClose = new Button();
+        btnClose.Text = "收起舆图";
+        btnClose.Pressed += _windowManager.PopWindow;
+        leftVBox.AddChild(btnClose);
+
+        // 右半边：太守任命、平叛、招抚详情与执行台
+        var rightVBox = new VBoxContainer();
+        rightVBox.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        hBox.AddChild(rightVBox);
+
+        _provinceDetailsLabel = new RichTextLabel();
+        _provinceDetailsLabel.CustomMinimumSize = new Vector2(0, 100);
+        _provinceDetailsLabel.BbcodeEnabled = true;
+        rightVBox.AddChild(_provinceDetailsLabel);
+
+        _provinceActionsVBox = new VBoxContainer();
+        _provinceActionsVBox.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        rightVBox.AddChild(_provinceActionsVBox);
+
+        AddChild(_intelPopup);
     }
 
     private void OnIntelTokenPressed()
     {
-        GD.Print("【互动】拿起漆木密札，黄门暗探呈上竹简...");
+        UpdateIntelProvinceList();
+        _windowManager.PushWindow(_intelPopup!);
+    }
+
+    private void UpdateIntelProvinceList()
+    {
+        if (_provinceItemList == null || _gameState == null) return;
+        _provinceItemList.Clear();
+        _provinceDetailsLabel!.Text = "请在左侧大舆图上选择一个郡县进行治理、平叛或安抚...";
+        foreach (Node child in _provinceActionsVBox!.GetChildren()) child.QueueFree();
+
+        // 刷新大局态势与西园精锐军势情报
+        if (_intelGlobalStatsLabel != null)
+        {
+            _intelGlobalStatsLabel.Text = $"[color=gold][b]● 汉室天下大局态势[/b][/color]\n" +
+                $"天下民心: [color=yellow]{_gameState.PopularSupport}[/color]/100\n" +
+                $"西园新军: [color=yellow]{_gameState.WestGardenArmy.Size}[/color]兵 | 士气: [color=yellow]{_gameState.WestGardenArmy.Morale}[/color]/100 | 忠诚: [color=yellow]{_gameState.WestGardenArmy.Loyalty}[/color]/100";
+        }
+
+        foreach (var p in _gameState.Provinces.Values.OrderBy(p => p.Distance))
+        {
+            string govName = p.GovernorId != null && _gameState.Npcs.TryGetValue(p.GovernorId, out var g) ? g.Name : "暂无太守";
+            string status = p.IsRebelling ? $"⚡【叛乱中】{p.RebelFaction}" : "○ 安定";
+            _provinceItemList.AddItem($"{p.Name} (太守: {govName}) {status}");
+        }
+    }
+
+    private void OnProvinceSelected(long index)
+    {
+        if (_gameState == null || index < 0 || index >= _gameState.Provinces.Count) return;
+        var provincesList = _gameState.Provinces.Values.OrderBy(p => p.Distance).ToList();
+        var p = provincesList[(int)index];
+
+        string govName = p.GovernorId != null && _gameState.Npcs.TryGetValue(p.GovernorId, out var g) ? g.Name : "暂无";
+        string rebStatus = p.IsRebelling ? $"[color=red]⚡ 叛乱中 ({p.RebelFaction})，已持续 {p.RebellionMonths} 个月[/color]" : "[color=green]○ 安定无事[/color]";
+
+        _provinceDetailsLabel!.Text = $"[b][font_size=16]【{p.Name}】[/font_size][/b] 距京: [color=yellow]{p.Distance}[/color] 里\n" +
+            $"地方民心: {p.LocalSupport} / 100 | 郡中守军: {p.Garrison} 人\n" +
+            $"地方太守: {govName} | 当前局势: {rebStatus}";
+
+        // 清空操作区
+        foreach (Node child in _provinceActionsVBox!.GetChildren()) child.QueueFree();
+
+        // === 太守召回/任命区 ===
+        if (p.GovernorId != null)
+        {
+            var btnRecall = new Button();
+            btnRecall.Text = $"召回太守【{govName}】";
+            btnRecall.Pressed += () =>
+            {
+                _windowManager.PopWindow();
+                var res = _gameEngine!.RecallGovernor(p.Id);
+                if (_storyOutput != null) _storyOutput.Text = res.StoryText;
+                UpdateUI();
+            };
+            _provinceActionsVBox.AddChild(btnRecall);
+        }
+        else
+        {
+            // 任命太守列表
+            var hBoxGov = new HBoxContainer();
+            hBoxGov.AddThemeConstantOverride("separation", 10);
+            _provinceActionsVBox.AddChild(hBoxGov);
+            var lblGov = new Label(); lblGov.Text = "外派太守: ";
+            hBoxGov.AddChild(lblGov);
+
+            var availableNpcs = _gameState.Npcs.Values.Where(n => n.IsActive && n.GovernedProvinceId == null).ToList();
+            if (availableNpcs.Count == 0)
+            {
+                var lblNone = new Label(); lblNone.Text = "（京中暂无闲置文武）";
+                hBoxGov.AddChild(lblNone);
+            }
+            else
+            {
+                foreach (var npc in availableNpcs.Take(3)) // 推荐前三位
+                {
+                    var btnGov = new Button();
+                    btnGov.Text = $"{npc.Name} (野心 {npc.Ambition})";
+                    string npcId = npc.Id;
+                    btnGov.Pressed += () =>
+                    {
+                        _windowManager.PopWindow();
+                        var res = _gameEngine!.AssignGovernor(p.Id, npcId);
+                        if (_storyOutput != null) _storyOutput.Text = res.StoryText;
+                        UpdateUI();
+                    };
+                    hBoxGov.AddChild(btnGov);
+                }
+            }
+        }
+
+        // === 平叛与安抚 (仅在叛乱时显示) ===
+        if (p.IsRebelling)
+        {
+            // 1. 军事平叛
+            var hBoxSuppress = new HBoxContainer();
+            hBoxSuppress.AddThemeConstantOverride("separation", 10);
+            _provinceActionsVBox.AddChild(hBoxSuppress);
+            var lblSup = new Label(); lblSup.Text = "⚔️ 派兵平叛: ";
+            hBoxSuppress.AddChild(lblSup);
+
+            var militaryNpcs = _gameState.Npcs.Values.Where(n => n.IsActive && n.GovernedProvinceId == null).ToList();
+            foreach (var mil in militaryNpcs.Take(2))
+            {
+                var btnSup = new Button();
+                double combatPower = NpcTraitEvaluator.GetCombatPower(mil);
+                double successRate = Math.Clamp(combatPower - p.Distance * 5, 5, 95);
+                btnSup.Text = $"{mil.Name} (胜率{successRate:F0}%)";
+                
+                string milId = mil.Id;
+                btnSup.Pressed += () =>
+                {
+                    _windowManager.PopWindow();
+                    var res = _gameEngine!.SuppressRebellion(p.Id, milId);
+                    if (_storyOutput != null) _storyOutput.Text = res.StoryText;
+                    UpdateUI();
+                };
+                hBoxSuppress.AddChild(btnSup);
+            }
+
+            // 2. 遣使招抚 (使用说服与离间叠加策略)
+            var hBoxPacify = new HBoxContainer();
+            hBoxPacify.AddThemeConstantOverride("separation", 10);
+            _provinceActionsVBox.AddChild(hBoxPacify);
+            var lblPac = new Label(); lblPac.Text = "🌸 遣使招安: ";
+            hBoxPacify.AddChild(lblPac);
+
+            foreach (var envoy in militaryNpcs.Take(2))
+            {
+                var btnPac = new Button();
+                btnPac.Text = $"{envoy.Name} (说服+离间)";
+                
+                string envoyId = envoy.Id;
+                btnPac.Pressed += () =>
+                {
+                    _windowManager.PopWindow();
+                    var strategies = GameEngine.PacifyStrategy.Persuade | GameEngine.PacifyStrategy.SowDiscord;
+                    var res = _gameEngine!.PacifyRebellion(p.Id, envoyId, strategies, 0);
+                    if (_storyOutput != null) _storyOutput.Text = res.StoryText;
+                    UpdateUI();
+                };
+                hBoxPacify.AddChild(btnPac);
+            }
+        }
+    }
+
+    private Panel? _courtPopup;
+    private LineEdit? _courtInput;
+
+    private void InitializeCourtPanel()
+    {
+        _courtPopup = new Panel();
+        _courtPopup.Name = "CourtPopup";
+        _courtPopup.Visible = false;
+        _courtPopup.CustomMinimumSize = new Vector2(400, 200);
+        _courtPopup.SetAnchorsPreset(Control.LayoutPreset.Center);
+
+        var vBox = new VBoxContainer();
+        vBox.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        vBox.OffsetLeft = 20; vBox.OffsetTop = 20; vBox.OffsetRight = -20; vBox.OffsetBottom = -20;
+        vBox.AddThemeConstantOverride("separation", 15);
+        _courtPopup.AddChild(vBox);
+
+        var lbl = new Label();
+        lbl.Text = "👑 宣政殿 · 鸣磬起朝会";
+        lbl.HorizontalAlignment = HorizontalAlignment.Center;
+        vBox.AddChild(lbl);
+
+        _courtInput = new LineEdit();
+        _courtInput.PlaceholderText = "输入圣旨口召，如：重赏曹操、弹劾张让";
+        vBox.AddChild(_courtInput);
+
+        var hBox = new HBoxContainer();
+        hBox.Alignment = BoxContainer.AlignmentMode.Center;
+        hBox.AddThemeConstantOverride("separation", 20);
+        vBox.AddChild(hBox);
+
+        var btnConfirm = new Button();
+        btnConfirm.Text = "宣旨起大朝仪";
+        btnConfirm.Pressed += OnConfirmCourtAssembly;
+        hBox.AddChild(btnConfirm);
+
+        var btnCancel = new Button();
+        btnCancel.Text = "暂缓朝会";
+        btnCancel.Pressed += _windowManager.PopWindow;
+        hBox.AddChild(btnCancel);
+
+        AddChild(_courtPopup);
     }
 
     private void OnCourtSealPressed()
     {
-        GD.Print("【互动】拿起天子玉玺...");
+        if (_gameState == null) return;
+        if (_gameState.CurrentLocation != "宣政殿")
+        {
+            if (_storyOutput != null) _storyOutput.Text = "【太监急奏】\n\n“陛下，天子玉玺非大朝会宣政殿不可轻动！”";
+            return;
+        }
+        _courtInput!.Text = "";
+        _windowManager.PushWindow(_courtPopup!);
+    }
+
+    private async void OnConfirmCourtAssembly()
+    {
+        string txt = _courtInput!.Text;
+        if (string.IsNullOrWhiteSpace(txt)) return;
+
+        _windowManager.PopWindow(); // 关闭发起弹窗
+
+        // 触发大朝会三阶段过渡动画/文字效果
+        if (_transitionMask != null)
+        {
+            _transitionMask.Show();
+            
+            string[] rituals = new[] {
+                "【大朝仪 · 钟磬齐鸣】\n\n宣政殿前，礼部钟磬齐鸣，太监高唱：\n“天子登临——百官跪迎——！”",
+                "【大朝仪 · 天子加冕】\n\n陛下御带冕旒，身披龙袍，在宿卫亲军的护送下缓缓步入金銮。龙威赫赫，百官莫敢直视。",
+                "【大朝仪 · 宣旨群辩】\n\n“众卿平身——！”\n内侍太监缓缓展开黄绢，陛下口召已下：\n『" + txt + "』"
+            };
+
+            for (int i = 0; i < rituals.Length; i++)
+            {
+                if (_ritualTextLabel != null) _ritualTextLabel.Text = rituals[i];
+                await ToSignal(GetTree().CreateTimer(1.5f), "timeout");
+            }
+
+            _transitionMask.Hide();
+        }
+
+        // 执行 ProcessPlayerTurnAsync
+        if (_storyOutput != null) _storyOutput.Text = "百官正在唇枪舌战，商议对策...";
+        var result = await _gameEngine!.ProcessPlayerTurnAsync(txt);
+        if (_storyOutput != null) _storyOutput.Text = result.StoryText;
+        UpdateUI();
     }
 
     private void OnPleasureCenserPressed()
@@ -717,5 +1245,54 @@ public partial class MainScene : Control
             _gameEngine.TravelToLocation("后宫");
             UpdateUI();
         }
+    }
+
+    private Panel? _openingOverlay;
+
+    private void ShowOpeningOverlay()
+    {
+        _openingOverlay = new Panel();
+        _openingOverlay.Name = "OpeningOverlay";
+        _openingOverlay.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+
+        var opaqueStyle = new StyleBoxFlat();
+        opaqueStyle.BgColor = new Color(0.08f, 0.08f, 0.08f, 1.0f); // 厚重墨黑褐色
+        opaqueStyle.SetBorderWidthAll(4);
+        opaqueStyle.BorderColor = new Color(0.72f, 0.58f, 0.12f, 1.0f); // 暗亮金边
+        _openingOverlay.AddThemeStyleboxOverride("panel", opaqueStyle);
+
+        var vBox = new VBoxContainer();
+        vBox.SetAnchorsPreset(Control.LayoutPreset.Center);
+        vBox.CustomMinimumSize = new Vector2(650, 400);
+        vBox.AddThemeConstantOverride("separation", 35);
+        _openingOverlay.AddChild(vBox);
+
+        var title = new Label();
+        title.Text = "👑  东 汉 末 年 · 汉 灵 帝  👑";
+        title.HorizontalAlignment = HorizontalAlignment.Center;
+        title.AddThemeFontSizeOverride("font_size", 24);
+        vBox.AddChild(title);
+
+        var desc = new RichTextLabel();
+        desc.BbcodeEnabled = true;
+        desc.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        desc.Text = "[center][font_size=18]「光和七年，春。」[/font_size]\n\n" +
+                    "“苍天已死，黄天当立。岁在甲子，天下大吉！”\n" +
+                    "张角妖术惑众，巨鹿黄巾并起。外戚何进拥兵坐镇，十常侍张让把持禁中。\n" +
+                    "汉室倾颓，累卵之危。天下百姓，倒悬之急。\n\n" +
+                    "[color=yellow]陛下，大汉的八百载基业与十三州舆图，您将如何执掌重构？[/color][/center]";
+        vBox.AddChild(desc);
+
+        var btnConfirm = new Button();
+        btnConfirm.Text = "—— 临 朝 理 政 ——";
+        btnConfirm.CustomMinimumSize = new Vector2(250, 45);
+        btnConfirm.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
+        btnConfirm.Pressed += () =>
+        {
+            _openingOverlay.QueueFree(); // 玩家确认后彻底销毁，显示主场景
+        };
+        vBox.AddChild(btnConfirm);
+
+        AddChild(_openingOverlay);
     }
 }
