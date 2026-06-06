@@ -554,7 +554,11 @@ public class EngineTests
         // Arrange
         var state = new GameState();
         var scheduler = new MockScheduler { ShouldAddEdicts = false };
-        var engine = new GameEngine(state, scheduler, new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+        var engine = new GameEngine(state, scheduler, new MockOracle(), new MockMinisterAgent(), new MockNarrator(), new Random(42));
+
+        // 提升全郡民心，防止 CheckRebellions 产生非确定性副作用
+        foreach (var prov in state.Provinces.Values)
+            prov.LocalSupport = 100;
 
         // 创建一封 3 旬寿命的 UrgentCrisis 折
         var edict = new ImperialEdict

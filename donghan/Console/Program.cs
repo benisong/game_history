@@ -216,6 +216,8 @@ class DonghanConsole
                 case ConsoleKey.D9: DoShowIntel(); break;
                 case ConsoleKey.P: ShowProvinces(); break;
                 case ConsoleKey.A: DoAssignGovernor(); break;
+                case ConsoleKey.U: DoSuppressRebellion(); break;
+                case ConsoleKey.I: DoPacifyRebellion(); break;
                 case ConsoleKey.N: await DoNextXun(); break;
                 case ConsoleKey.T: DoTravel(); break;
                 case ConsoleKey.S: ShowState(); break;
@@ -324,7 +326,8 @@ class DonghanConsole
         Console.WriteLine("\n  ═══  廷议  ═══");
         Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine("  9. 密札情报        P. 郡县治理");
-        Console.WriteLine("  A. 任命地方官      N. 推进一旬");
+        Console.WriteLine("  A. 任命地方官      U. 军事平叛");
+        Console.WriteLine("  I. 安抚平叛        N. 推进一旬");
         Console.WriteLine("  T. 起驾换场景      S. 国势总览      Q. 退位");
 
         Console.ForegroundColor = ConsoleColor.Green;
@@ -344,6 +347,13 @@ class DonghanConsole
         Console.ForegroundColor = ConsoleColor.Gray;
         Console.Write($"国库:{_state.Treasury}万  私库:{_state.PrivateTreasury}万");
         if (_state.ActiveEdicts.Count > 0) { Console.ForegroundColor = ConsoleColor.Yellow; Console.Write($"  ⚠{_state.ActiveEdicts.Count}折"); }
+        var rebelling = _state.Provinces.Values.Where(p => p.IsRebelling).ToList();
+        if (rebelling.Count > 0)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            var names = string.Join("、", rebelling.Select(p => p.Name));
+            Console.Write($"  ⚡{names}叛乱");
+        }
         Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine();
     }
@@ -670,6 +680,143 @@ class DonghanConsole
         try
         {
             var result = _engine!.AssignGovernor(province.Id, available[ns - 1].Id);
+            Console.WriteLine($"\n{result.StoryText}");
+        }
+        catch (Exception ex) { Console.WriteLine($"\n【失败】{ex.Message}"); }
+
+        Console.WriteLine("\n按任意键返回……"); Console.ReadKey(true);
+    }
+
+    static void DoSuppressRebellion()
+    {
+        Console.Clear();
+        Console.WriteLine("═══ 军事平叛 ═══\n");
+
+        var rebelling = _state!.Provinces.Values.Where(p => p.IsRebelling).ToList();
+        if (rebelling.Count == 0)
+        {
+            Console.WriteLine("天下太平，暂无叛乱。");
+            Console.ReadKey(true); return;
+        }
+
+        Console.WriteLine("叛乱郡县：");
+        for (int i = 0; i < rebelling.Count; i++)
+            Console.WriteLine($"  [{i + 1}] {rebelling[i].Name} — {rebelling[i].RebelFaction}（持续{rebelling[i].RebellionMonths}月，距京{rebelling[i].Distance}）");
+
+        Console.Write($"\n选择平叛目标 [1-{rebelling.Count}]：");
+        if (!int.TryParse(Console.ReadLine(), out int ps) || ps < 1 || ps > rebelling.Count) return;
+
+        var province = rebelling[ps - 1];
+
+        var generals = _state.Npcs.Values.Where(n => n.IsActive && n.GovernedProvinceId == null && n.Martial >= 20).ToList();
+        if (generals.Count == 0)
+        {
+            Console.WriteLine("\n朝中无可用将领（需武力≥20且未外派）！");
+            Console.ReadKey(true); return;
+        }
+
+        Console.WriteLine("\n可选将领：");
+        for (int i = 0; i < generals.Count; i++)
+        {
+            var g = generals[i];
+            double combat = NpcTraitEvaluator.GetCombatPower(g);
+            Console.WriteLine($"  [{i + 1}] {g.Name} ({g.Title}) 战力:{combat:F0} 武力:{g.Martial} 统帅:{g.Leadership}");
+        }
+
+        Console.Write($"\n选择将领 [1-{generals.Count}]：");
+        if (!int.TryParse(Console.ReadLine(), out int gs) || gs < 1 || gs > generals.Count) return;
+
+        try
+        {
+            var result = _engine!.SuppressRebellion(province.Id, generals[gs - 1].Id);
+            Console.WriteLine($"\n{result.StoryText}");
+        }
+        catch (Exception ex) { Console.WriteLine($"\n【失败】{ex.Message}"); }
+
+        Console.WriteLine("\n按任意键返回……"); Console.ReadKey(true);
+    }
+
+    static void DoPacifyRebellion()
+    {
+        Console.Clear();
+        Console.WriteLine("═══ 安抚平叛 ═══\n");
+
+        var rebelling = _state!.Provinces.Values.Where(p => p.IsRebelling).ToList();
+        if (rebelling.Count == 0)
+        {
+            Console.WriteLine("天下太平，暂无叛乱。");
+            Console.ReadKey(true); return;
+        }
+
+        Console.WriteLine("叛乱郡县：");
+        for (int i = 0; i < rebelling.Count; i++)
+            Console.WriteLine($"  [{i + 1}] {rebelling[i].Name} — {rebelling[i].RebelFaction}（持续{rebelling[i].RebellionMonths}月）");
+
+        Console.Write($"\n选择安抚目标 [1-{rebelling.Count}]：");
+        if (!int.TryParse(Console.ReadLine(), out int ps) || ps < 1 || ps > rebelling.Count) return;
+
+        var province = rebelling[ps - 1];
+
+        var envoys = _state.Npcs.Values.Where(n => n.IsActive && n.GovernedProvinceId == null).ToList();
+        if (envoys.Count == 0)
+        {
+            Console.WriteLine("\n朝中无闲散大臣可派！");
+            Console.ReadKey(true); return;
+        }
+
+        Console.WriteLine("\n可选特使：");
+        for (int i = 0; i < envoys.Count; i++)
+        {
+            var e = envoys[i];
+            double pol = NpcTraitEvaluator.GetPoliticalSkill(e);
+            Console.WriteLine($"  [{i + 1}] {e.Name} ({e.Title}) 外交力:{pol:F0} 政治:{e.Politics} 魅力:{e.Charisma} 武力:{e.Martial}");
+        }
+
+        Console.Write($"\n选择特使 [1-{envoys.Count}]：");
+        if (!int.TryParse(Console.ReadLine(), out int es) || es < 1 || es > envoys.Count) return;
+
+        var envoy = envoys[es - 1];
+
+        // Strategy selection
+        Console.WriteLine("\n═══ 选择安抚策略（可多选，空格分隔）═══");
+        Console.WriteLine("  [1] 离间（需政治≥50，+15%成功率）");
+        Console.WriteLine("  [2] 说服（需魅力≥45，+20%成功率）");
+        Console.WriteLine("  [3] 赈灾（拨付钱粮，每500万+8%，上限1500万）");
+        Console.WriteLine("  [4] 惩治（需皇权≥35，+15%；皇权<20反而-10%）");
+        Console.Write("\n输入选择（如 \"1 3 4\"）：");
+        var stratInput = Console.ReadLine()?.Trim() ?? "";
+
+        GameEngine.PacifyStrategy strategies = GameEngine.PacifyStrategy.None;
+        int reliefGold = 0;
+        var parts = stratInput.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        foreach (var part in parts)
+        {
+            switch (part)
+            {
+                case "1": strategies |= GameEngine.PacifyStrategy.SowDiscord; break;
+                case "2": strategies |= GameEngine.PacifyStrategy.Persuade; break;
+                case "3":
+                    Console.Write("赈灾金额（万钱）：");
+                    if (int.TryParse(Console.ReadLine(), out int gold) && gold >= 500)
+                    {
+                        strategies |= GameEngine.PacifyStrategy.DisasterRelief;
+                        reliefGold = gold;
+                    }
+                    else { Console.WriteLine("金额不足500万，跳过赈灾。"); }
+                    break;
+                case "4": strategies |= GameEngine.PacifyStrategy.Punish; break;
+            }
+        }
+
+        if (strategies == GameEngine.PacifyStrategy.None)
+        {
+            Console.WriteLine("\n未选择任何有效策略。");
+            Console.ReadKey(true); return;
+        }
+
+        try
+        {
+            var result = _engine!.PacifyRebellion(province.Id, envoy.Id, strategies, reliefGold);
             Console.WriteLine($"\n{result.StoryText}");
         }
         catch (Exception ex) { Console.WriteLine($"\n【失败】{ex.Message}"); }

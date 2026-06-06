@@ -11,19 +11,22 @@ public partial class GameEngine
     private readonly IEventOracle _oracle;
     private readonly IMinisterAgent _ministerAgent;
     private readonly INarrator _narrator;
+    internal readonly Random _rng;
 
     public GameEngine(
         GameState state, 
         IAIScheduler scheduler, 
         IEventOracle oracle, 
         IMinisterAgent ministerAgent, 
-        INarrator narrator)
+        INarrator narrator,
+        Random? rng = null)
     {
         _state = state;
         _scheduler = scheduler;
         _oracle = oracle;
         _ministerAgent = ministerAgent;
         _narrator = narrator;
+        _rng = rng ?? new Random();
     }
 
     public GameState GetState() => _state;
