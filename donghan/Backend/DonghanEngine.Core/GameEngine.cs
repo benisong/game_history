@@ -66,6 +66,46 @@ public partial class GameEngine
         return new TurnResult { StoryText = BuildDrillArmyStory(settlement) };
     }
 
+    // 西园募兵补军
+    public TurnResult ExecuteRaiseWestGardenTroopsAction(int troops)
+    {
+        const int maxWestGardenArmySize = 12000;
+        const int troopsPerBatch = 1000;
+        const int costPerBatch = 300;
+        const int supportCostPerBatch = 1;
+
+        if (_state.CurrentLocation != "西园")
+            throw new InvalidOperationException("只能在西园校场募兵补军！");
+
+        if (troops <= 0 || troops % troopsPerBatch != 0)
+            throw new ArgumentException("募兵人数必须为 1000 的正整数倍！", nameof(troops));
+
+        var army = _state.WestGardenArmy;
+        int capacity = maxWestGardenArmySize - army.Size;
+        if (capacity <= 0)
+        {
+            return new TurnResult { StoryText = BuildWestGardenArmyFullStory(maxWestGardenArmySize) };
+        }
+
+        int actualTroops = Math.Min(troops, capacity);
+        int batches = actualTroops / troopsPerBatch;
+        int cost = batches * costPerBatch;
+        int supportDelta = -(batches * supportCostPerBatch);
+
+        if (cost > _state.Treasury)
+        {
+            return new TurnResult { StoryText = BuildInsufficientRecruitFundsStory(actualTroops, cost) };
+        }
+
+        army.Size += actualTroops;
+        army.Morale = Math.Clamp(army.Morale - batches, 0, 100);
+        _state.Treasury -= cost;
+        _state.PopularSupport = Math.Clamp(_state.PopularSupport + supportDelta, 0, 100);
+
+        _state.AddToChronicle(BuildRaiseWestGardenTroopsChronicle(actualTroops, cost, supportDelta));
+        return new TurnResult { StoryText = BuildRaiseWestGardenTroopsStory(actualTroops, cost, supportDelta, army.Size, maxWestGardenArmySize) };
+    }
+
     // 宣政殿大朝赈灾
     public TurnResult ExecuteDisasterReliefAction(int reliefAmount, string officerId)
     {

@@ -7,6 +7,26 @@ public partial class GameEngine
         return "【发饷失败】\n\n天子私库空虚，不足以支撑此次开支！群情哗然！\n\n[color=red]● 士气: -5[/color]";
     }
 
+    private static string BuildWestGardenArmyFullStory(int maxSize)
+    {
+        return $"【募兵暂止】\n\n西园校尉跪奏：西园新军已满 {maxSize} 人，营垒粮械俱已逼仄。若再强征丁壮，只会扰乱京畿民生。\n\n[color=yellow]● 西园军：已达上限[/color]";
+    }
+
+    private static string BuildInsufficientRecruitFundsStory(int troops, int cost)
+    {
+        return $"【募兵失败】\n\n大司农叩首急奏：欲新募 {troops} 名丁壮，需国库 {cost} 万钱置办甲械粮饷。如今国帑不足，诏书虽下，州县不敢奉行。\n\n[color=red]● 国库不足：需要 {cost} 万钱[/color]";
+    }
+
+    private static string BuildRaiseWestGardenTroopsChronicle(int troops, int cost, int supportDelta)
+    {
+        return $"【西园募兵】天子下诏扩充西园新军，征发丁壮 {troops} 人，国库支出 {cost} 万钱，天下民心 {supportDelta}。";
+    }
+
+    private static string BuildRaiseWestGardenTroopsStory(int troops, int cost, int supportDelta, int newArmySize, int maxSize)
+    {
+        return $"【西园募兵 · 补充新军】\n\n天子密诏州郡，选募骁勇丁壮入洛阳西园。校场之上，旌旗重列，甲械新发，西园新军重新有了可供征战的兵额。\n\n然而募兵并非无本之举：置办兵甲、转运粮草、安置军户，皆由国库支应；州县抽丁也令百姓怨声渐起。\n\n[color=green]● 西园军人数：+{troops}（当前 {newArmySize}/{maxSize}）[/color]\n[color=red]● 朝廷国库：-{cost} 万钱[/color]\n[color=red]● 天下民心：{supportDelta}[/color]\n[color=yellow]● 西园士气：-{troops / 1000}（新卒入营，军阵磨合）[/color]";
+    }
+
     private static string BuildDrillArmyChronicle(DrillArmySettlement settlement)
     {
         return $"【西园】天子命【{settlement.Officer.Name}】犒赏禁军，拨发 {settlement.PaidAmount} 万钱。被侵吞漂没 {settlement.SiphonedAmount} 万钱！实际到手 {settlement.ActualReceivedAmount} 万钱。军心士气变化: {settlement.FinalMoraleDelta}。";

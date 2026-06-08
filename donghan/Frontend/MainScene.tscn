@@ -181,6 +181,11 @@ visible = false
 layout_mode = 2
 text = "⚔️ 阅兵练兵 (+皇权 -私库)"
 
+[node name="RecruitArmyButton" type="Button" parent="RightPanel/Ministers"]
+visible = false
+layout_mode = 2
+text = "🛡️ 募兵补军 (+兵力 -国库 -民心)"
+
 [node name="HaremActionLabel" type="Label" parent="RightPanel/Ministers"]
 visible = false
 layout_mode = 2

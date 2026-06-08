@@ -48,6 +48,7 @@ public partial class MainScene : Control
     private Label? _actionLabel;
     private Button? _sellOfficeButton;
     private Button? _drillArmyButton;
+    private Button? _recruitArmyButton;
     private Label? _haremActionLabel;
     private Button? _haremRestButton;
 
@@ -115,6 +116,7 @@ public partial class MainScene : Control
         _actionLabel = GetNodeOrNull<Label>("RightPanel/Ministers/ActionLabel");
         _sellOfficeButton = GetNodeOrNull<Button>("RightPanel/Ministers/SellOfficeButton");
         _drillArmyButton = GetNodeOrNull<Button>("RightPanel/Ministers/DrillArmyButton");
+        _recruitArmyButton = GetNodeOrNull<Button>("RightPanel/Ministers/RecruitArmyButton");
         _haremActionLabel = GetNodeOrNull<Label>("RightPanel/Ministers/HaremActionLabel");
         _haremRestButton = GetNodeOrNull<Button>("RightPanel/Ministers/HaremRestButton");
 
@@ -203,6 +205,11 @@ public partial class MainScene : Control
                     payInput.Text = "请输入有效数字！";
                 }
             };
+        }
+
+        if (_recruitArmyButton != null)
+        {
+            _recruitArmyButton.Pressed += ShowRecruitArmyDialog;
         }
 
         // 宣政殿：开仓赈灾弹窗 UI 绑定

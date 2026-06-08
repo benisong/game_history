@@ -226,6 +226,83 @@ public class EngineTests
     }
 
     [Fact]
+    public void Test_RaiseWestGardenTroops_ShouldCostTreasuryAndRecoverArmySize()
+    {
+        // Arrange
+        var state = new GameState();
+        state.CurrentLocation = "西园";
+        state.WestGardenArmy.Size = 7000;
+        int initialTreasury = state.Treasury;
+        int initialSupport = state.PopularSupport;
+        int initialMorale = state.WestGardenArmy.Morale;
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // Act
+        var result = engine.ExecuteRaiseWestGardenTroopsAction(2000);
+
+        // Assert
+        Assert.Equal(9000, state.WestGardenArmy.Size);
+        Assert.Equal(initialTreasury - 600, state.Treasury);
+        Assert.Equal(initialSupport - 2, state.PopularSupport);
+        Assert.Equal(initialMorale - 2, state.WestGardenArmy.Morale);
+        Assert.Contains("西园募兵", result.StoryText);
+        Assert.Contains("+2000", result.StoryText);
+        Assert.Contains("-600 万钱", result.StoryText);
+    }
+
+    [Fact]
+    public void Test_RaiseWestGardenTroops_ShouldClampToMaxArmySize()
+    {
+        // Arrange
+        var state = new GameState();
+        state.CurrentLocation = "西园";
+        state.WestGardenArmy.Size = 11000;
+        int initialTreasury = state.Treasury;
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // Act
+        var result = engine.ExecuteRaiseWestGardenTroopsAction(3000);
+
+        // Assert
+        Assert.Equal(12000, state.WestGardenArmy.Size);
+        Assert.Equal(initialTreasury - 300, state.Treasury);
+        Assert.Contains("当前 12000/12000", result.StoryText);
+    }
+
+    [Fact]
+    public void Test_RaiseWestGardenTroops_InsufficientTreasury_ShouldNotChangeArmySize()
+    {
+        // Arrange
+        var state = new GameState();
+        state.CurrentLocation = "西园";
+        state.Treasury = 200;
+        int initialArmySize = state.WestGardenArmy.Size;
+        int initialSupport = state.PopularSupport;
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // Act
+        var result = engine.ExecuteRaiseWestGardenTroopsAction(1000);
+
+        // Assert
+        Assert.Equal(initialArmySize, state.WestGardenArmy.Size);
+        Assert.Equal(200, state.Treasury);
+        Assert.Equal(initialSupport, state.PopularSupport);
+        Assert.Contains("募兵失败", result.StoryText);
+    }
+
+    [Fact]
+    public void Test_RaiseWestGardenTroops_InvalidAmount_ShouldThrow()
+    {
+        // Arrange
+        var state = new GameState();
+        state.CurrentLocation = "西园";
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => engine.ExecuteRaiseWestGardenTroopsAction(1500));
+    }
+
+    [Fact]
     public void Test_DisasterRelief_WithCorruptOfficer_ShouldDeclineMoraleAndEnrichOfficer()
     {
         // Arrange

@@ -77,6 +77,7 @@ public partial class MainScene : Control
         if (_actionLabel != null) _actionLabel.Visible = isGarden;
         if (_sellOfficeButton != null) _sellOfficeButton.Visible = isGarden;
         if (_drillArmyButton != null) _drillArmyButton.Visible = isGarden;
+        if (_recruitArmyButton != null) _recruitArmyButton.Visible = isGarden;
 
         // 3. 后宫显示：后宫专属按钮（隐藏所有大臣，后宫不准外臣涉足）
         bool isHarem = loc == "后宫";
@@ -177,6 +178,140 @@ public partial class MainScene : Control
         {
             GD.PrintErr(ex.Message);
         }
+    }
+
+    private void DoRecruitArmyAction(int troops)
+    {
+        if (_gameEngine == null) return;
+
+        try
+        {
+            var result = _gameEngine.ExecuteRaiseWestGardenTroopsAction(troops);
+            if (_storyOutput != null)
+            {
+                _storyOutput.Text = result.StoryText;
+            }
+            UpdateUI();
+        }
+        catch (Exception ex)
+        {
+            GD.PrintErr(ex.Message);
+            if (_storyOutput != null)
+            {
+                _storyOutput.Text = $"【募兵未成】\n\n{ex.Message}";
+            }
+        }
+    }
+
+    private void ShowRecruitArmyDialog()
+    {
+        if (_gameState == null) return;
+
+        const int maxArmySize = 12000;
+        int capacity = Math.Max(0, maxArmySize - _gameState.WestGardenArmy.Size);
+        int defaultTroops = Math.Min(2000, capacity);
+        if (defaultTroops <= 0) defaultTroops = 1000;
+
+        var panel = new Panel { CustomMinimumSize = new Vector2(520, 340) };
+        panel.AnchorLeft = 0.5f;
+        panel.AnchorTop = 0.5f;
+        panel.AnchorRight = 0.5f;
+        panel.AnchorBottom = 0.5f;
+        panel.OffsetLeft = -260;
+        panel.OffsetTop = -170;
+        panel.OffsetRight = 260;
+        panel.OffsetBottom = 170;
+        panel.MouseFilter = Control.MouseFilterEnum.Stop;
+        panel.AddThemeStyleboxOverride("panel", CreateOpaquePanelStyle("RecruitArmyPopupPanel"));
+
+        var vBox = new VBoxContainer();
+        SetFullRect(vBox);
+        vBox.OffsetLeft = 22;
+        vBox.OffsetTop = 18;
+        vBox.OffsetRight = -22;
+        vBox.OffsetBottom = -18;
+        vBox.AddThemeConstantOverride("separation", 10);
+        panel.AddChild(vBox);
+
+        vBox.AddChild(new Label
+        {
+            Text = "西园募兵 · 补充新军",
+            HorizontalAlignment = HorizontalAlignment.Center
+        });
+
+        var desc = new Label
+        {
+            Text = $"当前兵力：{_gameState.WestGardenArmy.Size}/{maxArmySize}\n每募 1000 人：国库 -300 万钱，天下民心 -1，士气 -1。",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
+        vBox.AddChild(desc);
+
+        var troopSpin = new SpinBox
+        {
+            MinValue = 1000,
+            MaxValue = Math.Max(1000, capacity),
+            Step = 1000,
+            Value = defaultTroops,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        vBox.AddChild(troopSpin);
+
+        var preview = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        vBox.AddChild(preview);
+
+        void RefreshPreview(double value)
+        {
+            int troops = Math.Min((int)value, capacity);
+            if (capacity <= 0)
+            {
+                preview.Text = "西园新军已满编，无需继续募兵。";
+                troopSpin.Editable = false;
+                return;
+            }
+
+            int batches = troops / 1000;
+            preview.Text = $"预计征发：{troops} 人\n预计花费：{batches * 300} 万钱\n民心影响：-{batches}\n募兵后兵力：{_gameState.WestGardenArmy.Size + troops}/{maxArmySize}";
+        }
+
+        troopSpin.ValueChanged += RefreshPreview;
+        RefreshPreview(troopSpin.Value);
+
+        var row = new HBoxContainer
+        {
+            Alignment = BoxContainer.AlignmentMode.Center,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        row.AddThemeConstantOverride("separation", 12);
+        vBox.AddChild(row);
+
+        var confirm = new Button
+        {
+            Text = "下诏募兵",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            Disabled = capacity <= 0
+        };
+        var cancel = new Button
+        {
+            Text = "暂缓",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        row.AddChild(confirm);
+        row.AddChild(cancel);
+
+        confirm.Pressed += () =>
+        {
+            int troops = (int)troopSpin.Value;
+            _windowManager.PopWindow();
+            DoRecruitArmyAction(troops);
+        };
+        cancel.Pressed += _windowManager.PopWindow;
+
+        panel.VisibilityChanged += () =>
+        {
+            if (!panel.Visible && IsInstanceValid(panel)) panel.QueueFree();
+        };
+        AddChild(panel);
+        _windowManager.PushWindow(panel);
     }
 
     // 执行开仓赈灾动作
