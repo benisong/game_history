@@ -12,30 +12,16 @@ public partial class MainScene : Control
     {
         if (_gameState == null) return;
 
-        // 更新左侧数值
-        if (_reignLabel != null) _reignLabel.Text = $"年号: {_gameState.ReignTitle} {_gameState.ReignYear} 年";
-        if (_imperialPowerLabel != null) _imperialPowerLabel.Text = $"皇权值: {_gameState.ImperialPower} / 100";
-        if (_treasuryLabel != null) _treasuryLabel.Text = $"国库资金: {_gameState.Treasury} 万钱";
-        if (_privateTreasuryLabel != null) _privateTreasuryLabel.Text = $"西园私库: {_gameState.PrivateTreasury} 万钱";
-        
-        // 更新天下民心
-        var supportLabel = GetNodeOrNull<Label>("LeftPanel/VBoxContainer/PopularSupportLabel");
-        if (supportLabel != null) supportLabel.Hide();
+        if (_reignLabel != null)
+        {
+            _reignLabel.Text = FormatTimeLabel();
+        }
+        if (_mainTimeLabel != null)
+        {
+            _mainTimeLabel.Text = FormatTimeLabel();
+        }
 
-        if (_healthLabel != null) _healthLabel.Text = $"皇帝健康: {_gameState.Health} / 100";
-
-        // 更新左侧西园军势
-        var armyTitleLabel = GetNodeOrNull<Label>("LeftPanel/VBoxContainer/ArmyTitleLabel");
-        if (armyTitleLabel != null) armyTitleLabel.Hide();
-
-        var armySizeLabel = GetNodeOrNull<Label>("LeftPanel/VBoxContainer/ArmySizeLabel");
-        if (armySizeLabel != null) armySizeLabel.Hide();
-
-        var armyMoraleLabel = GetNodeOrNull<Label>("LeftPanel/VBoxContainer/ArmyMoraleLabel");
-        if (armyMoraleLabel != null) armyMoraleLabel.Hide();
-
-        var armyLoyaltyLabel = GetNodeOrNull<Label>("LeftPanel/VBoxContainer/ArmyLoyaltyLabel");
-        if (armyLoyaltyLabel != null) armyLoyaltyLabel.Hide();
+        HideMainSceneStatusAndNpcChrome();
 
         // 更新起居注/编年史
         if (_chronicleLog != null)
@@ -49,7 +35,51 @@ public partial class MainScene : Control
 
         // 根据当前所在场景，动态控制右侧控制面板按钮的显示隐藏！
         UpdateSceneButtons();
-        UpdateNpcList();
+    }
+
+    private string FormatTimeLabel()
+    {
+        if (_gameState == null) return string.Empty;
+
+        string xunName = _gameState.Xun switch
+        {
+            1 => "上旬",
+            2 => "中旬",
+            3 => "下旬",
+            _ => $"第{_gameState.Xun}旬"
+        };
+
+        return $"{_gameState.ReignTitle}{_gameState.ReignYear}年 · {_gameState.Year}年{_gameState.Month}月{xunName}";
+    }
+
+    private void HideMainSceneStatusAndNpcChrome()
+    {
+        GetNodeOrNull<Panel>("LeftPanel")?.Hide();
+        GetNodeOrNull<Panel>("RightPanel")?.Hide();
+        GetNodeOrNull<Panel>("BottomPanel")?.Hide();
+
+        _imperialPowerLabel?.Hide();
+        _treasuryLabel?.Hide();
+        _privateTreasuryLabel?.Hide();
+        _healthLabel?.Hide();
+        _chronicleLog?.Hide();
+
+        GetNodeOrNull<Label>("LeftPanel/VBoxContainer/TitleLabel")?.Hide();
+        GetNodeOrNull<Label>("LeftPanel/VBoxContainer/ChronicleTitle")?.Hide();
+        GetNodeOrNull<Label>("LeftPanel/VBoxContainer/PopularSupportLabel")?.Hide();
+        GetNodeOrNull<Label>("LeftPanel/VBoxContainer/ArmyTitleLabel")?.Hide();
+        GetNodeOrNull<Label>("LeftPanel/VBoxContainer/ArmySizeLabel")?.Hide();
+        GetNodeOrNull<Label>("LeftPanel/VBoxContainer/ArmyMoraleLabel")?.Hide();
+        GetNodeOrNull<Label>("LeftPanel/VBoxContainer/ArmyLoyaltyLabel")?.Hide();
+
+        _sceneTitleLabel?.Hide();
+        _interactiveLabel?.Hide();
+        _heJinButton?.Hide();
+        _zhangRangButton?.Hide();
+        _caoCaoButton?.Hide();
+        _jianShuoButton?.Hide();
+        _travelButton?.Hide();
+        _npcScrollContainer?.Hide();
     }
 
     // 动态控制右侧控制面板
@@ -57,39 +87,27 @@ public partial class MainScene : Control
     {
         if (_gameState == null) return;
 
-        string loc = _gameState.CurrentLocation;
+        _sceneTitleLabel?.Hide();
+        _interactiveLabel?.Hide();
+        _heJinButton?.Hide();
+        _zhangRangButton?.Hide();
+        _caoCaoButton?.Hide();
+        _jianShuoButton?.Hide();
 
-        if (_sceneTitleLabel != null) _sceneTitleLabel.Text = $"当前：{loc}";
-
-        // 1. 宣政殿显示：何进、张让，及赈灾快捷按钮
-        bool isCourt = loc == "宣政殿";
-        if (_heJinButton != null) _heJinButton.Visible = isCourt;
-        if (_zhangRangButton != null) _zhangRangButton.Visible = isCourt;
-        
         var disasterBtn = GetNodeOrNull<Button>("RightPanel/Ministers/DisasterReliefButton");
-        if (disasterBtn != null) disasterBtn.Visible = isCourt;
+        disasterBtn?.Hide();
 
-        // 2. 西园显示：曹操、蹇硕，以及西园专属操作按钮
-        bool isGarden = loc == "西园";
-        if (_caoCaoButton != null) _caoCaoButton.Visible = isGarden;
-        if (_jianShuoButton != null) _jianShuoButton.Visible = isGarden;
-        
-        if (_actionLabel != null) _actionLabel.Visible = isGarden;
-        if (_sellOfficeButton != null) _sellOfficeButton.Visible = isGarden;
-        if (_drillArmyButton != null) _drillArmyButton.Visible = isGarden;
-        if (_recruitArmyButton != null) _recruitArmyButton.Visible = isGarden;
-
-        // 3. 后宫显示：后宫专属按钮（隐藏所有大臣，后宫不准外臣涉足）
-        bool isHarem = loc == "后宫";
-        if (_haremActionLabel != null) _haremActionLabel.Visible = isHarem;
-        if (_haremRestButton != null) _haremRestButton.Visible = isHarem;
-
-        // 如果是后宫或西园，隐藏通用“召见群臣”文字标签
-        if (_interactiveLabel != null)
+        if (_actionLabel != null)
         {
-            _interactiveLabel.Visible = isCourt || isGarden;
-            _interactiveLabel.Text = isCourt ? "【召见朝臣】" : "【召见将领】";
+            _actionLabel.Visible = false;
+            _actionLabel.Text = "【西园军务】";
         }
+        if (_sellOfficeButton != null) _sellOfficeButton.Visible = false;
+        if (_drillArmyButton != null) _drillArmyButton.Visible = false;
+        if (_recruitArmyButton != null) _recruitArmyButton.Visible = false;
+
+        if (_haremActionLabel != null) _haremActionLabel.Visible = false;
+        if (_haremRestButton != null) _haremRestButton.Visible = false;
     }
 
     // 处理起驾

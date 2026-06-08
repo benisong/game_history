@@ -13,52 +13,89 @@ public partial class MainScene : Control
         var centerPanel = GetNodeOrNull<Panel>("CenterPanel");
         if (centerPanel == null) return;
 
+        // 极简主界面：只保留时间、卷轴/马车入口与正文
+        _mainTimeLabel = new Label();
+        _mainTimeLabel.Name = "MainTimeLabel";
+        _mainTimeLabel.Text = FormatTimeLabel();
+        _mainTimeLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        _mainTimeLabel.AnchorLeft = 0.5f;
+        _mainTimeLabel.AnchorTop = 0.0f;
+        _mainTimeLabel.AnchorRight = 0.5f;
+        _mainTimeLabel.AnchorBottom = 0.0f;
+        _mainTimeLabel.OffsetLeft = -240;
+        _mainTimeLabel.OffsetTop = 16;
+        _mainTimeLabel.OffsetRight = 240;
+        _mainTimeLabel.OffsetBottom = 48;
+        _mainTimeLabel.AddThemeFontSizeOverride("font_size", 22);
+        centerPanel.AddChild(_mainTimeLabel);
+        centerPanel.MoveChild(_mainTimeLabel, 0);
+
         _deskContainer = new VBoxContainer();
         _deskContainer.Name = "EmperorsDesk";
         _deskContainer.AnchorLeft = 0.5f;
         _deskContainer.AnchorTop = 0.0f;
         _deskContainer.AnchorRight = 0.5f;
         _deskContainer.AnchorBottom = 0.0f;
-        _deskContainer.OffsetLeft = -120;
-        _deskContainer.OffsetTop = 18;
-        _deskContainer.OffsetRight = 120;
-        _deskContainer.OffsetBottom = 250;
+        _deskContainer.OffsetLeft = -360;
+        _deskContainer.OffsetTop = 62;
+        _deskContainer.OffsetRight = 360;
+        _deskContainer.OffsetBottom = 118;
         _deskContainer.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
         _deskContainer.Alignment = BoxContainer.AlignmentMode.Center;
-        _deskContainer.CustomMinimumSize = new Vector2(240, 230);
+        _deskContainer.CustomMinimumSize = new Vector2(720, 100);
         _deskContainer.AddThemeConstantOverride("separation", 10);
         
         centerPanel.AddChild(_deskContainer);
         centerPanel.MoveChild(_deskContainer, 0);
 
-        // 调整 StoryOutput，给居中的竖向卷轴入口留出空间
+        // 极简主界面：上方只保留卷轴/马车入口，正文尽量展开
         if (_storyOutput != null)
         {
-            _storyOutput.OffsetTop = 280;
+            _storyOutput.OffsetTop = 150;
         }
 
-        // 创建四大按钮
-        _btnCourtSeal = CreateDeskButton("大朝会", OnCourtSealPressed);
-        _btnAffairsBox = CreateDeskButton("尚书台", OnAffairsBoxPressed);
-        _btnIntelToken = CreateDeskButton("黄门密札", OnIntelTokenPressed);
-        _btnPleasureCenser = CreateDeskButton("起驾巡幸", OnPleasureCenserPressed);
+        var deskRow = new HBoxContainer();
+        deskRow.Alignment = BoxContainer.AlignmentMode.Center;
+        deskRow.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        deskRow.AddThemeConstantOverride("separation", 18);
+        _deskContainer.AddChild(deskRow);
 
-        _deskContainer.AddChild(_btnCourtSeal);
-        _deskContainer.AddChild(_btnAffairsBox);
-        _deskContainer.AddChild(_btnIntelToken);
-        _deskContainer.AddChild(_btnPleasureCenser);
+        _btnCourtSeal = CreateDeskButton("📜 朝会", OnCourtSealPressed);
+        _btnIntelToken = CreateDeskButton("📜 情报", OnIntelTokenPressed);
+        _btnTravelCarriage = CreateCarriageButton("🐎 起驾", () =>
+        {
+            if (_travelOverlayPanel != null) _windowManager.PushWindow(_travelOverlayPanel);
+        });
+
+        deskRow.AddChild(_btnCourtSeal);
+        deskRow.AddChild(_btnIntelToken);
+        deskRow.AddChild(_btnTravelCarriage);
     }
 
     private Button CreateDeskButton(string text, Action pressedCallback)
     {
         var btn = new Button();
         btn.Text = text;
-        btn.CustomMinimumSize = new Vector2(220, 46);
+        btn.CustomMinimumSize = new Vector2(170, 58);
         btn.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
-        btn.AddThemeFontSizeOverride("font_size", 17);
-        btn.AddThemeStyleboxOverride("normal", CreateScrollButtonStyle(new Color(0.42f, 0.30f, 0.13f, 1.0f)));
-        btn.AddThemeStyleboxOverride("hover", CreateScrollButtonStyle(new Color(0.52f, 0.38f, 0.16f, 1.0f)));
+        btn.AddThemeFontSizeOverride("font_size", 19);
+        btn.AddThemeStyleboxOverride("normal", CreateScrollButtonStyle(new Color(0.47f, 0.33f, 0.14f, 1.0f)));
+        btn.AddThemeStyleboxOverride("hover", CreateScrollButtonStyle(new Color(0.58f, 0.42f, 0.18f, 1.0f)));
         btn.AddThemeStyleboxOverride("pressed", CreateScrollButtonStyle(new Color(0.30f, 0.20f, 0.09f, 1.0f)));
+        btn.Pressed += pressedCallback;
+        return btn;
+    }
+
+    private Button CreateCarriageButton(string text, Action pressedCallback)
+    {
+        var btn = new Button();
+        btn.Text = text;
+        btn.CustomMinimumSize = new Vector2(170, 58);
+        btn.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
+        btn.AddThemeFontSizeOverride("font_size", 19);
+        btn.AddThemeStyleboxOverride("normal", CreateCarriageButtonStyle(new Color(0.20f, 0.13f, 0.07f, 1.0f)));
+        btn.AddThemeStyleboxOverride("hover", CreateCarriageButtonStyle(new Color(0.30f, 0.20f, 0.10f, 1.0f)));
+        btn.AddThemeStyleboxOverride("pressed", CreateCarriageButtonStyle(new Color(0.12f, 0.08f, 0.04f, 1.0f)));
         btn.Pressed += pressedCallback;
         return btn;
     }
@@ -75,6 +112,23 @@ public partial class MainScene : Control
         style.CornerRadiusBottomRight = 4;
         style.ContentMarginLeft = 18;
         style.ContentMarginRight = 18;
+        style.ContentMarginTop = 8;
+        style.ContentMarginBottom = 8;
+        return style;
+    }
+
+    private static StyleBoxFlat CreateCarriageButtonStyle(Color bgColor)
+    {
+        var style = new StyleBoxFlat();
+        style.BgColor = bgColor;
+        style.BorderColor = new Color(0.72f, 0.50f, 0.20f, 1.0f);
+        style.SetBorderWidthAll(2);
+        style.CornerRadiusTopLeft = 14;
+        style.CornerRadiusTopRight = 14;
+        style.CornerRadiusBottomLeft = 22;
+        style.CornerRadiusBottomRight = 22;
+        style.ContentMarginLeft = 20;
+        style.ContentMarginRight = 20;
         style.ContentMarginTop = 8;
         style.ContentMarginBottom = 8;
         return style;

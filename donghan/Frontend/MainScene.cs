@@ -32,10 +32,10 @@ public partial class MainScene : Control
     private Button? _jianShuoButton;
 
     // 物理器物按钮
-    private Button? _btnAffairsBox;      // 雕龙漆木匣 (政务)
     private Button? _btnIntelToken;      // 漆木密札 (情报)
-    private Button? _btnCourtSeal;       // 天子玉玺 (朝会)
-    private Button? _btnPleasureCenser;  // 铜制博山炉 (娱乐)
+    private Button? _btnCourtSeal;       // 朝会卷轴
+    private Button? _btnTravelCarriage;  // 御驾马车
+    private Label? _mainTimeLabel;       // 主界面必要时间显示
 
     // 辅助面板层
     private Control? _panelAffairs;
