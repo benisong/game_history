@@ -181,11 +181,23 @@ public partial class MainScene : Control
                 suppressPanel.AddChild(new Label { Text = "（京中暂无可派遣将领）" });
             }
 
+            var troopBox = new HBoxContainer();
+            troopBox.AddThemeConstantOverride("separation", 8);
+            suppressPanel.AddChild(troopBox);
+            troopBox.AddChild(new Label { Text = "出兵规模:" });
+            var troopSpin = new SpinBox();
+            troopSpin.MinValue = 1000;
+            troopSpin.MaxValue = Math.Max(1000, _gameState.WestGardenArmy.Size);
+            troopSpin.Step = 1000;
+            troopSpin.Value = Math.Min(3000, Math.Max(1000, _gameState.WestGardenArmy.Size));
+            troopSpin.CustomMinimumSize = new Vector2(120, 0);
+            troopBox.AddChild(troopSpin);
+            troopBox.AddChild(new Label { Text = $"人（西园军现有 {_gameState.WestGardenArmy.Size} 人，军费=每千人100万）" });
+
             foreach (var mil in militaryNpcs.Take(3))
             {
                 double combatPower = NpcTraitEvaluator.GetCombatPower(mil);
                 double distancePenalty = p.Distance * 5;
-                double successRate = Math.Clamp(combatPower - distancePenalty, 5, 95);
 
                 var row = new VBoxContainer();
                 row.AddThemeConstantOverride("separation", 3);
@@ -193,19 +205,33 @@ public partial class MainScene : Control
 
                 var detail = new RichTextLabel();
                 detail.BbcodeEnabled = true;
-                detail.CustomMinimumSize = new Vector2(0, 54);
-                detail.Text = $"[b]{mil.Name}[/b] 武力:{mil.Martial} 统帅:{mil.Leadership} | 综合战力:[color=yellow]{combatPower:F0}[/color] - 距京惩罚:{distancePenalty:F0}\n" +
-                    $"预计胜率: [color={(successRate >= 70 ? "green" : successRate >= 45 ? "yellow" : "red")}]{successRate:F0}%[/color]";
-                row.AddChild(detail);
-
+                detail.CustomMinimumSize = new Vector2(0, 72);
                 var btnSup = new Button();
-                btnSup.Text = $"命 {mil.Name} 出征平叛";
+
+                void RefreshSuppressPreview(double troopsValue)
+                {
+                    int selectedTroops = (int)troopsValue;
+                    int campaignCost = Math.Max(100, selectedTroops / 10);
+                    double troopRatio = selectedTroops / (double)Math.Max(p.Garrison, 1);
+                    double troopBonus = Math.Clamp((troopRatio - 1.0) * 20, -20, 25);
+                    double successRate = Math.Clamp(combatPower - distancePenalty + troopBonus, 5, 95);
+
+                    detail.Text = $"[b]{mil.Name}[/b] 武力:{mil.Martial} 统帅:{mil.Leadership} | 综合战力:[color=yellow]{combatPower:F0}[/color] - 距京惩罚:{distancePenalty:F0}\n" +
+                        $"出兵:{selectedTroops}人 军费:{campaignCost}万 兵力修正:{troopBonus:+0;-0;0}%\n" +
+                        $"预计胜率: [color={(successRate >= 70 ? "green" : successRate >= 45 ? "yellow" : "red")}]{successRate:F0}%[/color]";
+                    btnSup.Text = $"命 {mil.Name} 率 {selectedTroops} 人出征";
+                }
+
+                RefreshSuppressPreview(troopSpin.Value);
+                troopSpin.ValueChanged += RefreshSuppressPreview;
+                row.AddChild(detail);
 
                 string milId = mil.Id;
                 btnSup.Pressed += () =>
                 {
+                    int troops = (int)troopSpin.Value;
                     _windowManager.PopWindow();
-                    var res = _gameEngine!.SuppressRebellion(p.Id, milId);
+                    var res = _gameEngine!.SuppressRebellion(p.Id, milId, troops);
                     if (_storyOutput != null) _storyOutput.Text = res.StoryText;
                     UpdateUI();
                 };

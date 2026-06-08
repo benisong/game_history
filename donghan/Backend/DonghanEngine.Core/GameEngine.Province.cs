@@ -133,6 +133,11 @@ public partial class GameEngine
     // ============================
     public TurnResult SuppressRebellion(string provinceId, string generalId)
     {
+        return SuppressRebellion(provinceId, generalId, 3000);
+    }
+
+    public TurnResult SuppressRebellion(string provinceId, string generalId, int troops)
+    {
         if (!_state.Provinces.TryGetValue(provinceId, out var province))
             throw new ArgumentException("无此郡县！", nameof(provinceId));
         if (!province.IsRebelling)
@@ -141,56 +146,73 @@ public partial class GameEngine
             throw new ArgumentException("朝中无此将领！", nameof(generalId));
         if (general.GovernedProvinceId != null)
             throw new InvalidOperationException($"{general.Name}已在外任职！");
+        if (troops < 1000)
+            throw new ArgumentException("平叛至少需发兵 1000 人！", nameof(troops));
+        if (troops > _state.WestGardenArmy.Size)
+            throw new InvalidOperationException($"西园军仅有 {_state.WestGardenArmy.Size} 人，无法发兵 {troops} 人！");
+
+        int campaignCost = Math.Max(100, troops / 10); // 万钱：千人百钱，八千人八百钱
+        if (_state.Treasury < campaignCost)
+            throw new InvalidOperationException($"国库仅余 {_state.Treasury} 万钱，不足以支付 {campaignCost} 万平叛军费！");
 
         double combatPower = NpcTraitEvaluator.GetCombatPower(general);
         double distancePenalty = province.Distance * 5;
-        double successRate = Math.Clamp(combatPower - distancePenalty, 5, 95);
+        double troopRatio = troops / (double)Math.Max(province.Garrison, 1);
+        double troopBonus = Math.Clamp((troopRatio - 1.0) * 20, -20, 25);
+        double successRate = Math.Clamp(combatPower - distancePenalty + troopBonus, 5, 95);
 
+        _state.Treasury = Math.Clamp(_state.Treasury - campaignCost, 0, int.MaxValue);
         bool success = _rng.Next(0, 100) < successRate;
 
         if (success)
         {
+            int casualty = Math.Max(200, troops / 8);
             province.IsRebelling = false;
             province.RebellionMonths = 0;
             province.RebelFaction = "";
             province.LocalSupport = Math.Clamp(province.LocalSupport + 15, 0, 100);
             province.Garrison = Math.Clamp(province.Garrison / 2, 500, 20000);
+            _state.WestGardenArmy.Size = Math.Clamp(_state.WestGardenArmy.Size - casualty, 0, int.MaxValue);
             general.Power = Math.Clamp(general.Power + 10, 0, 100);
             general.Favorability = Math.Clamp(general.Favorability + 5, 0, 100);
             _state.ImperialPower = Math.Clamp(_state.ImperialPower + 5, 0, 100);
             _state.PopularSupport = Math.Clamp(_state.PopularSupport + 3, 0, 100);
 
-            _state.AddToChronicle($"【平叛】{general.Name}率军平定{province.Name}叛乱，大获全胜！");
+            _state.AddToChronicle($"【平叛】{general.Name}率{troops}西园军平定{province.Name}叛乱，大获全胜！");
             return new TurnResult
             {
-                StoryText = $"【军事平叛 — 成功】\n\n陛下命【{general.Name}】率西园精锐出征{province.Name}，距京{province.Distance}千里。\n\n" +
-                            $"战力评估：{combatPower:F1} | 成功率：{successRate:F0}%\n\n" +
+                StoryText = $"【军事平叛 — 成功】\n\n陛下命【{general.Name}】率西园精锐 {troops} 人出征{province.Name}，距京{province.Distance}千里。\n\n" +
+                            $"战力评估：{combatPower:F1} | 兵力修正：{troopBonus:+0;-0;0}% | 成功率：{successRate:F0}%\n" +
+                            $"军费支出：{campaignCost} 万 | 战损：{casualty} 人\n\n" +
                             $"旌旗蔽日，铁骑隆隆。{general.Name}不负圣恩，一举荡平叛军！\n\n" +
                             $"[color=green]● {province.Name}叛乱平定[/color]\n" +
                             $"[color=green]● {province.Name}民心 +15[/color]\n" +
                             $"[color=green]● 皇权 +5[/color]\n" +
                             $"[color=green]● {general.Name}权势 +10，忠诚 +5[/color]\n" +
-                            $"[color=yellow]● {province.Name}守军减半（战损）[/color]"
+                            $"[color=yellow]● 国库 -{campaignCost} 万，西园军 -{casualty} 人[/color]"
             };
         }
         else
         {
+            int lostTroops = Math.Max(400, troops / 4);
+            int rebelGain = Math.Max(300, troops / 10);
             general.Power = Math.Clamp(general.Power - 8, 0, 100);
             general.Favorability = Math.Clamp(general.Favorability - 10, 0, 100);
             _state.ImperialPower = Math.Clamp(_state.ImperialPower - 3, 0, 100);
-            province.Garrison = Math.Clamp(province.Garrison + 500, 0, 20000); // 叛军壮大
-            _state.Treasury = Math.Clamp(_state.Treasury - 800, 0, int.MaxValue);
+            province.Garrison = Math.Clamp(province.Garrison + rebelGain, 0, 20000); // 叛军缴获兵械后壮大
+            _state.WestGardenArmy.Size = Math.Clamp(_state.WestGardenArmy.Size - lostTroops, 0, int.MaxValue);
 
-            _state.AddToChronicle($"【平叛失败】{general.Name}征讨{province.Name}失利，损兵折将！");
+            _state.AddToChronicle($"【平叛失败】{general.Name}率{troops}征讨{province.Name}失利，损兵折将！");
             return new TurnResult
             {
-                StoryText = $"【军事平叛 — 失败】\n\n陛下命【{general.Name}】出征{province.Name}……\n\n" +
-                            $"战力评估：{combatPower:F1} | 成功率：{successRate:F0}%\n\n" +
+                StoryText = $"【军事平叛 — 失败】\n\n陛下命【{general.Name}】率军 {troops} 人出征{province.Name}……\n\n" +
+                            $"战力评估：{combatPower:F1} | 兵力修正：{troopBonus:+0;-0;0}% | 成功率：{successRate:F0}%\n" +
+                            $"军费支出：{campaignCost} 万 | 折损兵马：{lostTroops} 人\n\n" +
                             $"奈何叛军势大，{general.Name}久攻不下，粮草不济，只得暂且收兵。\n\n" +
-                            $"[color=red]● 平叛失败！{province.Name}叛军壮大[/color]\n" +
+                            $"[color=red]● 平叛失败！{province.Name}叛军 +{rebelGain}[/color]\n" +
                             $"[color=red]● {general.Name}权势 -8，忠诚 -10[/color]\n" +
                             $"[color=red]● 皇权 -3[/color]\n" +
-                            $"[color=red]● 国库 -800 万（军费）[/color]"
+                            $"[color=red]● 国库 -{campaignCost} 万，西园军 -{lostTroops} 人[/color]"
             };
         }
     }

@@ -191,6 +191,35 @@ public class ProvinceRebellionTests
         Assert.NotNull(result.StoryText);
     }
 
+    [Fact]
+    public void Test_SuppressRebellion_Troops_AffectCostAndArmySize()
+    {
+        var state = new GameState();
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator(), new Random(42));
+        state.Provinces["jizhou"].IsRebelling = true;
+        state.Provinces["jizhou"].RebelFaction = "黄巾军";
+        state.Treasury = 10000;
+        state.WestGardenArmy.Size = 8000;
+
+        var result = engine.SuppressRebellion("jizhou", "cao_cao", troops: 5000);
+
+        Assert.Contains("5000", result.StoryText);
+        Assert.Contains("军费支出：500 万", result.StoryText);
+        Assert.Equal(9500, state.Treasury);
+        Assert.True(state.WestGardenArmy.Size < 8000);
+    }
+
+    [Fact]
+    public void Test_SuppressRebellion_InsufficientTroops_Throws()
+    {
+        var state = new GameState();
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator(), new Random(42));
+        state.Provinces["jizhou"].IsRebelling = true;
+        state.WestGardenArmy.Size = 2000;
+
+        Assert.Throws<InvalidOperationException>(() => engine.SuppressRebellion("jizhou", "cao_cao", troops: 3000));
+    }
+
     // ========================
     //  PacifyRebellion 测试
     // ========================
