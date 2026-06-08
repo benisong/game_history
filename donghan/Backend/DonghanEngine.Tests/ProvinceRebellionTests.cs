@@ -205,6 +205,9 @@ public class ProvinceRebellionTests
 
         Assert.Contains("5000", result.StoryText);
         Assert.Contains("军费支出：500 万", result.StoryText);
+        Assert.Contains("【战局复盘】", result.StoryText);
+        Assert.Contains("出兵/叛军：5000/2000", result.StoryText);
+        Assert.Contains("主要因素", result.StoryText);
         Assert.Equal(9500, state.Treasury);
         Assert.True(state.WestGardenArmy.Size < 8000);
     }

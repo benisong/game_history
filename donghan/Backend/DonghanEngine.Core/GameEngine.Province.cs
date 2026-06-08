@@ -160,6 +160,8 @@ public partial class GameEngine
         double troopRatio = troops / (double)Math.Max(province.Garrison, 1);
         double troopBonus = Math.Clamp((troopRatio - 1.0) * 20, -20, 25);
         double successRate = Math.Clamp(combatPower - distancePenalty + troopBonus, 5, 95);
+        int rebelGarrisonBeforeBattle = province.Garrison;
+        string battleReview = BuildSuppressBattleReview(combatPower, distancePenalty, troopBonus, successRate, troops, rebelGarrisonBeforeBattle, campaignCost);
 
         _state.Treasury = Math.Clamp(_state.Treasury - campaignCost, 0, int.MaxValue);
         bool success = _rng.Next(0, 100) < successRate;
@@ -184,6 +186,7 @@ public partial class GameEngine
                 StoryText = $"【军事平叛 — 成功】\n\n陛下命【{general.Name}】率西园精锐 {troops} 人出征{province.Name}，距京{province.Distance}千里。\n\n" +
                             $"战力评估：{combatPower:F1} | 兵力修正：{troopBonus:+0;-0;0}% | 成功率：{successRate:F0}%\n" +
                             $"军费支出：{campaignCost} 万 | 战损：{casualty} 人\n\n" +
+                            battleReview + "\n\n" +
                             $"旌旗蔽日，铁骑隆隆。{general.Name}不负圣恩，一举荡平叛军！\n\n" +
                             $"[color=green]● {province.Name}叛乱平定[/color]\n" +
                             $"[color=green]● {province.Name}民心 +15[/color]\n" +
@@ -208,6 +211,7 @@ public partial class GameEngine
                 StoryText = $"【军事平叛 — 失败】\n\n陛下命【{general.Name}】率军 {troops} 人出征{province.Name}……\n\n" +
                             $"战力评估：{combatPower:F1} | 兵力修正：{troopBonus:+0;-0;0}% | 成功率：{successRate:F0}%\n" +
                             $"军费支出：{campaignCost} 万 | 折损兵马：{lostTroops} 人\n\n" +
+                            battleReview + "\n\n" +
                             $"奈何叛军势大，{general.Name}久攻不下，粮草不济，只得暂且收兵。\n\n" +
                             $"[color=red]● 平叛失败！{province.Name}叛军 +{rebelGain}[/color]\n" +
                             $"[color=red]● {general.Name}权势 -8，忠诚 -10[/color]\n" +
@@ -215,6 +219,40 @@ public partial class GameEngine
                             $"[color=red]● 国库 -{campaignCost} 万，西园军 -{lostTroops} 人[/color]"
             };
         }
+    }
+
+    private static string BuildSuppressBattleReview(double combatPower, double distancePenalty, double troopBonus, double successRate, int troops, int rebelGarrison, int campaignCost)
+    {
+        var causes = new List<string>();
+
+        if (combatPower >= 80)
+            causes.Add("主将统御严整，临阵调度有方");
+        else if (combatPower < 45)
+            causes.Add("主将武略不足，难以独当方面");
+
+        if (distancePenalty >= 20)
+            causes.Add("道路迢递，转运不继，军心渐疲");
+        else if (distancePenalty <= 5)
+            causes.Add("近畿转运便利，诏令与粮草可迅速抵达");
+
+        if (troopBonus >= 15)
+            causes.Add("王师兵力压境，贼众望旗而怯");
+        else if (troopBonus <= -10)
+            causes.Add("兵少而贼众，虽将帅奋战亦难破围");
+
+        if (campaignCost >= 600)
+            causes.Add("此役调度浩大，国帑压力显著");
+
+        if (causes.Count == 0)
+            causes.Add(successRate >= 60 ? "诸项条件平稳，胜机主要来自稳健调度" : "诸项条件并无明显优势，胜负多系临阵发挥");
+
+        return "【战局复盘】\n" +
+               $"● 主将战力：{combatPower:F1}\n" +
+               $"● 距京惩罚：-{distancePenalty:F0}%\n" +
+               $"● 出兵/叛军：{troops}/{rebelGarrison}\n" +
+               $"● 兵力修正：{troopBonus:+0;-0;0}%\n" +
+               $"● 最终胜率：{successRate:F0}%\n" +
+               $"● 主要因素：{string.Join("；", causes)}";
     }
 
     // ============================
