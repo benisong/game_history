@@ -166,21 +166,41 @@ public partial class MainScene : Control
         // === 平叛与安抚 (仅在叛乱时显示) ===
         if (p.IsRebelling)
         {
-            // 1. 军事平叛
-            var hBoxSuppress = new HBoxContainer();
-            hBoxSuppress.AddThemeConstantOverride("separation", 10);
-            _provinceActionsVBox.AddChild(hBoxSuppress);
-            var lblSup = new Label(); lblSup.Text = "⚔️ 派兵平叛: ";
-            hBoxSuppress.AddChild(lblSup);
+            // 1. 军事平叛：展示将领五维、战力、距京惩罚与最终胜率
+            var suppressPanel = new VBoxContainer();
+            suppressPanel.AddThemeConstantOverride("separation", 6);
+            _provinceActionsVBox.AddChild(suppressPanel);
+
+            var lblSup = new Label();
+            lblSup.Text = "⚔️ 派兵平叛候选将领";
+            suppressPanel.AddChild(lblSup);
 
             var militaryNpcs = _gameState.Npcs.Values.Where(n => n.IsActive && n.GovernedProvinceId == null).ToList();
-            foreach (var mil in militaryNpcs.Take(2))
+            if (militaryNpcs.Count == 0)
             {
-                var btnSup = new Button();
+                suppressPanel.AddChild(new Label { Text = "（京中暂无可派遣将领）" });
+            }
+
+            foreach (var mil in militaryNpcs.Take(3))
+            {
                 double combatPower = NpcTraitEvaluator.GetCombatPower(mil);
-                double successRate = Math.Clamp(combatPower - p.Distance * 5, 5, 95);
-                btnSup.Text = $"{mil.Name} (胜率{successRate:F0}%)";
-                
+                double distancePenalty = p.Distance * 5;
+                double successRate = Math.Clamp(combatPower - distancePenalty, 5, 95);
+
+                var row = new VBoxContainer();
+                row.AddThemeConstantOverride("separation", 3);
+                suppressPanel.AddChild(row);
+
+                var detail = new RichTextLabel();
+                detail.BbcodeEnabled = true;
+                detail.CustomMinimumSize = new Vector2(0, 54);
+                detail.Text = $"[b]{mil.Name}[/b] 武力:{mil.Martial} 统帅:{mil.Leadership} | 综合战力:[color=yellow]{combatPower:F0}[/color] - 距京惩罚:{distancePenalty:F0}\n" +
+                    $"预计胜率: [color={(successRate >= 70 ? "green" : successRate >= 45 ? "yellow" : "red")}]{successRate:F0}%[/color]";
+                row.AddChild(detail);
+
+                var btnSup = new Button();
+                btnSup.Text = $"命 {mil.Name} 出征平叛";
+
                 string milId = mil.Id;
                 btnSup.Pressed += () =>
                 {
@@ -189,7 +209,7 @@ public partial class MainScene : Control
                     if (_storyOutput != null) _storyOutput.Text = res.StoryText;
                     UpdateUI();
                 };
-                hBoxSuppress.AddChild(btnSup);
+                row.AddChild(btnSup);
             }
 
             // 2. 遣使招抚：由玩家勾选四策并选择赈灾金额
