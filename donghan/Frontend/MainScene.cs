@@ -175,9 +175,13 @@ public partial class MainScene : Control
     private WindowManager _windowManager = new();
 
     private string _currentDetailsMinisterId = string.Empty;
+    private bool _forceFullscreen = true;
 
     public override void _Ready()
     {
+        ForceExclusiveFullscreen();
+        EnsureOpaqueSceneBackground();
+
         // 1. 初始化 C# 面向对象后端游戏实例
         _gameState = new GameState();
         
@@ -191,13 +195,12 @@ public partial class MainScene : Control
         // 2. 注册窗口管理器节点到场景中
         AddChild(_windowManager);
 
-        InitializeEmperorsDesk();
-
         _panelAffairs = GetNodeOrNull<Control>("UI_Layer/PanelAffairs");
         _transitionMask = GetNodeOrNull<ColorRect>("UI_Layer/TransitionMask");
         if (_transitionMask != null)
         {
             _ritualTextLabel = _transitionMask.GetNodeOrNull<RichTextLabel>("RitualTextLabel");
+            ConfigureFullScreenBlocker(_transitionMask, zIndex: 20_000);
             _transitionMask.Hide();
         }
 
@@ -236,6 +239,9 @@ public partial class MainScene : Control
         _ministerTitleLabel = GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterTitle");
         _ministerFavorabilityLabel = GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterFavor");
         _ministerPowerLabel = GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterPower");
+        ConfigureMinisterPanelLayout();
+
+        InitializeEmperorsDesk();
 
         // 4. 绑定交互事件
         if (_submitButton != null) _submitButton.Pressed += OnSubmitButtonPressed;
@@ -390,6 +396,7 @@ public partial class MainScene : Control
         InitializeAffairsPanel();
         InitializeIntelPanel();
         InitializeCourtPanel();
+        ApplyOpaquePanelTheme(this);
 
         // 渲染初始界面状态
         UpdateUI();
@@ -398,6 +405,144 @@ public partial class MainScene : Control
             _storyOutput.Text = "陛下已经驾临宣政殿，请在上方抚摩御案物理器物，或在下方朱批下旨，乾纲独断...";
         }
         ShowOpeningOverlay();
+    }
+
+    public override void _Process(double delta)
+    {
+        if (!_forceFullscreen) return;
+
+        var mode = DisplayServer.WindowGetMode();
+        if (mode != DisplayServer.WindowMode.ExclusiveFullscreen)
+        {
+            ForceExclusiveFullscreen();
+        }
+    }
+
+    private static void ForceExclusiveFullscreen()
+    {
+        DisplayServer.WindowSetMode(DisplayServer.WindowMode.ExclusiveFullscreen);
+    }
+
+    private static void ConfigureFullScreenBlocker(ColorRect blocker, int zIndex)
+    {
+        blocker.Color = new Color(0.04f, 0.035f, 0.03f, 1.0f);
+        blocker.MouseFilter = Control.MouseFilterEnum.Stop;
+        blocker.ZIndex = zIndex;
+        SetFullRect(blocker);
+    }
+
+    private void EnsureOpaqueSceneBackground()
+    {
+        if (GetNodeOrNull<ColorRect>("OpaqueSceneBackground") != null) return;
+
+        var background = new ColorRect();
+        background.Name = "OpaqueSceneBackground";
+        background.Color = new Color(0.055f, 0.045f, 0.04f, 1.0f);
+        background.MouseFilter = Control.MouseFilterEnum.Ignore;
+        background.ZIndex = -100;
+        SetFullRect(background);
+
+        AddChild(background);
+        MoveChild(background, 0);
+    }
+
+    private static void ApplyOpaquePanelTheme(Node root)
+    {
+        if (root is Panel panel)
+        {
+            panel.AddThemeStyleboxOverride("panel", CreateOpaquePanelStyle(panel.Name.ToString()));
+            panel.MouseFilter = Control.MouseFilterEnum.Stop;
+        }
+
+        if (root is ColorRect colorRect && root.Name.ToString().Contains("TransitionMask"))
+        {
+            ConfigureFullScreenBlocker(colorRect, zIndex: 20_000);
+        }
+
+        foreach (var child in root.GetChildren())
+        {
+            ApplyOpaquePanelTheme(child);
+        }
+    }
+
+    private static StyleBoxFlat CreateOpaquePanelStyle(string panelName)
+    {
+        bool isPopup = panelName.Contains("Popup") || panelName.Contains("Overlay");
+        var style = new StyleBoxFlat();
+        style.BgColor = isPopup
+            ? new Color(0.10f, 0.095f, 0.085f, 1.0f)
+            : new Color(0.075f, 0.068f, 0.06f, 1.0f);
+        style.SetBorderWidthAll(isPopup ? 2 : 1);
+        style.BorderColor = isPopup
+            ? new Color(0.84f, 0.67f, 0.12f, 1.0f)
+            : new Color(0.40f, 0.32f, 0.10f, 1.0f);
+        style.ContentMarginLeft = 8;
+        style.ContentMarginRight = 8;
+        style.ContentMarginTop = 8;
+        style.ContentMarginBottom = 8;
+        return style;
+    }
+
+    private static void SetFullRect(Control control)
+    {
+        control.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        control.OffsetLeft = 0;
+        control.OffsetTop = 0;
+        control.OffsetRight = 0;
+        control.OffsetBottom = 0;
+    }
+
+    private void ConfigureMinisterPanelLayout()
+    {
+        if (_ministerPanel == null) return;
+
+        _ministerPanel.CustomMinimumSize = new Vector2(520, 360);
+        _ministerPanel.AnchorLeft = 0.5f;
+        _ministerPanel.AnchorTop = 0.5f;
+        _ministerPanel.AnchorRight = 0.5f;
+        _ministerPanel.AnchorBottom = 0.5f;
+        _ministerPanel.OffsetLeft = -260;
+        _ministerPanel.OffsetTop = -180;
+        _ministerPanel.OffsetRight = 260;
+        _ministerPanel.OffsetBottom = 180;
+
+        var vBox = _ministerPanel.GetNodeOrNull<VBoxContainer>("VBox");
+        if (vBox != null)
+        {
+            vBox.AddThemeConstantOverride("separation", 8);
+        }
+
+        ConfigureWrappingLabel(_ministerTitleLabel, HorizontalAlignment.Center);
+        ConfigureWrappingLabel(_ministerFavorabilityLabel);
+        ConfigureWrappingLabel(_ministerPowerLabel);
+        ConfigureWrappingLabel(GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterCorruption"));
+        ConfigureWrappingLabel(GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterWealth"));
+
+        var actionRow = GetNodeOrNull<HBoxContainer>("MinisterOverlayPanel/VBox/HBox");
+        if (actionRow != null)
+        {
+            actionRow.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            actionRow.Alignment = BoxContainer.AlignmentMode.Center;
+            actionRow.AddThemeConstantOverride("separation", 12);
+            foreach (var child in actionRow.GetChildren())
+            {
+                if (child is Button button)
+                {
+                    button.CustomMinimumSize = new Vector2(0, 42);
+                    button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+                }
+            }
+        }
+    }
+
+    private static void ConfigureWrappingLabel(Label? label, HorizontalAlignment alignment = HorizontalAlignment.Left)
+    {
+        if (label == null) return;
+
+        label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        label.HorizontalAlignment = alignment;
+        label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        label.ClipText = false;
     }
 
     private void UpdateUI()
@@ -664,10 +809,14 @@ public partial class MainScene : Control
             {
                 fiveAttributesLabel = new Label();
                 fiveAttributesLabel.Name = "FiveAttributes";
-                fiveAttributesLabel.HorizontalAlignment = HorizontalAlignment.Center;
+                ConfigureWrappingLabel(fiveAttributesLabel, HorizontalAlignment.Center);
                 _ministerPanel.GetNode<VBoxContainer>("VBox").AddChild(fiveAttributesLabel);
                 // 移动到 CloseButton 之前
                 _ministerPanel.GetNode<VBoxContainer>("VBox").MoveChild(fiveAttributesLabel, 5);
+            }
+            else
+            {
+                ConfigureWrappingLabel(fiveAttributesLabel, HorizontalAlignment.Center);
             }
             string govText = minister.GovernedProvinceId != null ? $"【外任 {_gameState.Provinces[minister.GovernedProvinceId].Name} 太守】\n" : "【在京闲置】\n";
             fiveAttributesLabel.Text = govText +
@@ -764,39 +913,46 @@ public partial class MainScene : Control
         }
     }
 
-    private HBoxContainer? _deskContainer;
+    private VBoxContainer? _deskContainer;
 
     private void InitializeEmperorsDesk()
     {
         var centerPanel = GetNodeOrNull<Panel>("CenterPanel");
         if (centerPanel == null) return;
 
-        _deskContainer = new HBoxContainer();
+        _deskContainer = new VBoxContainer();
         _deskContainer.Name = "EmperorsDesk";
-        _deskContainer.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _deskContainer.AnchorLeft = 0.5f;
+        _deskContainer.AnchorTop = 0.0f;
+        _deskContainer.AnchorRight = 0.5f;
+        _deskContainer.AnchorBottom = 0.0f;
+        _deskContainer.OffsetLeft = -120;
+        _deskContainer.OffsetTop = 18;
+        _deskContainer.OffsetRight = 120;
+        _deskContainer.OffsetBottom = 250;
+        _deskContainer.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
         _deskContainer.Alignment = BoxContainer.AlignmentMode.Center;
-        _deskContainer.CustomMinimumSize = new Vector2(0, 45);
-        _deskContainer.AddThemeConstantOverride("separation", 15);
+        _deskContainer.CustomMinimumSize = new Vector2(240, 230);
+        _deskContainer.AddThemeConstantOverride("separation", 10);
         
-        // 绝对定位在 CenterPanel 顶端，故事文本区上移
         centerPanel.AddChild(_deskContainer);
         centerPanel.MoveChild(_deskContainer, 0);
 
-        // 调整 StoryOutput，预留顶部 50 像素
+        // 调整 StoryOutput，给居中的竖向卷轴入口留出空间
         if (_storyOutput != null)
         {
-            _storyOutput.OffsetTop = 55;
+            _storyOutput.OffsetTop = 280;
         }
 
         // 创建四大按钮
-        _btnAffairsBox = CreateDeskButton("📜 雕龙漆木匣 (政务)", OnAffairsBoxPressed);
-        _btnIntelToken = CreateDeskButton("🗺️ 漆木密札 (情报)", OnIntelTokenPressed);
-        _btnCourtSeal = CreateDeskButton("👑 传国玉玺 (朝会)", OnCourtSealPressed);
-        _btnPleasureCenser = CreateDeskButton("💨 铜制博山炉 (巡幸)", OnPleasureCenserPressed);
+        _btnCourtSeal = CreateDeskButton("大朝会", OnCourtSealPressed);
+        _btnAffairsBox = CreateDeskButton("尚书台", OnAffairsBoxPressed);
+        _btnIntelToken = CreateDeskButton("黄门密札", OnIntelTokenPressed);
+        _btnPleasureCenser = CreateDeskButton("起驾巡幸", OnPleasureCenserPressed);
 
+        _deskContainer.AddChild(_btnCourtSeal);
         _deskContainer.AddChild(_btnAffairsBox);
         _deskContainer.AddChild(_btnIntelToken);
-        _deskContainer.AddChild(_btnCourtSeal);
         _deskContainer.AddChild(_btnPleasureCenser);
     }
 
@@ -804,9 +960,31 @@ public partial class MainScene : Control
     {
         var btn = new Button();
         btn.Text = text;
-        btn.CustomMinimumSize = new Vector2(135, 35);
+        btn.CustomMinimumSize = new Vector2(220, 46);
+        btn.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
+        btn.AddThemeFontSizeOverride("font_size", 17);
+        btn.AddThemeStyleboxOverride("normal", CreateScrollButtonStyle(new Color(0.42f, 0.30f, 0.13f, 1.0f)));
+        btn.AddThemeStyleboxOverride("hover", CreateScrollButtonStyle(new Color(0.52f, 0.38f, 0.16f, 1.0f)));
+        btn.AddThemeStyleboxOverride("pressed", CreateScrollButtonStyle(new Color(0.30f, 0.20f, 0.09f, 1.0f)));
         btn.Pressed += pressedCallback;
         return btn;
+    }
+
+    private static StyleBoxFlat CreateScrollButtonStyle(Color bgColor)
+    {
+        var style = new StyleBoxFlat();
+        style.BgColor = bgColor;
+        style.BorderColor = new Color(0.92f, 0.76f, 0.33f, 1.0f);
+        style.SetBorderWidthAll(2);
+        style.CornerRadiusTopLeft = 4;
+        style.CornerRadiusTopRight = 4;
+        style.CornerRadiusBottomLeft = 4;
+        style.CornerRadiusBottomRight = 4;
+        style.ContentMarginLeft = 18;
+        style.ContentMarginRight = 18;
+        style.ContentMarginTop = 8;
+        style.ContentMarginBottom = 8;
+        return style;
     }
 
     private Panel? _affairsPopup;
@@ -1253,7 +1431,10 @@ public partial class MainScene : Control
     {
         _openingOverlay = new Panel();
         _openingOverlay.Name = "OpeningOverlay";
-        _openingOverlay.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _openingOverlay.MouseFilter = Control.MouseFilterEnum.Stop;
+        _openingOverlay.FocusMode = Control.FocusModeEnum.All;
+        _openingOverlay.ZIndex = 30_000;
+        SetFullRect(_openingOverlay);
 
         var opaqueStyle = new StyleBoxFlat();
         opaqueStyle.BgColor = new Color(0.08f, 0.08f, 0.08f, 1.0f); // 厚重墨黑褐色
@@ -1289,10 +1470,12 @@ public partial class MainScene : Control
         btnConfirm.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
         btnConfirm.Pressed += () =>
         {
+            _openingOverlay.ReleaseFocus();
             _openingOverlay.QueueFree(); // 玩家确认后彻底销毁，显示主场景
         };
         vBox.AddChild(btnConfirm);
 
         AddChild(_openingOverlay);
+        _openingOverlay.GrabFocus();
     }
 }

@@ -114,6 +114,14 @@
 *   奏折如果连续 3 旬未被批复，视为“流产”。
 *   急报类流产（留中不发导致大难无法挽回）：**天下民心大跌 -15**，记入实录；普通奏折流产：皇权大跌 -2。
 
+### 5.4 `GameEngine` 规则结算与叙事文本拆分
+为了让核心引擎便于继续扩展，`GameEngine` 采用 `partial class` 分层承载职责：
+*   **`GameEngine.cs`**：保留玩家输入解析、流程编排、状态推进与外部 API 入口。
+*   **`GameEngine.ActionSettlements.cs`**：集中处理“规则结算”，包括西园犒赏、开仓赈灾、抄家反噬等动作的数值计算、Outcome 判定与状态落地。
+*   **`GameEngine.Narrative.cs`**：集中承载“大段叙事文本”，将 RichText/Bbcode 故事、实录 Chronicle 与结算反馈从流程代码中剥离。
+
+这一拆分的原则是：规则先算出结构化 Settlement，叙事层再根据 Settlement 生成玩家可读文本，主引擎只负责把二者串起来。
+
 ---
 
 ## 6. AI 调度员与大朝会异步双通道缓冲 (Async Deferral Queue)
@@ -148,22 +156,31 @@
 ## 7. Godot 前端第一人称“赤霄御案”视觉美学与 C# 控制层
 
 ### 7.1 主界面物理物件绑定
-主界面 `MainScene.cs` 采取第一人称视角。龙椅案台（黑漆红底纹）上放置四大古典交互按钮。
+主界面 `MainScene.cs` 采取第一人称视角。龙椅案台（黑漆红底纹）上放置居中竖排的“御案卷轴”入口。
 我们通过 Godot 的 `.NET` 脚本层反射获取节点，并绑定物理点击：
-*   **雕龙漆木匣** (`BtnAffairsBox`) ➡️ 点击进入【政务处理】（展开奏章生绢）。
-*   **漆木密札** (`BtnIntelToken`) ➡️ 点击进入【黄门暗探】（显示十三州预警与百官木制身份牌）。
-*   **天子和氏璧玉玺** (`BtnCourtSeal`) ➡️ 砸下御玺，触发三段式大朝仪遮罩，并异步启动 `TriggerCourtDebateAsync`。
-*   **铜制博山炉** (`BtnPleasureCenser`) ➡️ 喷出缭绕紫烟，起驾后宫/西园。
+*   **大朝会**：点击后弹出朝会输入，确认后触发三段式大朝仪遮罩动画，再进入玩家诏令的异步处理流程。
+*   **尚书台**：点击进入【政务处理】独占弹窗，展开奏章生绢、批阅选项与朱批反馈。
+*   **黄门密札**：点击进入【情报】独占弹窗，显示十三州预警、地方局势与可执行的治理动作。
+*   **起驾巡幸**：点击后切换至后宫/西园相关地点，并刷新主界面状态。
+
+### 7.2 全屏、弹窗独占与不透明界面约束
+前端界面统一以 `project.godot` 和 `MainScene.cs` 双重约束维持全屏体验：
+*   `window/size/mode=4` 强制独占全屏，`_Process()` 会在运行中检测并恢复 `ExclusiveFullscreen`。
+*   `WindowManager` 采用栈式弹窗管理；弹窗打开时会插入全屏 `ModalBlocker`，阻断原窗口输入，必须关闭当前弹窗后才能继续操作底层界面。
+*   开场遮罩、朝会转场、弹窗面板和模态遮罩全部使用 alpha 为 `1.0` 的不透明背景，避免窗口叠加时露出底层内容。
+*   NPC 信息弹窗扩大到稳定尺寸，并对所有固定标签与动态生成的五维属性标签启用自动换行，避免文本溢出窗口。
 
 ---
 
-## 8. 目录结构与自动化测试验证 (14/14 Passed)
+## 8. 目录结构与自动化测试验证 (46/46 Passed)
 ```
 donghan/
 ├── Backend/
 │   ├── DonghanEngine.Core/          # 核心后端逻辑类库 DLL
 │   │   ├── GameState.cs             # 纪元时间戳、NPC 字典、时间戳锁
-│   │   ├── GameEngine.cs            # 赈灾、阅兵、抄家反噬物理大政、政务批阅入口
+│   │   ├── GameEngine.cs            # 主流程编排、玩家输入解析、外部动作入口
+│   │   ├── GameEngine.ActionSettlements.cs # 规则结算、Outcome 判定与状态落地
+│   │   ├── GameEngine.Narrative.cs  # 大段叙事文本、实录与 RichText 反馈
 │   │   ├── ImperialEdict.cs         # 5大奏折、跃迁选项数据结构
 │   │   ├── NpcTraitEvaluator.cs     # 32项 Traits 复合共存类乘评估引擎
 │   │   ├── INpcRegistry.cs          # NPC 动态登庸与下野物理接口
@@ -171,12 +188,14 @@ donghan/
 │   │   └── IAIScheduler.cs          # AI 调度编排器接口
 │   └── DonghanEngine.Tests/         # 基于 xUnit 的自动化单元测试
 └── Frontend/                        # Godot 4.3 (.NET) 游戏项目
-    ├── MainScene.cs                 # 赤霄御案四大器物物理点击、大朝仪遮罩驱动
-    └── WindowManager.cs             # 栈式防穿透弹窗管理器
+    ├── MainScene.cs                 # 御案卷轴入口、全屏恢复、大朝仪遮罩与 NPC 弹窗布局
+    ├── WindowManager.cs             # 栈式独占弹窗、ModalBlocker 与不透明面板样式
+    └── project.godot                # Godot 全屏、不可缩放窗口与拉伸策略配置
 ```
 
 ### 核心单元测试大满贯：
 *   `Test_NPC_Ecosystem_LifecycleAndDescriptiveTraits`：验证 A/B 轨冷备降级（董卓）、刘备登庸与寿命变老、刘备「经天纬地」开仓提振、曹操「老谋深算」强抄张让反噬折减、以及「经天纬地」+「爱民如子」的 **Traits 共存复合累乘 ($1.20 \times 1.15 = 1.38x$)**。
 *   `Test_Edicts_ResolutionAndPromoBacklash`：验证邀功折、逐级提拔、以及曹操连跃 2 级官阶直接扣减皇权并触发朝野非议的反噬。
 *   `Test_Edicts_ExpiryCrisis`：验证 3 旬留中不发导致的急报特大流产，以及天下民心暴跌 15 点。
-*   在命令行运行 `dotnet test`，所有 14 个测试用例 **100% 成功通过 (0个失败)**。
+*   在命令行运行 `dotnet test Backend\DonghanEngine.Tests\DonghanEngine.Tests.csproj`，所有 46 个测试用例 **100% 成功通过 (0个失败)**。
+*   前端可使用 `dotnet build Frontend\DonghanFrontend.csproj --no-restore -v minimal` 验证 Godot C# 编译，当前构建为 **0 个警告 / 0 个错误**。

@@ -5,6 +5,8 @@ namespace DonghanFrontend;
 
 public partial class WindowManager : Node
 {
+    private const int ModalBaseZIndex = 10_000;
+
     private Stack<Control> _windowStack = new();
     private Stack<ColorRect> _blockerStack = new();
 
@@ -12,26 +14,31 @@ public partial class WindowManager : Node
     public void PushWindow(Control window)
     {
         if (window == null) return;
+        if (window.GetParent() == null) return;
+        if (_windowStack.Count > 0 && _windowStack.Peek() == window) return;
+
+        GetViewport().GuiReleaseFocus();
 
         // 1. 创建全屏模态防穿透点击拦截器
         var blocker = new ColorRect();
         blocker.Name = $"{window.Name}_Blocker";
-        blocker.Color = new Color(0.1f, 0.1f, 0.1f, 0.85f); // 85% 暗化不透明，盖死底层
-        blocker.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        blocker.Color = new Color(0.04f, 0.035f, 0.03f, 1.0f); // 100% 不透明，底层完全不可见不可点
         blocker.MouseFilter = Control.MouseFilterEnum.Stop; // 拦截所有事件，彻底不漏点
+        blocker.ZIndex = ModalBaseZIndex + _windowStack.Count * 2;
+        SetFullRect(blocker);
 
         // 2. 将遮蔽阻断器动态加入场景，正好垫在弹窗下方
         window.GetParent().AddChild(blocker);
         window.GetParent().MoveChild(blocker, window.GetIndex());
 
         // 3. 将弹窗自身 Style 重写为 100% 物理不透明，以防半透明漏影
+        window.MouseFilter = Control.MouseFilterEnum.Stop;
+        window.FocusMode = Control.FocusModeEnum.All;
+        window.ZIndex = blocker.ZIndex + 1;
+
         if (window is Panel panel)
         {
-            var opaqueStyle = new StyleBoxFlat();
-            opaqueStyle.BgColor = new Color(0.12f, 0.12f, 0.12f, 1.0f); // 100% 绝对不透明深黑灰
-            opaqueStyle.SetBorderWidthAll(2);
-            opaqueStyle.BorderColor = new Color(0.84f, 0.67f, 0.12f, 1.0f); // 暗金框
-            panel.AddThemeStyleboxOverride("panel", opaqueStyle);
+            panel.AddThemeStyleboxOverride("panel", CreateOpaquePanelStyle());
         }
 
         _windowStack.Push(window);
@@ -39,6 +46,7 @@ public partial class WindowManager : Node
 
         blocker.Show();
         window.Show();
+        window.GrabFocus();
         
         GD.Print($"[WindowManager]: 已呼出防穿透弹窗 {window.Name}，阻断器已生效！");
     }
@@ -50,6 +58,7 @@ public partial class WindowManager : Node
         {
             var topWindow = _windowStack.Pop();
             topWindow.Hide();
+            topWindow.ReleaseFocus();
 
             if (_blockerStack.Count > 0)
             {
@@ -71,5 +80,23 @@ public partial class WindowManager : Node
                 GetViewport().SetInputAsHandled();
             }
         }
+    }
+
+    private static void SetFullRect(Control control)
+    {
+        control.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        control.OffsetLeft = 0;
+        control.OffsetTop = 0;
+        control.OffsetRight = 0;
+        control.OffsetBottom = 0;
+    }
+
+    private static StyleBoxFlat CreateOpaquePanelStyle()
+    {
+        var opaqueStyle = new StyleBoxFlat();
+        opaqueStyle.BgColor = new Color(0.10f, 0.095f, 0.085f, 1.0f);
+        opaqueStyle.SetBorderWidthAll(2);
+        opaqueStyle.BorderColor = new Color(0.84f, 0.67f, 0.12f, 1.0f);
+        return opaqueStyle;
     }
 }
