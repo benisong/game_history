@@ -192,28 +192,76 @@ public partial class MainScene : Control
                 hBoxSuppress.AddChild(btnSup);
             }
 
-            // 2. 遣使招抚 (使用说服与离间叠加策略)
-            var hBoxPacify = new HBoxContainer();
-            hBoxPacify.AddThemeConstantOverride("separation", 10);
-            _provinceActionsVBox.AddChild(hBoxPacify);
-            var lblPac = new Label(); lblPac.Text = "🌸 遣使招安: ";
-            hBoxPacify.AddChild(lblPac);
+            // 2. 遣使招抚：由玩家勾选四策并选择赈灾金额
+            var pacifyPanel = new VBoxContainer();
+            pacifyPanel.AddThemeConstantOverride("separation", 6);
+            _provinceActionsVBox.AddChild(pacifyPanel);
 
-            foreach (var envoy in militaryNpcs.Take(2))
+            var lblPac = new Label();
+            lblPac.Text = "🌸 遣使招安四策";
+            pacifyPanel.AddChild(lblPac);
+
+            var strategyGrid = new GridContainer();
+            strategyGrid.Columns = 2;
+            strategyGrid.AddThemeConstantOverride("h_separation", 12);
+            strategyGrid.AddThemeConstantOverride("v_separation", 4);
+            pacifyPanel.AddChild(strategyGrid);
+
+            var chkSowDiscord = new CheckBox { Text = "离间计 (政治≥50)" };
+            var chkPersuade = new CheckBox { Text = "说服 (魅力≥45)", ButtonPressed = true };
+            var chkDisasterRelief = new CheckBox { Text = "赈灾放粮" };
+            var chkPunish = new CheckBox { Text = "惩治官员 (皇权≥35)" };
+            strategyGrid.AddChild(chkSowDiscord);
+            strategyGrid.AddChild(chkPersuade);
+            strategyGrid.AddChild(chkDisasterRelief);
+            strategyGrid.AddChild(chkPunish);
+
+            var reliefBox = new HBoxContainer();
+            reliefBox.AddThemeConstantOverride("separation", 8);
+            pacifyPanel.AddChild(reliefBox);
+            reliefBox.AddChild(new Label { Text = "赈灾金额:" });
+            var reliefSpin = new SpinBox();
+            reliefSpin.MinValue = 500;
+            reliefSpin.MaxValue = 1500;
+            reliefSpin.Step = 500;
+            reliefSpin.Value = 500;
+            reliefSpin.CustomMinimumSize = new Vector2(110, 0);
+            reliefBox.AddChild(reliefSpin);
+            reliefBox.AddChild(new Label { Text = "万钱（仅勾选赈灾时扣国库）" });
+
+            var envoyBox = new HBoxContainer();
+            envoyBox.AddThemeConstantOverride("separation", 10);
+            pacifyPanel.AddChild(envoyBox);
+            envoyBox.AddChild(new Label { Text = "选择特使:" });
+
+            foreach (var envoy in militaryNpcs.Take(3))
             {
                 var btnPac = new Button();
-                btnPac.Text = $"{envoy.Name} (说服+离间)";
-                
+                double politicalSkill = NpcTraitEvaluator.GetPoliticalSkill(envoy);
+                btnPac.Text = $"{envoy.Name} (政略{politicalSkill:F0})";
+
                 string envoyId = envoy.Id;
                 btnPac.Pressed += () =>
                 {
+                    var strategies = (GameEngine.PacifyStrategy)0;
+                    if (chkSowDiscord.ButtonPressed) strategies |= GameEngine.PacifyStrategy.SowDiscord;
+                    if (chkPersuade.ButtonPressed) strategies |= GameEngine.PacifyStrategy.Persuade;
+                    if (chkDisasterRelief.ButtonPressed) strategies |= GameEngine.PacifyStrategy.DisasterRelief;
+                    if (chkPunish.ButtonPressed) strategies |= GameEngine.PacifyStrategy.Punish;
+
+                    if (strategies == 0)
+                    {
+                        if (_storyOutput != null) _storyOutput.Text = "【招安未发】\n\n陛下尚未选定任何安抚策略，黄门捧诏不敢出宫。";
+                        return;
+                    }
+
+                    int reliefGold = chkDisasterRelief.ButtonPressed ? (int)reliefSpin.Value : 0;
                     _windowManager.PopWindow();
-                    var strategies = GameEngine.PacifyStrategy.Persuade | GameEngine.PacifyStrategy.SowDiscord;
-                    var res = _gameEngine!.PacifyRebellion(p.Id, envoyId, strategies, 0);
+                    var res = _gameEngine!.PacifyRebellion(p.Id, envoyId, strategies, reliefGold);
                     if (_storyOutput != null) _storyOutput.Text = res.StoryText;
                     UpdateUI();
                 };
-                hBoxPacify.AddChild(btnPac);
+                envoyBox.AddChild(btnPac);
             }
         }
     }
