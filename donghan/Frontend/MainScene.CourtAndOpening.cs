@@ -1,102 +1,9 @@
 using Godot;
-using System;
-using System.Threading.Tasks;
-using DonghanEngine.Core;
 
 namespace DonghanFrontend;
 
 public partial class MainScene : Control
 {
-    private Panel? _courtPopup;
-    private LineEdit? _courtInput;
-
-    private void InitializeCourtPanel()
-    {
-        _courtPopup = new Panel();
-        _courtPopup.Name = "CourtPopup";
-        _courtPopup.Visible = false;
-        _courtPopup.CustomMinimumSize = new Vector2(400, 200);
-        _courtPopup.SetAnchorsPreset(Control.LayoutPreset.Center);
-
-        var vBox = new VBoxContainer();
-        vBox.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        vBox.OffsetLeft = 20; vBox.OffsetTop = 20; vBox.OffsetRight = -20; vBox.OffsetBottom = -20;
-        vBox.AddThemeConstantOverride("separation", 15);
-        _courtPopup.AddChild(vBox);
-
-        var lbl = new Label();
-        lbl.Text = "👑 宣政殿 · 鸣磬起朝会";
-        lbl.HorizontalAlignment = HorizontalAlignment.Center;
-        vBox.AddChild(lbl);
-
-        _courtInput = new LineEdit();
-        _courtInput.PlaceholderText = "输入圣旨口召，如：重赏曹操、弹劾张让";
-        vBox.AddChild(_courtInput);
-
-        var hBox = new HBoxContainer();
-        hBox.Alignment = BoxContainer.AlignmentMode.Center;
-        hBox.AddThemeConstantOverride("separation", 20);
-        vBox.AddChild(hBox);
-
-        var btnConfirm = new Button();
-        btnConfirm.Text = "宣旨起大朝仪";
-        btnConfirm.Pressed += OnConfirmCourtAssembly;
-        hBox.AddChild(btnConfirm);
-
-        var btnCancel = new Button();
-        btnCancel.Text = "暂缓朝会";
-        btnCancel.Pressed += _windowManager.PopWindow;
-        hBox.AddChild(btnCancel);
-
-        AddChild(_courtPopup);
-    }
-
-    private void OnCourtSealPressed()
-    {
-        if (_gameState == null) return;
-        if (_gameState.CurrentLocation != "宣政殿")
-        {
-            if (_storyOutput != null) _storyOutput.Text = "【太监急奏】\n\n“陛下，天子玉玺非大朝会宣政殿不可轻动！”";
-            return;
-        }
-        _courtInput!.Text = "";
-        _windowManager.PushWindow(_courtPopup!);
-    }
-
-    private async void OnConfirmCourtAssembly()
-    {
-        string txt = _courtInput!.Text;
-        if (string.IsNullOrWhiteSpace(txt)) return;
-
-        _windowManager.PopWindow(); // 关闭发起弹窗
-
-        // 触发大朝会三阶段过渡动画/文字效果
-        if (_transitionMask != null)
-        {
-            _transitionMask.Show();
-            
-            string[] rituals = new[] {
-                "【大朝仪 · 钟磬齐鸣】\n\n宣政殿前，礼部钟磬齐鸣，太监高唱：\n“天子登临——百官跪迎——！”",
-                "【大朝仪 · 天子加冕】\n\n陛下御带冕旒，身披龙袍，在宿卫亲军的护送下缓缓步入金銮。龙威赫赫，百官莫敢直视。",
-                "【大朝仪 · 宣旨群辩】\n\n“众卿平身——！”\n内侍太监缓缓展开黄绢，陛下口召已下：\n『" + txt + "』"
-            };
-
-            for (int i = 0; i < rituals.Length; i++)
-            {
-                if (_ritualTextLabel != null) _ritualTextLabel.Text = rituals[i];
-                await ToSignal(GetTree().CreateTimer(1.5f), "timeout");
-            }
-
-            _transitionMask.Hide();
-        }
-
-        // 执行 ProcessPlayerTurnAsync
-        if (_storyOutput != null) _storyOutput.Text = "百官正在唇枪舌战，商议对策...";
-        var result = await _gameEngine!.ProcessPlayerTurnAsync(txt);
-        if (_storyOutput != null) _storyOutput.Text = result.StoryText;
-        UpdateUI();
-    }
-
     private void OnPleasureCenserPressed()
     {
         GD.Print("【互动】点燃博山炉，紫烟升起，起驾后宫/西园...");
@@ -119,9 +26,9 @@ public partial class MainScene : Control
         SetFullRect(_openingOverlay);
 
         var opaqueStyle = new StyleBoxFlat();
-        opaqueStyle.BgColor = new Color(0.08f, 0.08f, 0.08f, 1.0f); // 厚重墨黑褐色
+        opaqueStyle.BgColor = new Color(0.08f, 0.08f, 0.08f, 1.0f);
         opaqueStyle.SetBorderWidthAll(4);
-        opaqueStyle.BorderColor = new Color(0.72f, 0.58f, 0.12f, 1.0f); // 暗亮金边
+        opaqueStyle.BorderColor = new Color(0.72f, 0.58f, 0.12f, 1.0f);
         _openingOverlay.AddThemeStyleboxOverride("panel", opaqueStyle);
 
         var vBox = new VBoxContainer();
@@ -153,7 +60,7 @@ public partial class MainScene : Control
         btnConfirm.Pressed += () =>
         {
             _openingOverlay.ReleaseFocus();
-            _openingOverlay.QueueFree(); // 玩家确认后彻底销毁，显示主场景
+            _openingOverlay.QueueFree();
         };
         vBox.AddChild(btnConfirm);
 
