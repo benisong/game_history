@@ -20,7 +20,7 @@ public partial class MainScene : Control
         var panel = new Panel();
         panel.Name = "TravelChoicePopup";
         panel.Visible = false;
-        ConfigureCenteredPopupPanel(panel, PopupSkin.Travel, new Vector2(760, 490));
+        ConfigureCenteredPopupPanel(panel, PopupSkin.Travel, new Vector2(880, 560));
 
         var root = new VBoxContainer();
         SetFullRect(root);
@@ -31,18 +31,26 @@ public partial class MainScene : Control
         root.AddThemeConstantOverride("separation", 12);
         panel.AddChild(root);
 
-        var title = new Label { Text = "龙辇巡幸 · 三处移驾" };
+        var title = new Label { Text = "龙辇巡幸 · 驻跸择所" };
         StylePopupTitle(title, PopupSkin.Travel);
         root.AddChild(title);
 
+        var routeFrame = new PanelContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        routeFrame.AddThemeStyleboxOverride("panel", CreateTravelRouteBannerStyle());
+        root.AddChild(routeFrame);
+
+        var routeBox = new VBoxContainer();
+        routeBox.AddThemeConstantOverride("separation", 4);
+        routeFrame.AddChild(routeBox);
+
         var routeStrip = new Label
         {
-            Text = "宣政殿  ━  温德殿  ━  西园精舍",
+            Text = "宫门黄门执节  ━  宣政殿  ━  温德殿  ━  西园精舍",
             HorizontalAlignment = HorizontalAlignment.Center
         };
         StyleColumnTitle(routeStrip, PopupSkin.Travel);
         routeStrip.AddThemeFontSizeOverride("font_size", 16);
-        root.AddChild(routeStrip);
+        routeBox.AddChild(routeStrip);
 
         var desc = new Label
         {
@@ -50,7 +58,7 @@ public partial class MainScene : Control
             HorizontalAlignment = HorizontalAlignment.Center
         };
         StylePopupBodyText(desc, PopupSkin.Travel);
-        root.AddChild(desc);
+        routeBox.AddChild(desc);
 
         var cards = new HBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, SizeFlagsVertical = Control.SizeFlags.ExpandFill };
         cards.AddThemeConstantOverride("separation", 12);
@@ -107,16 +115,22 @@ public partial class MainScene : Control
 
         var title = new Label { Text = heading };
         StyleColumnTitle(title, PopupSkin.Travel);
+        title.AddThemeFontSizeOverride("font_size", 20);
         box.AddChild(title);
+
+        var sigilFrame = new PanelContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 66) };
+        sigilFrame.AddThemeStyleboxOverride("panel", CreateTravelSigilFrameStyle(destination));
+        box.AddChild(sigilFrame);
 
         var sigil = new Label
         {
             Text = GetTravelDestinationSigil(destination),
-            HorizontalAlignment = HorizontalAlignment.Center
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
         };
-        sigil.AddThemeFontSizeOverride("font_size", 22);
-        sigil.AddThemeColorOverride("font_color", GetPopupTitleColor(PopupSkin.Travel).Lightened(0.10f));
-        box.AddChild(sigil);
+        sigil.AddThemeFontSizeOverride("font_size", 24);
+        sigil.AddThemeColorOverride("font_color", GetPopupTitleColor(PopupSkin.Travel).Lightened(0.13f));
+        sigilFrame.AddChild(sigil);
 
         var bodyLabel = new Label
         {
@@ -128,6 +142,7 @@ public partial class MainScene : Control
 
         var usageLabel = CreateActionPreviewLabel(PopupSkin.Travel);
         usageLabel.Text = usage;
+        usageLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         box.AddChild(usageLabel);
 
         var go = new Button
@@ -145,9 +160,9 @@ public partial class MainScene : Control
     {
         return destination switch
         {
-            "宣政殿" => "▰ 王座 ▰",
-            "后宫" => "✦ 炉烟 ✦",
-            "西园" => "◆ 羽林 ◆",
+            "宣政殿" => "▰ 御座 · 百官 ▰",
+            "后宫" => "✦ 博山炉烟 ✦",
+            "西园" => "◆ 羽林虎符 ◆",
             _ => "◇ 龙辇 ◇"
         };
     }
@@ -172,6 +187,54 @@ public partial class MainScene : Control
         style.SetBorderWidthAll(2);
         style.ShadowColor = new Color(0.0f, 0.0f, 0.0f, 0.42f);
         style.ShadowSize = 8;
+        return style;
+    }
+
+    private static StyleBoxFlat CreateTravelRouteBannerStyle()
+    {
+        var style = CreatePopupInnerPanelStyle(PopupSkin.Travel);
+        style.BgColor = new Color(0.115f, 0.060f, 0.030f, 1.0f);
+        style.BorderColor = new Color(0.82f, 0.54f, 0.18f, 1.0f);
+        style.SetBorderWidthAll(2);
+        style.CornerRadiusTopLeft = 14;
+        style.CornerRadiusTopRight = 14;
+        style.CornerRadiusBottomLeft = 14;
+        style.CornerRadiusBottomRight = 14;
+        style.ContentMarginLeft = 16;
+        style.ContentMarginRight = 16;
+        style.ContentMarginTop = 10;
+        style.ContentMarginBottom = 10;
+        style.ShadowColor = new Color(0.0f, 0.0f, 0.0f, 0.46f);
+        style.ShadowSize = 8;
+        return style;
+    }
+
+    private static StyleBoxFlat CreateTravelSigilFrameStyle(string destination)
+    {
+        var style = CreatePopupInnerPanelStyle(PopupSkin.Travel);
+        style.BgColor = destination switch
+        {
+            "宣政殿" => new Color(0.190f, 0.050f, 0.032f, 1.0f),
+            "后宫" => new Color(0.145f, 0.067f, 0.060f, 1.0f),
+            "西园" => new Color(0.082f, 0.075f, 0.050f, 1.0f),
+            _ => style.BgColor
+        };
+        style.BorderColor = destination switch
+        {
+            "宣政殿" => new Color(0.90f, 0.58f, 0.18f, 1.0f),
+            "后宫" => new Color(0.78f, 0.42f, 0.32f, 1.0f),
+            "西园" => new Color(0.62f, 0.50f, 0.26f, 1.0f),
+            _ => style.BorderColor
+        };
+        style.SetBorderWidthAll(2);
+        style.CornerRadiusTopLeft = 10;
+        style.CornerRadiusTopRight = 10;
+        style.CornerRadiusBottomLeft = 10;
+        style.CornerRadiusBottomRight = 10;
+        style.ContentMarginLeft = 8;
+        style.ContentMarginRight = 8;
+        style.ContentMarginTop = 6;
+        style.ContentMarginBottom = 6;
         return style;
     }
 
