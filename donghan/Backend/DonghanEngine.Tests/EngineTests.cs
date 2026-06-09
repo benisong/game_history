@@ -388,12 +388,41 @@ public class EngineTests
         Assert.Equal(initialTreasury + amountToTreasury, state.Treasury);
         // 3. 验证天子私库获得 30% 扣除后的赃款：2000 + 1620 = 3620 万钱
         Assert.Equal(initialPrivateTreasury + amountToPrivate, state.PrivateTreasury);
-        // 4. 钦差代表天子执行抄家特权，朝堂权势获得成长 +3
-        Assert.Equal(30 + 3, state.Npcs["jian_shuo"].Power);
+        // 4. 钦差代表天子执行抄家特权，朝堂权势获得成长 +3；蹇硕与张让宫中军权相争，关系牵连再 +1
+        Assert.Equal(30 + 4, state.Npcs["jian_shuo"].Power);
         // 5. 验证铲除贪官带来天下民心大振
         Assert.True(state.PopularSupport > initialSupport);
 
         Assert.Contains("蹇硕", result.StoryText);
+    }
+
+    [Fact]
+    public void Test_Confiscation_ShouldTriggerRelationBacklash()
+    {
+        var state = new GameState();
+        state.CurrentLocation = "宣政殿";
+        state.Npcs["cao_cao"].Favorability = 90; // 确保有清廉近臣出列弹劾。
+        int initialZhaoZhongFavor = state.Npcs["zhao_zhong"].Favorability;
+        int initialZhaoZhongPower = state.Npcs["zhao_zhong"].Power;
+        int initialHeJinFavor = state.Npcs["he_jin"].Favorability;
+        int initialHeJinPower = state.Npcs["he_jin"].Power;
+        int initialImperialPower = state.ImperialPower;
+
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+        var preview = engine.PreviewConfiscationRelationBacklashes("zhang_rang");
+
+        Assert.Contains(preview, r => r.NpcId == "zhao_zhong" && r.FavorabilityDelta < 0);
+        Assert.Contains(preview, r => r.NpcId == "he_jin" && r.FavorabilityDelta > 0);
+
+        var result = engine.ExecuteConfiscationAction("zhang_rang", "国库");
+
+        Assert.True(state.Npcs["zhao_zhong"].Favorability < initialZhaoZhongFavor);
+        Assert.True(state.Npcs["zhao_zhong"].Power > initialZhaoZhongPower);
+        Assert.True(state.Npcs["he_jin"].Favorability > initialHeJinFavor);
+        Assert.True(state.Npcs["he_jin"].Power > initialHeJinPower);
+        Assert.True(state.ImperialPower < initialImperialPower - 15); // 原本张让强权反噬 -15，关系网会进一步加压。
+        Assert.Contains("关系牵连", result.StoryText);
+        Assert.Contains("赵忠", result.StoryText);
     }
 
     [Fact]
@@ -527,13 +556,12 @@ public class EngineTests
 
         // 4. 验证文学词汇 [老谋深算] 降低抄家反噬
         // 曹操 (Traits 包含老谋深算) 诬陷抄家张让（张让 Power 75 触发党羽反噬）
-        // 反噬降低：曹操办案，皇权仅降 10 点 (原 base 15 * 0.7 = 10点)
-        // 排除刘备干扰（其 Corruption=0 < 曹操的5，新钦差选择规则会优先选最低贪腐度）
+        // 关系网会额外加压：十常侍同党被牵连，曹操虽老谋深算，皇权仍多损 6 点。
         state.Npcs["liu_bei"].Favorability = 30; // 降至门槛以下，确保曹操当选
         state.Npcs["cao_cao"].Favorability = 90;
         int initialPower = state.ImperialPower;
         engine.ExecuteConfiscationAction("zhang_rang", "国库");
-        Assert.Equal(initialPower - 10, state.ImperialPower);
+        Assert.Equal(initialPower - 16, state.ImperialPower);
 
         // 5. 验证 Traits 累乘共存：刘备同时拥有 [经天纬地] 1.20x 与 [爱民如子] 1.15x
         // 累计系数：1.20 * 1.15 = 1.38x

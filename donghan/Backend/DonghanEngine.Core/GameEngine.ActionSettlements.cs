@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace DonghanEngine.Core;
 
@@ -54,7 +56,17 @@ public partial class GameEngine
         int NetSupportDelta,
         int ImperialPowerDelta,
         int FinalPowerLoss,
+        IReadOnlyList<ConfiscationRelationBacklash> RelationBacklashes,
         ConfiscationOutcome Outcome);
+
+    public sealed record ConfiscationRelationBacklash(
+        string NpcId,
+        string NpcName,
+        NpcRelationType Type,
+        int Strength,
+        int FavorabilityDelta,
+        int PowerDelta,
+        string Label);
 
     private DrillArmySettlement CalculateDrillArmySettlement(int paidAmount, NpcState officer)
     {
@@ -213,7 +225,10 @@ public partial class GameEngine
         int supportDelta = (int)Math.Round(15.0 * (1.0 - Math.Exp(-rawWealth / 3000.0)));
         supportDelta = Math.Clamp(supportDelta, 1, 15);
 
-        bool cliqueBacklash = target.Power >= 60;
+        var relationBacklashes = CalculateConfiscationRelationBacklashes(target);
+        int relationBacklashPressure = Math.Clamp(relationBacklashes.Sum(r => Math.Abs(r.FavorabilityDelta)), 0, 12);
+
+        bool cliqueBacklash = target.Power >= 60 || relationBacklashes.Any(r => r.Strength >= 80);
         int finalPowerLoss = NpcTraitEvaluator.GetConfiscationImperialPowerLoss(framer, target);
 
         int netSupportDelta;
@@ -223,13 +238,13 @@ public partial class GameEngine
         if (cliqueBacklash)
         {
             netSupportDelta = target.Traits.Contains(TraitNames.QingZhengLianJie) ? -20 : supportDelta - 8;
-            imperialPowerDelta = -finalPowerLoss;
+            imperialPowerDelta = -(finalPowerLoss + relationBacklashPressure / 2);
             outcome = ConfiscationOutcome.CliqueBacklash;
         }
         else
         {
             netSupportDelta = target.Traits.Contains(TraitNames.QingZhengLianJie) ? -20 : supportDelta;
-            imperialPowerDelta = 8;
+            imperialPowerDelta = Math.Max(3, 8 - relationBacklashPressure / 2);
             outcome = ConfiscationOutcome.QuietSuccess;
         }
 
@@ -243,7 +258,76 @@ public partial class GameEngine
             netSupportDelta,
             imperialPowerDelta,
             finalPowerLoss,
+            relationBacklashes,
             outcome);
+    }
+
+    public IReadOnlyList<ConfiscationRelationBacklash> PreviewConfiscationRelationBacklashes(string targetMinisterId)
+    {
+        if (!_state.Npcs.TryGetValue(targetMinisterId, out var target))
+        {
+            return Array.Empty<ConfiscationRelationBacklash>();
+        }
+
+        return CalculateConfiscationRelationBacklashes(target);
+    }
+
+    private IReadOnlyList<ConfiscationRelationBacklash> CalculateConfiscationRelationBacklashes(NpcState target)
+    {
+        return _state.NpcRelations
+            .Where(r => r.FromNpcId == target.Id || (r.IsMutual && r.ToNpcId == target.Id))
+            .Select(r => BuildConfiscationRelationBacklash(r, target.Id))
+            .Where(r => r != null)
+            .Select(r => r!)
+            .OrderBy(r => r.FavorabilityDelta)
+            .ThenByDescending(r => r.Strength)
+            .ToList();
+    }
+
+    private ConfiscationRelationBacklash? BuildConfiscationRelationBacklash(NpcRelation relation, string targetId)
+    {
+        string affectedId = relation.FromNpcId == targetId ? relation.ToNpcId : relation.FromNpcId;
+        if (!_state.Npcs.TryGetValue(affectedId, out var affected) || !affected.IsActive || affected.IsHostile)
+        {
+            return null;
+        }
+
+        int favorabilityLoss = relation.Type switch
+        {
+            NpcRelationType.Kinship => 16,
+            NpcRelationType.FactionAlly => 12,
+            NpcRelationType.Patronage => 9,
+            NpcRelationType.TeacherStudent => 8,
+            NpcRelationType.SwornBond => 14,
+            NpcRelationType.Command => 10,
+            NpcRelationType.RegionalTie => 5,
+            NpcRelationType.Rivalry => -5,
+            NpcRelationType.Hostility => -8,
+            _ => 6
+        };
+
+        favorabilityLoss = (int)Math.Round(favorabilityLoss * Math.Clamp(relation.Strength, 20, 100) / 100.0);
+        int favorabilityDelta = -favorabilityLoss;
+        int powerDelta = 0;
+
+        if (relation.Type is NpcRelationType.Rivalry or NpcRelationType.Hostility)
+        {
+            favorabilityDelta = Math.Abs(favorabilityLoss);
+            powerDelta = 1;
+        }
+        else if (relation.Type is NpcRelationType.Kinship or NpcRelationType.FactionAlly or NpcRelationType.SwornBond or NpcRelationType.Command)
+        {
+            powerDelta = relation.Strength >= 80 ? 2 : 1;
+        }
+
+        return new ConfiscationRelationBacklash(
+            affected.Id,
+            affected.Name,
+            relation.Type,
+            relation.Strength,
+            favorabilityDelta,
+            powerDelta,
+            relation.Label);
     }
 
     private void ApplyConfiscationSettlement(ConfiscationSettlement settlement)
@@ -266,6 +350,17 @@ public partial class GameEngine
         {
             settlement.Target.Power = Math.Clamp(settlement.Target.Power - 40, 0, 100);
             settlement.Target.Favorability = Math.Clamp(settlement.Target.Favorability - 30, 0, 100);
+        }
+
+        foreach (var backlash in settlement.RelationBacklashes)
+        {
+            if (!_state.Npcs.TryGetValue(backlash.NpcId, out var affected) || !affected.IsActive)
+            {
+                continue;
+            }
+
+            affected.Favorability = Math.Clamp(affected.Favorability + backlash.FavorabilityDelta, 0, 100);
+            affected.Power = Math.Clamp(affected.Power + backlash.PowerDelta, 0, 100);
         }
     }
 }

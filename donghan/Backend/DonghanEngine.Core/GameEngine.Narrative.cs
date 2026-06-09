@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Linq;
+
 namespace DonghanEngine.Core;
 
 public partial class GameEngine
@@ -98,12 +101,25 @@ public partial class GameEngine
             : "";
 
         string splitLootText = $"[color=green]● 籍没分配：朝廷国库进账 +{settlement.AmountToTreasury} 万钱 (占70%)，天子西园私库进账 +{settlement.AmountToPrivate} 万钱 (占30%)[/color]";
+        string relationBacklashText = BuildConfiscationRelationBacklashText(settlement.RelationBacklashes);
 
         if (settlement.Outcome == ConfiscationOutcome.CliqueBacklash)
         {
-            return $"【🚨 朝堂风暴 · 强行抄家】\n\n宣政殿上，近臣[b]【{settlement.Framer.Name}】[/b]突然出列弹劾[b]【{settlement.Target.Name}】[/b]暗通外藩、意图谋反。\n\n由于其权势滔天，十常侍和大将军党羽人人自危，在宣政殿上发起疯狂弹劾抵制：\"陛下诬陷开国元勋，老臣不服！\"天子强令御林军缉拿，查封府邸。\n\n{corruptionLossText}{splitLootText}\n\n[color=red]● 朝堂反噬：政令招致官吏阶层大恐慌，朝廷皇权暴跌 -{settlement.FinalPowerLoss}[/color]\n[color=yellow]● 百姓拍手：铲除朝廷巨蠹，天下民心净变动 {(settlement.NetSupportDelta >= 0 ? "+" : "")}{settlement.NetSupportDelta}[/color]\n[color=green]● 【{settlement.Framer.Name}】执掌抄家：中饱漂没 +{settlement.FramerEmbezzled} 万钱，其朝堂权势稳步上升 +3[/color]";
+            return $"【🚨 朝堂风暴 · 强行抄家】\n\n宣政殿上，近臣[b]【{settlement.Framer.Name}】[/b]突然出列弹劾[b]【{settlement.Target.Name}】[/b]暗通外藩、意图谋反。\n\n由于其权势滔天，十常侍和大将军党羽人人自危，在宣政殿上发起疯狂弹劾抵制：\"陛下诬陷开国元勋，老臣不服！\"天子强令御林军缉拿，查封府邸。\n\n{corruptionLossText}{splitLootText}{relationBacklashText}\n\n[color=red]● 朝堂反噬：政令招致官吏阶层大恐慌，朝廷皇权变动 {settlement.ImperialPowerDelta}[/color]\n[color=yellow]● 百姓拍手：铲除朝廷巨蠹，天下民心净变动 {(settlement.NetSupportDelta >= 0 ? "+" : "")}{settlement.NetSupportDelta}[/color]\n[color=green]● 【{settlement.Framer.Name}】执掌抄家：中饱漂没 +{settlement.FramerEmbezzled} 万钱，其朝堂权势稳步上升 +3[/color]";
         }
 
-        return $"【🏛️ 帝王心术 · 诬陷籍没】\n\n大朝会上，近臣[b]【{settlement.Framer.Name}】[/b]心领神会，高声揭发[b]【{settlement.Target.Name}】[/b]结党营私、收受贿赂。陛下朱批定罪，御林军重甲封锁其府邸查抄！\n\n由于对方毫无党羽，满朝群臣噤若寒蝉。查抄所得大快人心！\n\n{corruptionLossText}{splitLootText}\n\n[color=green]● 皇权震慑：巧妙施展手腕清除异己，皇权提升 +8[/color]\n[color=green]● 惩奸除恶：惩治巨贪，天下百姓无不额手称庆，天下民心大幅攀升 +{settlement.NetSupportDelta}[/color]\n[color=green]● 钦差办案：经办官【{settlement.Framer.Name}】中饱漂没 +{settlement.FramerEmbezzled} 万钱，朝堂权势稳步上升 +3[/color]";
+        return $"【🏛️ 帝王心术 · 诬陷籍没】\n\n大朝会上，近臣[b]【{settlement.Framer.Name}】[/b]心领神会，高声揭发[b]【{settlement.Target.Name}】[/b]结党营私、收受贿赂。陛下朱批定罪，御林军重甲封锁其府邸查抄！\n\n由于对方毫无党羽，满朝群臣噤若寒蝉。查抄所得大快人心！\n\n{corruptionLossText}{splitLootText}{relationBacklashText}\n\n[color=green]● 皇权震慑：巧妙施展手腕清除异己，皇权变动 {(settlement.ImperialPowerDelta >= 0 ? "+" : "")}{settlement.ImperialPowerDelta}[/color]\n[color=green]● 惩奸除恶：惩治巨贪，天下百姓无不额手称庆，天下民心大幅攀升 +{settlement.NetSupportDelta}[/color]\n[color=green]● 钦差办案：经办官【{settlement.Framer.Name}】中饱漂没 +{settlement.FramerEmbezzled} 万钱，朝堂权势稳步上升 +3[/color]";
+    }
+
+    private static string BuildConfiscationRelationBacklashText(IReadOnlyList<ConfiscationRelationBacklash> backlashes)
+    {
+        if (backlashes.Count == 0)
+        {
+            return "\n";
+        }
+
+        var lines = backlashes.Select(backlash =>
+            $"[color=yellow]● 关系牵连：{backlash.NpcName}（{backlash.Label}）好感 {(backlash.FavorabilityDelta >= 0 ? "+" : "")}{backlash.FavorabilityDelta}，权势 {(backlash.PowerDelta >= 0 ? "+" : "")}{backlash.PowerDelta}[/color]");
+        return "\n" + string.Join("\n", lines) + "\n";
     }
 }

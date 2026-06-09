@@ -323,13 +323,28 @@ public partial class MainScene : Control
             ? $"入账预估：国库约 +{expectedTreasury} 万钱，西园私库约 +{expectedPrivate} 万钱（按现行籍没拆分）"
             : $"入账预估：国库约 +{expectedTreasury} 万钱，西园私库约 +{expectedPrivate} 万钱（即便朱批偏私，办案仍会有国税拆分）";
         string factionRisk = target.Power >= 60 ? "高：目标朝局分量炽盛，党羽可能反噬皇权" : "可控：目标朝局分量未至炽盛";
+        string relationRisk = BuildConfiscationRelationPreviewText(target.Id);
         string justiceRisk = target.Corruption < 35 ? "高：廉污风评尚廉，强行籍没恐伤民心" : target.Corruption >= 70 ? "低：巨蠹有赃，民间或称快" : "中：需罗织罪名坐实赃款";
         string wealthLine = rawWealth > 0 ? $"可籍赃银：{rawWealth} 万钱" : "可籍赃银：无；此时强行动手收益极低";
         string locationLine = _gameState?.CurrentLocation == "宣政殿"
             ? "礼法条件：已在宣政殿，可当朝宣旨"
             : "礼法条件：不在宣政殿，强行籍没将被御史驳回";
 
-        return $"{wealthLine}\n{destinationLine}\n党羽反噬：{factionRisk}\n清议风险：{justiceRisk}\n{locationLine}\n后果预判：目标权势与好感将大幅下挫；若朝中无近臣出列弹劾，圣旨可能流产并损失皇权。";
+        return $"{wealthLine}\n{destinationLine}\n党羽反噬：{factionRisk}\n关系牵连：{relationRisk}\n清议风险：{justiceRisk}\n{locationLine}\n后果预判：目标权势与好感将大幅下挫；若朝中无近臣出列弹劾，圣旨可能流产并损失皇权。";
+    }
+
+    private string BuildConfiscationRelationPreviewText(string targetId)
+    {
+        if (_gameEngine == null) return "暂无可见牵连。";
+
+        var backlashes = _gameEngine.PreviewConfiscationRelationBacklashes(targetId);
+        if (backlashes.Count == 0)
+        {
+            return "暂无可见牵连。";
+        }
+
+        return string.Join("；", backlashes.Take(3).Select(backlash =>
+            $"{backlash.NpcName}（{backlash.Label}，好感 {(backlash.FavorabilityDelta >= 0 ? "+" : "")}{backlash.FavorabilityDelta}，权势 {(backlash.PowerDelta >= 0 ? "+" : "")}{backlash.PowerDelta}）"));
     }
 
     // 执行抄家动作
