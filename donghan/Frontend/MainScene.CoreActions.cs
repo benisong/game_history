@@ -235,6 +235,7 @@ public partial class MainScene : Control
             Value = Math.Min(Math.Max(_gameState.WestGardenArmy.BasePayPerTurn + 100, 150), Math.Max(0, _gameState.PrivateTreasury)),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
+        StylePopupInput(amountSpin, PopupSkin.WestGarden);
         vBox.AddChild(amountSpin);
 
         var previewFrame = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
@@ -313,6 +314,7 @@ public partial class MainScene : Control
             Value = defaultTroops,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
+        StylePopupInput(troopSpin, PopupSkin.WestGarden);
         vBox.AddChild(troopSpin);
 
         var previewFrame = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
@@ -392,6 +394,7 @@ public partial class MainScene : Control
             Value = Math.Min(1000, Math.Max(100, _gameState.Treasury)),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
+        StylePopupInput(amountSpin, PopupSkin.Court);
         vBox.AddChild(amountSpin);
 
         var previewFrame = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };

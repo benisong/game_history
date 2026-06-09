@@ -310,6 +310,7 @@ public partial class MainScene : Control
 
         _courtInput = new LineEdit();
         _courtInput.PlaceholderText = "如：重赏何进，命其整军备寇";
+        StylePopupInput(_courtInput, PopupSkin.Court);
         _courtFreeEdictVBox.AddChild(_courtInput);
 
         var row = new HBoxContainer();

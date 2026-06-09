@@ -299,6 +299,7 @@ public partial class MainScene : Control
         AddOfficerOption(officerOption, "jian_shuo");
         AddOfficerOption(officerOption, "cao_cao");
         AddOfficerOption(officerOption, "zhang_rang");
+        StylePopupInput(officerOption, PopupSkin.WestGarden);
         _westGardenActionsVBox.AddChild(officerOption);
 
         var paySpin = new SpinBox
@@ -309,6 +310,7 @@ public partial class MainScene : Control
             Value = Math.Min(1000, Math.Max(0, _gameState.PrivateTreasury)),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
+        StylePopupInput(paySpin, PopupSkin.WestGarden);
         _westGardenActionsVBox.AddChild(paySpin);
 
         var drillPreview = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
@@ -338,6 +340,7 @@ public partial class MainScene : Control
             Editable = capacity > 0,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
+        StylePopupInput(troopSpin, PopupSkin.WestGarden);
         _westGardenActionsVBox.AddChild(troopSpin);
 
         var recruitPreview = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };

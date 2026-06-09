@@ -172,6 +172,7 @@ public partial class MainScene : Control
             Value = Math.Min(3000, Math.Max(1000, _gameState.WestGardenArmy.Size)),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
+        StylePopupInput(troopSpin, PopupSkin.Intel);
         troopBox.AddChild(troopSpin);
         var troopUnit = new Label { Text = "人" };
         StylePopupBodyText(troopUnit, PopupSkin.Intel);
@@ -257,6 +258,10 @@ public partial class MainScene : Control
         var chkPersuade = new CheckBox { Text = "说服", ButtonPressed = true };
         var chkDisasterRelief = new CheckBox { Text = "赈灾" };
         var chkPunish = new CheckBox { Text = "惩治" };
+        StylePopupCheckBox(chkSowDiscord, PopupSkin.Intel);
+        StylePopupCheckBox(chkPersuade, PopupSkin.Intel);
+        StylePopupCheckBox(chkDisasterRelief, PopupSkin.Intel);
+        StylePopupCheckBox(chkPunish, PopupSkin.Intel);
         strategyGrid.AddChild(chkSowDiscord);
         strategyGrid.AddChild(chkPersuade);
         strategyGrid.AddChild(chkDisasterRelief);
@@ -276,6 +281,7 @@ public partial class MainScene : Control
             Value = 500,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
+        StylePopupInput(reliefSpin, PopupSkin.Intel);
         reliefBox.AddChild(reliefSpin);
         var reliefUnit = new Label { Text = "万" };
         StylePopupBodyText(reliefUnit, PopupSkin.Intel);

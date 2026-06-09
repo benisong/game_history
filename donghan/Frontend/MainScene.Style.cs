@@ -312,6 +312,72 @@ public partial class MainScene : Control
         };
     }
 
+    private static void StylePopupInput(Control? control, PopupSkin skin)
+    {
+        if (control == null) return;
+
+        control.MouseFilter = Control.MouseFilterEnum.Stop;
+        control.AddThemeFontSizeOverride("font_size", 15);
+        control.AddThemeColorOverride("font_color", GetPopupBodyColor(skin));
+        control.AddThemeColorOverride("font_hover_color", GetPopupBodyColor(skin).Lightened(0.18f));
+        control.AddThemeColorOverride("font_focus_color", GetPopupBodyColor(skin).Lightened(0.24f));
+        control.AddThemeColorOverride("font_disabled_color", GetPopupBodyColor(skin).Darkened(0.42f));
+        control.AddThemeColorOverride("caret_color", GetPopupTitleColor(skin));
+        control.AddThemeColorOverride("selection_color", GetPopupTitleColor(skin).Darkened(0.20f));
+        control.AddThemeStyleboxOverride("normal", CreatePopupInputStyle(skin, false, false));
+        control.AddThemeStyleboxOverride("hover", CreatePopupInputStyle(skin, false, false));
+        control.AddThemeStyleboxOverride("focus", CreatePopupInputStyle(skin, true, false));
+        control.AddThemeStyleboxOverride("read_only", CreatePopupInputStyle(skin, false, true));
+        control.AddThemeStyleboxOverride("disabled", CreatePopupInputStyle(skin, false, true));
+    }
+
+    private static void StylePopupCheckBox(CheckBox? checkBox, PopupSkin skin)
+    {
+        if (checkBox == null) return;
+
+        checkBox.MouseFilter = Control.MouseFilterEnum.Stop;
+        checkBox.AddThemeFontSizeOverride("font_size", 15);
+        checkBox.AddThemeColorOverride("font_color", GetPopupBodyColor(skin));
+        checkBox.AddThemeColorOverride("font_hover_color", GetPopupBodyColor(skin).Lightened(0.18f));
+        checkBox.AddThemeColorOverride("font_pressed_color", GetPopupTitleColor(skin));
+        checkBox.AddThemeColorOverride("font_focus_color", GetPopupTitleColor(skin));
+        checkBox.AddThemeColorOverride("font_disabled_color", GetPopupBodyColor(skin).Darkened(0.42f));
+    }
+
+    private static StyleBoxFlat CreatePopupInputStyle(PopupSkin skin, bool focused, bool disabled)
+    {
+        var style = new StyleBoxFlat();
+        Color bg = skin switch
+        {
+            PopupSkin.Intel => new Color(0.760f, 0.650f, 0.430f, 1.0f),
+            PopupSkin.Document => new Color(0.700f, 0.585f, 0.365f, 1.0f),
+            PopupSkin.WestGarden => new Color(0.095f, 0.080f, 0.056f, 1.0f),
+            PopupSkin.Warning => new Color(0.120f, 0.050f, 0.038f, 1.0f),
+            _ => new Color(0.105f, 0.040f, 0.028f, 1.0f)
+        };
+        if (focused) bg = bg.Lightened(0.08f);
+        if (disabled) bg = bg.Darkened(0.28f);
+        style.BgColor = bg;
+        style.BorderColor = focused ? GetPopupTitleColor(skin) : skin switch
+        {
+            PopupSkin.Intel => new Color(0.42f, 0.24f, 0.10f, 1.0f),
+            PopupSkin.Document => new Color(0.34f, 0.18f, 0.08f, 1.0f),
+            PopupSkin.WestGarden => new Color(0.48f, 0.38f, 0.20f, 1.0f),
+            PopupSkin.Warning => new Color(0.62f, 0.14f, 0.09f, 1.0f),
+            _ => new Color(0.58f, 0.34f, 0.10f, 1.0f)
+        };
+        style.SetBorderWidthAll(focused ? 2 : 1);
+        style.CornerRadiusTopLeft = 6;
+        style.CornerRadiusTopRight = 6;
+        style.CornerRadiusBottomLeft = 6;
+        style.CornerRadiusBottomRight = 6;
+        style.ContentMarginLeft = 10;
+        style.ContentMarginRight = 10;
+        style.ContentMarginTop = 7;
+        style.ContentMarginBottom = 7;
+        return style;
+    }
+
     private static void SetFullRect(Control control)
     {
         control.SetAnchorsPreset(Control.LayoutPreset.FullRect);
