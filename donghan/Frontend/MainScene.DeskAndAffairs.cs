@@ -13,7 +13,9 @@ public partial class MainScene : Control
         var centerPanel = GetNodeOrNull<Panel>("CenterPanel");
         if (centerPanel == null) return;
 
-        // 极简主界面：只保留时间、卷轴/马车入口与正文
+        // 主界面第一版视觉方案：顶部只放简要时间；主体由四张长方形入口卡片横向占据。
+        EnsureMainSceneImageBackground(centerPanel);
+
         _mainTimeLabel = new Label();
         _mainTimeLabel.Name = "MainTimeLabel";
         _mainTimeLabel.Text = FormatTimeLabel();
@@ -22,11 +24,12 @@ public partial class MainScene : Control
         _mainTimeLabel.AnchorTop = 0.0f;
         _mainTimeLabel.AnchorRight = 0.5f;
         _mainTimeLabel.AnchorBottom = 0.0f;
-        _mainTimeLabel.OffsetLeft = -240;
-        _mainTimeLabel.OffsetTop = 16;
-        _mainTimeLabel.OffsetRight = 240;
-        _mainTimeLabel.OffsetBottom = 48;
-        _mainTimeLabel.AddThemeFontSizeOverride("font_size", 22);
+        _mainTimeLabel.OffsetLeft = -320;
+        _mainTimeLabel.OffsetTop = 18;
+        _mainTimeLabel.OffsetRight = 320;
+        _mainTimeLabel.OffsetBottom = 54;
+        _mainTimeLabel.AddThemeFontSizeOverride("font_size", 24);
+        _mainTimeLabel.AddThemeColorOverride("font_color", new Color(0.92f, 0.78f, 0.45f, 1.0f));
         centerPanel.AddChild(_mainTimeLabel);
         centerPanel.MoveChild(_mainTimeLabel, 0);
 
@@ -36,42 +39,149 @@ public partial class MainScene : Control
         _deskContainer.AnchorTop = 0.0f;
         _deskContainer.AnchorRight = 0.5f;
         _deskContainer.AnchorBottom = 0.0f;
-        _deskContainer.OffsetLeft = -360;
-        _deskContainer.OffsetTop = 62;
-        _deskContainer.OffsetRight = 360;
-        _deskContainer.OffsetBottom = 118;
+        _deskContainer.OffsetLeft = -620;
+        _deskContainer.OffsetTop = 76;
+        _deskContainer.OffsetRight = 620;
+        _deskContainer.OffsetBottom = 560;
         _deskContainer.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
         _deskContainer.Alignment = BoxContainer.AlignmentMode.Center;
-        _deskContainer.CustomMinimumSize = new Vector2(720, 100);
+        _deskContainer.CustomMinimumSize = new Vector2(1240, 470);
         _deskContainer.AddThemeConstantOverride("separation", 10);
-        
         centerPanel.AddChild(_deskContainer);
         centerPanel.MoveChild(_deskContainer, 0);
 
-        // 极简主界面：上方只保留卷轴/马车入口，正文尽量展开
         if (_storyOutput != null)
         {
-            _storyOutput.OffsetTop = 150;
+            _storyOutput.OffsetLeft = 70;
+            _storyOutput.OffsetTop = 585;
+            _storyOutput.OffsetRight = -70;
+            _storyOutput.OffsetBottom = -28;
         }
 
         var deskRow = new HBoxContainer();
         deskRow.Alignment = BoxContainer.AlignmentMode.Center;
         deskRow.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        deskRow.AddThemeConstantOverride("separation", 18);
+        deskRow.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        deskRow.AddThemeConstantOverride("separation", 28);
         _deskContainer.AddChild(deskRow);
 
-        _btnCourtSeal = CreateDeskButton("📜 朝会", OnCourtSealPressed);
-        _btnIntelToken = CreateDeskButton("📜 情报", OnIntelTokenPressed);
-        _btnWestGardenPalace = CreateDeskButton("🏯 西园", OnWestGardenPressed);
-        _btnTravelCarriage = CreateCarriageButton("🐎 起驾", () =>
-        {
-            if (_travelOverlayPanel != null) _windowManager.PushWindow(_travelOverlayPanel);
-        });
+        _btnCourtSeal = CreateMainEntryCard(
+            "朝会",
+            "临朝听政",
+            "res://Assets/UI/cards/main_court_card.png",
+            OnCourtSealPressed);
+        _btnIntelToken = CreateMainEntryCard(
+            "黄门密札",
+            "天下情报",
+            "res://Assets/UI/cards/main_intel_card.png",
+            OnIntelTokenPressed);
+        _btnWestGardenPalace = CreateMainEntryCard(
+            "西园",
+            "私军密署",
+            "res://Assets/UI/cards/main_west_garden_card.png",
+            OnWestGardenPressed);
+        _btnTravelCarriage = CreateMainEntryCard(
+            "起驾",
+            "巡幸移驾",
+            "res://Assets/UI/cards/main_travel_card.png",
+            () =>
+            {
+                if (_travelOverlayPanel != null) _windowManager.PushWindow(_travelOverlayPanel);
+            });
 
         deskRow.AddChild(_btnCourtSeal);
         deskRow.AddChild(_btnIntelToken);
         deskRow.AddChild(_btnWestGardenPalace);
         deskRow.AddChild(_btnTravelCarriage);
+    }
+
+    private Button CreateMainEntryCard(string title, string subtitle, string texturePath, Action pressedCallback)
+    {
+        var btn = new Button();
+        btn.Text = string.Empty;
+        btn.CustomMinimumSize = new Vector2(270, 405);
+        btn.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        btn.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        btn.MouseFilter = Control.MouseFilterEnum.Stop;
+        btn.AddThemeStyleboxOverride("normal", CreateMainEntryCardStyle(new Color(0.10f, 0.055f, 0.035f, 1.0f), 2));
+        btn.AddThemeStyleboxOverride("hover", CreateMainEntryCardStyle(new Color(0.16f, 0.095f, 0.045f, 1.0f), 4));
+        btn.AddThemeStyleboxOverride("pressed", CreateMainEntryCardStyle(new Color(0.055f, 0.030f, 0.020f, 1.0f), 3));
+        btn.Pressed += pressedCallback;
+
+        var art = new TextureRect();
+        art.Name = "CardArt";
+        art.Texture = GD.Load<Texture2D>(texturePath);
+        art.MouseFilter = Control.MouseFilterEnum.Ignore;
+        art.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        art.OffsetLeft = 8;
+        art.OffsetTop = 8;
+        art.OffsetRight = -8;
+        art.OffsetBottom = -8;
+        art.ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize;
+        art.StretchMode = TextureRect.StretchModeEnum.Scale;
+        btn.AddChild(art);
+
+        var shade = new ColorRect();
+        shade.Name = "BottomShade";
+        shade.Color = new Color(0.0f, 0.0f, 0.0f, 0.62f);
+        shade.MouseFilter = Control.MouseFilterEnum.Ignore;
+        shade.AnchorLeft = 0.0f;
+        shade.AnchorTop = 1.0f;
+        shade.AnchorRight = 1.0f;
+        shade.AnchorBottom = 1.0f;
+        shade.OffsetLeft = 12;
+        shade.OffsetTop = -86;
+        shade.OffsetRight = -12;
+        shade.OffsetBottom = -14;
+        btn.AddChild(shade);
+
+        var labelBox = new VBoxContainer();
+        labelBox.Name = "CardLabelBox";
+        labelBox.MouseFilter = Control.MouseFilterEnum.Ignore;
+        labelBox.AnchorLeft = 0.0f;
+        labelBox.AnchorTop = 1.0f;
+        labelBox.AnchorRight = 1.0f;
+        labelBox.AnchorBottom = 1.0f;
+        labelBox.OffsetLeft = 14;
+        labelBox.OffsetTop = -82;
+        labelBox.OffsetRight = -14;
+        labelBox.OffsetBottom = -16;
+        labelBox.Alignment = BoxContainer.AlignmentMode.Center;
+        labelBox.AddThemeConstantOverride("separation", 0);
+        btn.AddChild(labelBox);
+
+        var titleLabel = new Label();
+        titleLabel.Text = title;
+        titleLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        titleLabel.AddThemeFontSizeOverride("font_size", title.Length >= 4 ? 25 : 30);
+        titleLabel.AddThemeColorOverride("font_color", new Color(0.96f, 0.84f, 0.52f, 1.0f));
+        labelBox.AddChild(titleLabel);
+
+        var subtitleLabel = new Label();
+        subtitleLabel.Text = subtitle;
+        subtitleLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        subtitleLabel.AddThemeFontSizeOverride("font_size", 15);
+        subtitleLabel.AddThemeColorOverride("font_color", new Color(0.72f, 0.58f, 0.34f, 1.0f));
+        labelBox.AddChild(subtitleLabel);
+
+        return btn;
+    }
+
+    private static StyleBoxFlat CreateMainEntryCardStyle(Color bgColor, int borderWidth)
+    {
+        var style = new StyleBoxFlat();
+        style.BgColor = bgColor;
+        style.BorderColor = new Color(0.83f, 0.60f, 0.20f, 1.0f);
+        style.SetBorderWidthAll(borderWidth);
+        style.CornerRadiusTopLeft = 18;
+        style.CornerRadiusTopRight = 18;
+        style.CornerRadiusBottomLeft = 18;
+        style.CornerRadiusBottomRight = 18;
+        style.ContentMarginLeft = 8;
+        style.ContentMarginRight = 8;
+        style.ContentMarginTop = 8;
+        style.ContentMarginBottom = 8;
+        return style;
     }
 
     private Button CreateDeskButton(string text, Action pressedCallback)

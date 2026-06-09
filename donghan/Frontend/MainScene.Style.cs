@@ -34,6 +34,31 @@ public partial class MainScene : Control
         MoveChild(background, 0);
     }
 
+    private static void EnsureMainSceneImageBackground(Panel centerPanel)
+    {
+        if (centerPanel.GetNodeOrNull<TextureRect>("MainLacquerBackground") != null) return;
+
+        var texture = new TextureRect();
+        texture.Name = "MainLacquerBackground";
+        texture.Texture = GD.Load<Texture2D>("res://Assets/UI/backgrounds/main_lacquer_bg.png");
+        texture.MouseFilter = Control.MouseFilterEnum.Ignore;
+        texture.ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize;
+        texture.StretchMode = TextureRect.StretchModeEnum.Scale;
+        texture.ZIndex = -20;
+        SetFullRect(texture);
+        centerPanel.AddChild(texture);
+        centerPanel.MoveChild(texture, 0);
+
+        var darkWash = new ColorRect();
+        darkWash.Name = "MainBackgroundDarkWash";
+        darkWash.Color = new Color(0.0f, 0.0f, 0.0f, 0.34f);
+        darkWash.MouseFilter = Control.MouseFilterEnum.Ignore;
+        darkWash.ZIndex = -19;
+        SetFullRect(darkWash);
+        centerPanel.AddChild(darkWash);
+        centerPanel.MoveChild(darkWash, 1);
+    }
+
     private static void ApplyOpaquePanelTheme(Node root)
     {
         if (root is Panel panel)
