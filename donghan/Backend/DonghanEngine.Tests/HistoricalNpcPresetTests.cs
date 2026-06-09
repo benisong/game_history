@@ -12,13 +12,20 @@ public class HistoricalNpcPresetTests
     {
         var state = new GameState();
 
-        Assert.Equal(17, state.Npcs.Count);
+        Assert.Equal(27, state.Npcs.Count);
         Assert.Contains("yuan_shao", state.Npcs.Keys);
         Assert.Contains("huangfu_song", state.Npcs.Keys);
         Assert.Contains("zhao_zhong", state.Npcs.Keys);
+        Assert.Contains("yuan_wei", state.Npcs.Keys);
+        Assert.Contains("qiao_xuan", state.Npcs.Keys);
+        Assert.Contains("xia_yun", state.Npcs.Keys);
+        Assert.Contains("han_kui", state.Npcs.Keys);
         Assert.DoesNotContain("dong_zhuo", state.Npcs.Keys);
         Assert.DoesNotContain("liu_bei", state.Npcs.Keys);
+        Assert.DoesNotContain("guo_jia", state.Npcs.Keys);
+        Assert.DoesNotContain("qiao_mao", state.Npcs.Keys);
         Assert.DoesNotContain("zhang_jue", state.Npcs.Keys);
+        Assert.DoesNotContain("zhang_yan", state.Npcs.Keys);
         Assert.All(state.Npcs.Values, npc => Assert.False(npc.IsHostile));
     }
 
@@ -28,7 +35,7 @@ public class HistoricalNpcPresetTests
         var presets = HistoricalNpcPresets.All;
         var ids = presets.Select(n => n.Id).ToList();
 
-        Assert.True(presets.Count >= 32, $"Expected at least 32 historical NPC presets, got {presets.Count}");
+        Assert.True(presets.Count >= 70, $"Expected at least 70 historical NPC presets, got {presets.Count}");
         Assert.Equal(ids.Count, ids.Distinct().Count());
         Assert.All(presets, npc =>
         {
@@ -41,6 +48,23 @@ public class HistoricalNpcPresetTests
             Assert.InRange(npc.Charisma, 0, 100);
             Assert.InRange(npc.Ambition, 0, 100);
         });
+    }
+
+
+    [Fact]
+    public void Test_SecondWavePresets_KeepOpeningAndColdPoolSeparated()
+    {
+        var presets = HistoricalNpcPresets.All.ToDictionary(n => n.Id);
+
+        Assert.Equal("洛阳朝堂", presets["yuan_wei"].InitialLocation);
+        Assert.Equal("开局", presets["yuan_wei"].EntryCondition);
+        Assert.Contains(TraitNames.MenFaShiJia, presets["yuan_wei"].Traits);
+        Assert.Contains(TraitNames.QingZhengLianJie, presets["qiao_xuan"].Traits);
+        Assert.Equal("洛阳宫中", presets["xia_yun"].InitialLocation);
+        Assert.Equal("事件触发", presets["qiao_mao"].EntryCondition);
+        Assert.Equal("年月触发", presets["guo_jia"].EntryCondition);
+        Assert.True(presets["zhang_yan"].IsHostile);
+        Assert.True(presets["beigong_boyu"].IsHostile);
     }
 
     [Fact]

@@ -128,7 +128,9 @@ public class GameState
         foreach (var id in new[]
         {
             "yuan_shao", "yuan_shu", "wang_yun", "lu_zhi", "huangfu_song", "zhu_jun",
-            "zhao_zhong", "duan_gui", "bi_lan", "he_miao", "yang_biao", "ma_ridi", "cai_yong"
+            "zhao_zhong", "duan_gui", "bi_lan", "he_miao", "yang_biao", "ma_ridi", "cai_yong",
+            "yuan_wei", "zhang_wen", "cui_lie", "qiao_xuan", "xun_shuang", "chen_song",
+            "xia_yun", "guo_sheng", "song_dian", "han_kui"
         })
         {
             if (HistoricalNpcPresets.All.Find(n => n.Id == id) is { } preset)
