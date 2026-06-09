@@ -11,6 +11,7 @@ public partial class MainScene : Control
         Court,
         Intel,
         WestGarden,
+        Travel,
         Document,
         Warning
     }
@@ -178,6 +179,7 @@ public partial class MainScene : Control
             PopupSkin.Court => new Color(0.070f, 0.030f, 0.020f, 1.0f),
             PopupSkin.Intel => new Color(0.055f, 0.043f, 0.030f, 1.0f),
             PopupSkin.WestGarden => new Color(0.070f, 0.060f, 0.044f, 1.0f),
+            PopupSkin.Travel => new Color(0.060f, 0.036f, 0.022f, 1.0f),
             PopupSkin.Warning => new Color(0.100f, 0.045f, 0.035f, 1.0f),
             PopupSkin.Document => new Color(0.520f, 0.430f, 0.270f, 1.0f),
             _ => new Color(0.100f, 0.095f, 0.085f, 1.0f)
@@ -187,6 +189,7 @@ public partial class MainScene : Control
             PopupSkin.Court => new Color(0.70f, 0.46f, 0.11f, 1.0f),
             PopupSkin.Intel => new Color(0.58f, 0.42f, 0.22f, 1.0f),
             PopupSkin.WestGarden => new Color(0.54f, 0.42f, 0.20f, 1.0f),
+            PopupSkin.Travel => new Color(0.86f, 0.58f, 0.18f, 1.0f),
             PopupSkin.Warning => new Color(0.72f, 0.16f, 0.10f, 1.0f),
             PopupSkin.Document => new Color(0.34f, 0.18f, 0.08f, 1.0f),
             _ => new Color(0.84f, 0.67f, 0.12f, 1.0f)
@@ -213,6 +216,7 @@ public partial class MainScene : Control
             PopupSkin.Court => new Color(0.120f, 0.055f, 0.030f, 1.0f),
             PopupSkin.Intel => new Color(0.690f, 0.590f, 0.390f, 1.0f),
             PopupSkin.WestGarden => new Color(0.125f, 0.105f, 0.075f, 1.0f),
+            PopupSkin.Travel => new Color(0.125f, 0.070f, 0.036f, 1.0f),
             PopupSkin.Warning => new Color(0.160f, 0.070f, 0.050f, 1.0f),
             PopupSkin.Document => new Color(0.760f, 0.650f, 0.430f, 1.0f),
             _ => new Color(0.110f, 0.085f, 0.060f, 1.0f)
@@ -222,6 +226,7 @@ public partial class MainScene : Control
             PopupSkin.Court => new Color(0.62f, 0.38f, 0.10f, 1.0f),
             PopupSkin.Intel => new Color(0.46f, 0.27f, 0.13f, 1.0f),
             PopupSkin.WestGarden => new Color(0.48f, 0.38f, 0.22f, 1.0f),
+            PopupSkin.Travel => new Color(0.70f, 0.42f, 0.12f, 1.0f),
             PopupSkin.Warning => new Color(0.72f, 0.18f, 0.10f, 1.0f),
             PopupSkin.Document => new Color(0.34f, 0.18f, 0.08f, 1.0f),
             _ => new Color(0.58f, 0.43f, 0.14f, 1.0f)
@@ -273,6 +278,7 @@ public partial class MainScene : Control
         {
             PopupSkin.Intel => new Color(0.16f, 0.09f, 0.04f, 1.0f),
             PopupSkin.WestGarden => new Color(0.86f, 0.66f, 0.28f, 1.0f),
+            PopupSkin.Travel => new Color(0.98f, 0.76f, 0.30f, 1.0f),
             PopupSkin.Warning => new Color(0.95f, 0.35f, 0.20f, 1.0f),
             PopupSkin.Document => new Color(0.18f, 0.09f, 0.04f, 1.0f),
             _ => new Color(0.92f, 0.70f, 0.25f, 1.0f)
@@ -330,6 +336,7 @@ public partial class MainScene : Control
         {
             PopupSkin.Document => new Color(0.20f, 0.11f, 0.05f, 1.0f),
             PopupSkin.Intel => new Color(0.88f, 0.73f, 0.46f, 1.0f),
+            PopupSkin.Travel => new Color(0.90f, 0.74f, 0.48f, 1.0f),
             PopupSkin.WestGarden => new Color(0.82f, 0.74f, 0.58f, 1.0f),
             _ => new Color(0.86f, 0.74f, 0.50f, 1.0f)
         });
@@ -341,6 +348,7 @@ public partial class MainScene : Control
         {
             PopupSkin.Document => new Color(0.20f, 0.11f, 0.05f, 1.0f),
             PopupSkin.Intel => new Color(0.88f, 0.73f, 0.46f, 1.0f),
+            PopupSkin.Travel => new Color(0.90f, 0.74f, 0.48f, 1.0f),
             PopupSkin.WestGarden => new Color(0.82f, 0.74f, 0.58f, 1.0f),
             _ => new Color(0.86f, 0.74f, 0.50f, 1.0f)
         };
@@ -424,6 +432,7 @@ public partial class MainScene : Control
             PopupSkin.Intel => new Color(0.760f, 0.650f, 0.430f, 1.0f),
             PopupSkin.Document => new Color(0.700f, 0.585f, 0.365f, 1.0f),
             PopupSkin.WestGarden => new Color(0.095f, 0.080f, 0.056f, 1.0f),
+            PopupSkin.Travel => new Color(0.095f, 0.052f, 0.028f, 1.0f),
             PopupSkin.Warning => new Color(0.120f, 0.050f, 0.038f, 1.0f),
             _ => new Color(0.105f, 0.040f, 0.028f, 1.0f)
         };
@@ -435,6 +444,7 @@ public partial class MainScene : Control
             PopupSkin.Intel => new Color(0.42f, 0.24f, 0.10f, 1.0f),
             PopupSkin.Document => new Color(0.34f, 0.18f, 0.08f, 1.0f),
             PopupSkin.WestGarden => new Color(0.48f, 0.38f, 0.20f, 1.0f),
+            PopupSkin.Travel => new Color(0.70f, 0.42f, 0.12f, 1.0f),
             PopupSkin.Warning => new Color(0.62f, 0.14f, 0.09f, 1.0f),
             _ => new Color(0.58f, 0.34f, 0.10f, 1.0f)
         };
@@ -485,6 +495,7 @@ public partial class MainScene : Control
         {
             PopupSkin.Court => ActionButtonSkin.Court,
             PopupSkin.WestGarden => ActionButtonSkin.WestGarden,
+            PopupSkin.Travel => ActionButtonSkin.Travel,
             PopupSkin.Warning => ActionButtonSkin.Warning,
             _ => ActionButtonSkin.Document
         };

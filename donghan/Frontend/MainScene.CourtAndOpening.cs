@@ -20,7 +20,7 @@ public partial class MainScene : Control
         var panel = new Panel();
         panel.Name = "TravelChoicePopup";
         panel.Visible = false;
-        ConfigureCenteredPopupPanel(panel, PopupSkin.Warning, new Vector2(720, 470));
+        ConfigureCenteredPopupPanel(panel, PopupSkin.Travel, new Vector2(760, 490));
 
         var root = new VBoxContainer();
         SetFullRect(root);
@@ -32,14 +32,24 @@ public partial class MainScene : Control
         panel.AddChild(root);
 
         var title = new Label { Text = "龙辇巡幸 · 三处移驾" };
-        StylePopupTitle(title, PopupSkin.Warning);
+        StylePopupTitle(title, PopupSkin.Travel);
         root.AddChild(title);
+
+        var routeStrip = new Label
+        {
+            Text = "宣政殿  ━  温德殿  ━  西园精舍",
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        StyleColumnTitle(routeStrip, PopupSkin.Travel);
+        routeStrip.AddThemeFontSizeOverride("font_size", 16);
+        root.AddChild(routeStrip);
 
         var desc = new Label
         {
-            Text = "请陛下定夺今日驻跸之所。宣政殿总揽朝纲，温德殿调养龙体，西园精舍掌私库与新军。"
+            Text = "黄门执节，羽林夹道。请陛下定夺今日驻跸之所：临朝则百官肃立，入内则炉烟养神，幸西园则私库与新军皆待圣裁。",
+            HorizontalAlignment = HorizontalAlignment.Center
         };
-        StylePopupBodyText(desc, PopupSkin.Warning);
+        StylePopupBodyText(desc, PopupSkin.Travel);
         root.AddChild(desc);
 
         var cards = new HBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, SizeFlagsVertical = Control.SizeFlags.ExpandFill };
@@ -48,23 +58,23 @@ public partial class MainScene : Control
 
         AddTravelDestinationCard(cards,
             "宣政殿",
-            "朝会理政",
-            "批阅天下奏折、召见群臣、处置赈灾与地方任免。",
-            "适合：总揽大权、稳定朝局",
+            "玉阶临朝",
+            "王座居中，群臣趋伏；适合批阅天下奏折、召见重臣、处置赈灾与地方任免。",
+            "权力效果：总揽大权、稳定朝局",
             "起驾宣政殿");
 
         AddTravelDestinationCard(cards,
             "后宫",
-            "温德殿",
-            "暂离朝争，调养龙体；后续可扩展妃嫔、皇嗣与内廷事件。",
-            "适合：恢复健康、缓冲政务压力",
+            "温德炉烟",
+            "朱帘低垂，博山炉紫烟绕殿；暂离朝争，调养龙体，缓冲政务压力。",
+            "内廷效果：恢复健康、蓄养精神",
             "巡幸温德殿");
 
         AddTravelDestinationCard(cards,
             "西园",
-            "西园精舍",
-            "避开外朝耳目，掌控私库、新军、阅兵发饷与募兵补军。",
-            "适合：强军、蓄财、重建皇权根基",
+            "西园秘营",
+            "外朝目光止于宫门；私库、新军、阅兵发饷与募兵补军，皆可在此秘密铺陈。",
+            "根基效果：强军、蓄财、重建皇权",
             "起驾西园");
 
         var cancel = new Button
@@ -83,7 +93,7 @@ public partial class MainScene : Control
     private void AddTravelDestinationCard(HBoxContainer parent, string destination, string heading, string body, string usage, string buttonText)
     {
         var card = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, SizeFlagsVertical = Control.SizeFlags.ExpandFill };
-        card.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Warning));
+        card.AddThemeStyleboxOverride("panel", CreateTravelDestinationCardStyle(destination));
         parent.AddChild(card);
 
         var box = new VBoxContainer();
@@ -96,18 +106,27 @@ public partial class MainScene : Control
         card.AddChild(box);
 
         var title = new Label { Text = heading };
-        StyleColumnTitle(title, PopupSkin.Warning);
+        StyleColumnTitle(title, PopupSkin.Travel);
         box.AddChild(title);
+
+        var sigil = new Label
+        {
+            Text = GetTravelDestinationSigil(destination),
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        sigil.AddThemeFontSizeOverride("font_size", 22);
+        sigil.AddThemeColorOverride("font_color", GetPopupTitleColor(PopupSkin.Travel).Lightened(0.10f));
+        box.AddChild(sigil);
 
         var bodyLabel = new Label
         {
             Text = body,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill
         };
-        StylePopupBodyText(bodyLabel, PopupSkin.Warning);
+        StylePopupBodyText(bodyLabel, PopupSkin.Travel);
         box.AddChild(bodyLabel);
 
-        var usageLabel = CreateActionPreviewLabel(PopupSkin.Warning);
+        var usageLabel = CreateActionPreviewLabel(PopupSkin.Travel);
         usageLabel.Text = usage;
         box.AddChild(usageLabel);
 
@@ -120,6 +139,40 @@ public partial class MainScene : Control
         StyleSceneActionButton(go, ActionButtonSkin.Travel);
         go.Pressed += () => DoTravel(destination);
         box.AddChild(go);
+    }
+
+    private static string GetTravelDestinationSigil(string destination)
+    {
+        return destination switch
+        {
+            "宣政殿" => "▰ 王座 ▰",
+            "后宫" => "✦ 炉烟 ✦",
+            "西园" => "◆ 羽林 ◆",
+            _ => "◇ 龙辇 ◇"
+        };
+    }
+
+    private static StyleBoxFlat CreateTravelDestinationCardStyle(string destination)
+    {
+        var style = CreatePopupInnerPanelStyle(PopupSkin.Travel);
+        style.BgColor = destination switch
+        {
+            "宣政殿" => new Color(0.150f, 0.060f, 0.038f, 1.0f),
+            "后宫" => new Color(0.120f, 0.066f, 0.056f, 1.0f),
+            "西园" => new Color(0.094f, 0.080f, 0.052f, 1.0f),
+            _ => style.BgColor
+        };
+        style.BorderColor = destination switch
+        {
+            "宣政殿" => new Color(0.84f, 0.52f, 0.16f, 1.0f),
+            "后宫" => new Color(0.72f, 0.38f, 0.28f, 1.0f),
+            "西园" => new Color(0.58f, 0.46f, 0.22f, 1.0f),
+            _ => style.BorderColor
+        };
+        style.SetBorderWidthAll(2);
+        style.ShadowColor = new Color(0.0f, 0.0f, 0.0f, 0.42f);
+        style.ShadowSize = 8;
+        return style;
     }
 
     private void ShowOpeningOverlay()
