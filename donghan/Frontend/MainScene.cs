@@ -126,6 +126,7 @@ public partial class MainScene : Control
         _ministerFavorabilityLabel = GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterFavor");
         _ministerPowerLabel = GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterPower");
         ConfigureMinisterPanelLayout();
+        ApplySceneActionButtonStyles();
 
         InitializeEmperorsDesk();
 

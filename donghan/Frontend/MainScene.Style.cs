@@ -15,6 +15,16 @@ public partial class MainScene : Control
         Warning
     }
 
+    private enum ActionButtonSkin
+    {
+        Court,
+        WestGarden,
+        Harem,
+        Travel,
+        Warning,
+        Document
+    }
+
     private static void ForceExclusiveFullscreen()
     {
         DisplayServer.WindowSetMode(DisplayServer.WindowMode.ExclusiveFullscreen);
@@ -352,6 +362,92 @@ public partial class MainScene : Control
                 }
             }
         }
+    }
+
+
+    private static void StyleSceneActionButton(Button? button, ActionButtonSkin skin)
+    {
+        if (button == null) return;
+
+        button.CustomMinimumSize = new Vector2(0, 42);
+        button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        button.MouseFilter = Control.MouseFilterEnum.Stop;
+        button.AddThemeFontSizeOverride("font_size", 15);
+        button.AddThemeColorOverride("font_color", GetActionButtonTextColor(skin));
+        button.AddThemeColorOverride("font_hover_color", new Color(1.0f, 0.86f, 0.48f, 1.0f));
+        button.AddThemeColorOverride("font_pressed_color", new Color(0.98f, 0.72f, 0.24f, 1.0f));
+        button.AddThemeStyleboxOverride("normal", CreateActionButtonStyle(skin, false, false));
+        button.AddThemeStyleboxOverride("hover", CreateActionButtonStyle(skin, true, false));
+        button.AddThemeStyleboxOverride("pressed", CreateActionButtonStyle(skin, false, true));
+        button.AddThemeStyleboxOverride("focus", new StyleBoxEmpty());
+    }
+
+    private static Color GetActionButtonTextColor(ActionButtonSkin skin)
+    {
+        return skin switch
+        {
+            ActionButtonSkin.Court => new Color(0.94f, 0.75f, 0.36f, 1.0f),
+            ActionButtonSkin.WestGarden => new Color(0.86f, 0.70f, 0.42f, 1.0f),
+            ActionButtonSkin.Harem => new Color(0.92f, 0.74f, 0.62f, 1.0f),
+            ActionButtonSkin.Travel => new Color(0.96f, 0.84f, 0.46f, 1.0f),
+            ActionButtonSkin.Warning => new Color(0.95f, 0.45f, 0.30f, 1.0f),
+            ActionButtonSkin.Document => new Color(0.24f, 0.12f, 0.05f, 1.0f),
+            _ => new Color(0.92f, 0.74f, 0.42f, 1.0f)
+        };
+    }
+
+    private static StyleBoxFlat CreateActionButtonStyle(ActionButtonSkin skin, bool hover, bool pressed)
+    {
+        var style = new StyleBoxFlat();
+        Color bg = skin switch
+        {
+            ActionButtonSkin.Court => new Color(0.105f, 0.034f, 0.024f, 0.96f),
+            ActionButtonSkin.WestGarden => new Color(0.092f, 0.074f, 0.050f, 0.96f),
+            ActionButtonSkin.Harem => new Color(0.115f, 0.060f, 0.055f, 0.96f),
+            ActionButtonSkin.Travel => new Color(0.090f, 0.052f, 0.030f, 0.98f),
+            ActionButtonSkin.Warning => new Color(0.130f, 0.045f, 0.034f, 0.98f),
+            ActionButtonSkin.Document => new Color(0.610f, 0.500f, 0.315f, 0.98f),
+            _ => new Color(0.090f, 0.060f, 0.040f, 0.96f)
+        };
+        if (hover) bg = bg.Lightened(0.12f);
+        if (pressed) bg = bg.Darkened(0.18f);
+        style.BgColor = bg;
+        style.BorderColor = skin switch
+        {
+            ActionButtonSkin.Court => new Color(0.64f, 0.36f, 0.10f, 1.0f),
+            ActionButtonSkin.WestGarden => new Color(0.52f, 0.40f, 0.21f, 1.0f),
+            ActionButtonSkin.Harem => new Color(0.58f, 0.30f, 0.24f, 1.0f),
+            ActionButtonSkin.Travel => new Color(0.74f, 0.50f, 0.16f, 1.0f),
+            ActionButtonSkin.Warning => new Color(0.72f, 0.16f, 0.10f, 1.0f),
+            ActionButtonSkin.Document => new Color(0.37f, 0.20f, 0.09f, 1.0f),
+            _ => new Color(0.55f, 0.36f, 0.12f, 1.0f)
+        };
+        style.SetBorderWidthAll(1);
+        if (hover) style.SetBorderWidthAll(2);
+        style.CornerRadiusTopLeft = 6;
+        style.CornerRadiusTopRight = 6;
+        style.CornerRadiusBottomLeft = 6;
+        style.CornerRadiusBottomRight = 6;
+        style.ContentMarginLeft = 12;
+        style.ContentMarginRight = 12;
+        style.ContentMarginTop = 8;
+        style.ContentMarginBottom = 8;
+        style.ShadowColor = new Color(0, 0, 0, hover ? 0.42f : 0.25f);
+        style.ShadowSize = hover ? 6 : 3;
+        return style;
+    }
+
+    private void ApplySceneActionButtonStyles()
+    {
+        StyleSceneActionButton(GetNodeOrNull<Button>("RightPanel/Ministers/DisasterReliefButton"), ActionButtonSkin.Court);
+        StyleSceneActionButton(_sellOfficeButton, ActionButtonSkin.WestGarden);
+        StyleSceneActionButton(_drillArmyButton, ActionButtonSkin.WestGarden);
+        StyleSceneActionButton(_recruitArmyButton, ActionButtonSkin.WestGarden);
+        StyleSceneActionButton(_haremRestButton, ActionButtonSkin.Harem);
+        StyleSceneActionButton(_travelButton, ActionButtonSkin.Travel);
+
+        StyleSceneActionButton(GetNodeOrNull<Button>("MinisterOverlayPanel/VBox/HBox/ConfiscateTreasuryBtn"), ActionButtonSkin.Warning);
+        StyleSceneActionButton(GetNodeOrNull<Button>("MinisterOverlayPanel/VBox/HBox/ConfiscatePrivateBtn"), ActionButtonSkin.Warning);
     }
 
     private static void ConfigureWrappingLabel(Label? label, HorizontalAlignment alignment = HorizontalAlignment.Left)
