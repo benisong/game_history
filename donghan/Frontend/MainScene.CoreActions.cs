@@ -264,6 +264,8 @@ public partial class MainScene : Control
         var row = CreateActionPopupButtonRow();
         var confirm = new Button { Text = "朱批发饷", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, Disabled = _gameState.PrivateTreasury <= 0 };
         var cancel = new Button { Text = "收回军令", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        StyleSceneActionButton(confirm, ActionButtonSkin.WestGarden);
+        StyleSceneActionButton(cancel, ActionButtonSkin.WestGarden);
         row.AddChild(confirm);
         row.AddChild(cancel);
         vBox.AddChild(row);
@@ -346,6 +348,8 @@ public partial class MainScene : Control
         var row = CreateActionPopupButtonRow();
         var confirm = new Button { Text = "下诏募兵", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, Disabled = capacity <= 0 };
         var cancel = new Button { Text = "暂缓", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        StyleSceneActionButton(confirm, ActionButtonSkin.WestGarden);
+        StyleSceneActionButton(cancel, ActionButtonSkin.WestGarden);
         row.AddChild(confirm);
         row.AddChild(cancel);
         vBox.AddChild(row);
@@ -422,6 +426,7 @@ public partial class MainScene : Control
         vBox.AddChild(officerRow);
 
         var cancel = new Button { Text = "暂缓决策", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        StyleSceneActionButton(cancel, ActionButtonSkin.Court);
         cancel.Pressed += _windowManager.PopWindow;
         vBox.AddChild(cancel);
 
@@ -437,6 +442,7 @@ public partial class MainScene : Control
         }
 
         var button = new Button { Text = label, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        StyleSceneActionButton(button, ActionButtonSkin.Court);
         button.Pressed += () =>
         {
             int amount = (int)amountSpin.Value;
@@ -515,6 +521,7 @@ public partial class MainScene : Control
             CustomMinimumSize = new Vector2(0, 42),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
+        StyleSceneActionButton(close, GetActionButtonSkinForPopup(skin));
         close.Pressed += _windowManager.PopWindow;
         root.AddChild(close);
 

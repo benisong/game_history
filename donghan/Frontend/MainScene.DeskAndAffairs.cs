@@ -108,6 +108,7 @@ public partial class MainScene : Control
         btn.AddThemeStyleboxOverride("normal", CreateMainEntryCardStyle(new Color(0.10f, 0.055f, 0.035f, 1.0f), 2));
         btn.AddThemeStyleboxOverride("hover", CreateMainEntryCardStyle(new Color(0.16f, 0.095f, 0.045f, 1.0f), 4));
         btn.AddThemeStyleboxOverride("pressed", CreateMainEntryCardStyle(new Color(0.055f, 0.030f, 0.020f, 1.0f), 3));
+        btn.AddThemeStyleboxOverride("focus", CreateMainEntryCardStyle(new Color(0.18f, 0.105f, 0.045f, 1.0f), 4));
         btn.Pressed += pressedCallback;
 
         var art = new TextureRect();
@@ -390,6 +391,7 @@ public partial class MainScene : Control
             btn.Text = $"朱批：{option.Description}";
             btn.Alignment = HorizontalAlignment.Left;
             btn.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            StyleSceneActionButton(btn, ActionButtonSkin.Document);
             
             int optIndex = i;
             btn.Pressed += async () =>

@@ -376,10 +376,24 @@ public partial class MainScene : Control
         button.AddThemeColorOverride("font_color", GetActionButtonTextColor(skin));
         button.AddThemeColorOverride("font_hover_color", new Color(1.0f, 0.86f, 0.48f, 1.0f));
         button.AddThemeColorOverride("font_pressed_color", new Color(0.98f, 0.72f, 0.24f, 1.0f));
+        button.AddThemeColorOverride("font_focus_color", new Color(1.0f, 0.90f, 0.58f, 1.0f));
+        button.AddThemeColorOverride("font_disabled_color", GetActionButtonTextColor(skin).Darkened(0.42f));
         button.AddThemeStyleboxOverride("normal", CreateActionButtonStyle(skin, false, false));
         button.AddThemeStyleboxOverride("hover", CreateActionButtonStyle(skin, true, false));
         button.AddThemeStyleboxOverride("pressed", CreateActionButtonStyle(skin, false, true));
-        button.AddThemeStyleboxOverride("focus", new StyleBoxEmpty());
+        button.AddThemeStyleboxOverride("focus", CreateActionButtonFocusStyle(skin));
+        button.AddThemeStyleboxOverride("disabled", CreateActionButtonDisabledStyle(skin));
+    }
+
+    private static ActionButtonSkin GetActionButtonSkinForPopup(PopupSkin skin)
+    {
+        return skin switch
+        {
+            PopupSkin.Court => ActionButtonSkin.Court,
+            PopupSkin.WestGarden => ActionButtonSkin.WestGarden,
+            PopupSkin.Warning => ActionButtonSkin.Warning,
+            _ => ActionButtonSkin.Document
+        };
     }
 
     private static Color GetActionButtonTextColor(ActionButtonSkin skin)
@@ -434,6 +448,25 @@ public partial class MainScene : Control
         style.ContentMarginBottom = 8;
         style.ShadowColor = new Color(0, 0, 0, hover ? 0.42f : 0.25f);
         style.ShadowSize = hover ? 6 : 3;
+        return style;
+    }
+
+    private static StyleBoxFlat CreateActionButtonFocusStyle(ActionButtonSkin skin)
+    {
+        var style = CreateActionButtonStyle(skin, true, false);
+        style.BorderColor = new Color(1.0f, 0.82f, 0.30f, 1.0f);
+        style.SetBorderWidthAll(2);
+        style.ShadowColor = new Color(1.0f, 0.62f, 0.12f, 0.36f);
+        style.ShadowSize = 8;
+        return style;
+    }
+
+    private static StyleBoxFlat CreateActionButtonDisabledStyle(ActionButtonSkin skin)
+    {
+        var style = CreateActionButtonStyle(skin, false, false);
+        style.BgColor = style.BgColor.Darkened(0.36f);
+        style.BorderColor = style.BorderColor.Darkened(0.45f);
+        style.ShadowSize = 0;
         return style;
     }
 

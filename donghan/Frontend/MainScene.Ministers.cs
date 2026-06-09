@@ -186,6 +186,8 @@ public partial class MainScene : Control
             Disabled = target.StashedWealth <= 0
         };
         var cancel = new Button { Text = "暂缓不发", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        StyleSceneActionButton(confirm, ActionButtonSkin.Warning);
+        StyleSceneActionButton(cancel, ActionButtonSkin.Warning);
         row.AddChild(confirm);
         row.AddChild(cancel);
         root.AddChild(row);
@@ -291,6 +293,7 @@ public partial class MainScene : Control
             btn.Text = $"[{npc.Faction}] {npc.Name} {locationTag}";
             btn.Alignment = HorizontalAlignment.Left;
             btn.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            StyleSceneActionButton(btn, ActionButtonSkin.Court);
             
             string npcId = npc.Id;
             btn.Pressed += () => ShowMinisterDetails(npcId);
