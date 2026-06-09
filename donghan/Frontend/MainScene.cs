@@ -54,7 +54,6 @@ public partial class MainScene : Control
 
     // 弹窗与管理器
     private Button? _travelButton;
-    private Panel? _travelOverlayPanel;
     private Panel? _ministerPanel;
     private Label? _ministerTitleLabel;
     private Label? _ministerFavorabilityLabel;
@@ -122,8 +121,6 @@ public partial class MainScene : Control
 
         // 起驾与弹窗
         _travelButton = GetNodeOrNull<Button>("RightPanel/Ministers/TravelButton");
-        _travelOverlayPanel = GetNodeOrNull<Panel>("TravelOverlayPanel");
-
         _ministerPanel = GetNodeOrNull<Panel>("MinisterOverlayPanel");
         _ministerTitleLabel = GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterTitle");
         _ministerFavorabilityLabel = GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterFavor");
@@ -153,126 +150,13 @@ public partial class MainScene : Control
         var btnConfPrivate = GetNodeOrNull<Button>("MinisterOverlayPanel/VBox/HBox/ConfiscatePrivateBtn");
         if (btnConfPrivate != null) btnConfPrivate.Pressed += () => ShowConfiscateConfirmAction("私库");
 
-        // 场景切换按钮绑定
-        if (_travelButton != null && _travelOverlayPanel != null)
-        {
-            _travelButton.Pressed += ShowTravelOverlay;
-        }
+        // 场景切换与行动弹窗均由代码动态创建；旧 tscn 弹窗节点已移除。
+        if (_travelButton != null) _travelButton.Pressed += ShowTravelOverlay;
+        if (_drillArmyButton != null) _drillArmyButton.Pressed += ShowArmyDrillDialog;
+        if (_recruitArmyButton != null) _recruitArmyButton.Pressed += ShowRecruitArmyDialog;
 
-        var btnGoCourt = GetNodeOrNull<Button>("TravelOverlayPanel/VBox/GoCourtButton");
-        if (btnGoCourt != null) btnGoCourt.Pressed += () => DoTravel("宣政殿");
-
-        var btnGoHarem = GetNodeOrNull<Button>("TravelOverlayPanel/VBox/GoHaremButton");
-        if (btnGoHarem != null) btnGoHarem.Pressed += () => DoTravel("后宫");
-
-        var btnGoGarden = GetNodeOrNull<Button>("TravelOverlayPanel/VBox/GoGardenButton");
-        if (btnGoGarden != null) btnGoGarden.Pressed += () => DoTravel("西园");
-
-        var btnCancelTravel = GetNodeOrNull<Button>("TravelOverlayPanel/VBox/CancelTravelButton");
-        if (btnCancelTravel != null) btnCancelTravel.Pressed += _windowManager.PopWindow;
-
-        // 阅兵弹窗 UI 及事件绑定
-        var armyDrillPopup = GetNodeOrNull<Panel>("ArmyDrillPopupPanel");
-        var btnConfirmPay = GetNodeOrNull<Button>("ArmyDrillPopupPanel/VBox/ConfirmPayButton");
-        var btnCancelPay = GetNodeOrNull<Button>("ArmyDrillPopupPanel/VBox/CancelPayButton");
-        var payInput = GetNodeOrNull<LineEdit>("ArmyDrillPopupPanel/VBox/PayInput");
-
-        if (_drillArmyButton != null && armyDrillPopup != null)
-        {
-            _drillArmyButton.Pressed += () => ShowArmyDrillDialog(armyDrillPopup, payInput);
-        }
-
-        if (btnCancelPay != null)
-        {
-            btnCancelPay.Pressed += _windowManager.PopWindow;
-        }
-
-        if (btnConfirmPay != null && payInput != null)
-        {
-            btnConfirmPay.Pressed += () =>
-            {
-                if (int.TryParse(payInput.Text, out int amount))
-                {
-                    _windowManager.PopWindow();
-                    DoArmyDrillAction(amount);
-                }
-                else
-                {
-                    payInput.Text = "请输入有效数字！";
-                }
-            };
-        }
-
-        if (_recruitArmyButton != null)
-        {
-            _recruitArmyButton.Pressed += ShowRecruitArmyDialog;
-        }
-
-        // 宣政殿：开仓赈灾弹窗 UI 绑定
         var disasterBtn = GetNodeOrNull<Button>("RightPanel/Ministers/DisasterReliefButton");
-        var reliefPopup = GetNodeOrNull<Panel>("DisasterReliefPopupPanel");
-        var reliefInput = GetNodeOrNull<LineEdit>("DisasterReliefPopupPanel/VBox/ReliefAmountInput");
-        
-        var btnCaoRelief = GetNodeOrNull<Button>("DisasterReliefPopupPanel/VBox/HBox/ReliefCaoButton");
-        var btnHeRelief = GetNodeOrNull<Button>("DisasterReliefPopupPanel/VBox/HBox/ReliefHeButton");
-        var btnZhangRelief = GetNodeOrNull<Button>("DisasterReliefPopupPanel/VBox/HBox/ReliefZhangButton");
-        var btnCancelRelief = GetNodeOrNull<Button>("DisasterReliefPopupPanel/VBox/CancelReliefButton");
-
-        if (disasterBtn != null && reliefPopup != null)
-        {
-            disasterBtn.Pressed += () => ShowDisasterReliefDialog(reliefPopup, reliefInput);
-        }
-
-        if (btnCancelRelief != null) btnCancelRelief.Pressed += _windowManager.PopWindow;
-
-        // 绑定指派各经办官员出发
-        if (btnCaoRelief != null && reliefInput != null)
-        {
-            btnCaoRelief.Pressed += () =>
-            {
-                if (int.TryParse(reliefInput.Text, out int amt))
-                {
-                    _windowManager.PopWindow();
-                    DoDisasterReliefAction(amt, "cao_cao");
-                }
-                else
-                {
-                    reliefInput.Text = "输入数字不合法！";
-                }
-            };
-        }
-
-        if (btnHeRelief != null && reliefInput != null)
-        {
-            btnHeRelief.Pressed += () =>
-            {
-                if (int.TryParse(reliefInput.Text, out int amt))
-                {
-                    _windowManager.PopWindow();
-                    DoDisasterReliefAction(amt, "he_jin");
-                }
-                else
-                {
-                    reliefInput.Text = "输入数字不合法！";
-                }
-            };
-        }
-
-        if (btnZhangRelief != null && reliefInput != null)
-        {
-            btnZhangRelief.Pressed += () =>
-            {
-                if (int.TryParse(reliefInput.Text, out int amt))
-                {
-                    _windowManager.PopWindow();
-                    DoDisasterReliefAction(amt, "zhang_rang");
-                }
-                else
-                {
-                    reliefInput.Text = "输入数字不合法！";
-                }
-            };
-        }
+        if (disasterBtn != null) disasterBtn.Pressed += ShowDisasterReliefDialog;
 
         // 场景专属快捷指令事件绑定
         if (_sellOfficeButton != null) _sellOfficeButton.Pressed += () => DoQuickAction("sell_office");

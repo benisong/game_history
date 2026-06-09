@@ -89,10 +89,7 @@ public partial class MainScene : Control
             "起驾",
             "巡幸移驾",
             "res://Assets/UI/cards/main_travel_card.png",
-            () =>
-            {
-                if (_travelOverlayPanel != null) _windowManager.PushWindow(_travelOverlayPanel);
-            });
+            ShowTravelOverlay);
 
         deskRow.AddChild(_btnCourtSeal);
         deskRow.AddChild(_btnIntelToken);

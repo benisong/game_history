@@ -208,11 +208,9 @@ public partial class MainScene : Control
         }
     }
 
-    private void ShowArmyDrillDialog(Panel legacyPanel, LineEdit? legacyPayInput)
+    private void ShowArmyDrillDialog()
     {
         if (_gameState == null) return;
-
-        if (legacyPayInput != null) legacyPayInput.Text = "";
 
         var panel = new Panel();
         ConfigureCenteredPopupPanel(panel, PopupSkin.WestGarden, new Vector2(540, 350));
@@ -363,11 +361,9 @@ public partial class MainScene : Control
         PushTemporaryPopup(panel);
     }
 
-    private void ShowDisasterReliefDialog(Panel legacyPanel, LineEdit? legacyReliefInput)
+    private void ShowDisasterReliefDialog()
     {
         if (_gameState == null) return;
-
-        if (legacyReliefInput != null) legacyReliefInput.Text = "";
 
         var panel = new Panel();
         ConfigureCenteredPopupPanel(panel, PopupSkin.Court, new Vector2(620, 390));
