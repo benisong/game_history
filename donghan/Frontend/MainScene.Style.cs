@@ -248,6 +248,25 @@ public partial class MainScene : Control
         return style;
     }
 
+    private static StyleBoxFlat CreatePopupParchmentStyle()
+    {
+        var style = new StyleBoxFlat();
+        style.BgColor = new Color(0.835f, 0.745f, 0.520f, 1.0f);
+        style.BorderColor = new Color(0.38f, 0.20f, 0.08f, 1.0f);
+        style.SetBorderWidthAll(2);
+        style.CornerRadiusTopLeft = 3;
+        style.CornerRadiusTopRight = 3;
+        style.CornerRadiusBottomLeft = 3;
+        style.CornerRadiusBottomRight = 3;
+        style.ContentMarginLeft = 14;
+        style.ContentMarginRight = 14;
+        style.ContentMarginTop = 12;
+        style.ContentMarginBottom = 12;
+        style.ShadowColor = new Color(0.18f, 0.09f, 0.025f, 0.40f);
+        style.ShadowSize = 6;
+        return style;
+    }
+
     private static Color GetPopupTitleColor(PopupSkin skin)
     {
         return skin switch

@@ -293,22 +293,49 @@ public partial class MainScene : Control
         _affairsPopup = new Panel();
         _affairsPopup.Name = "AffairsPopup";
         _affairsPopup.Visible = false;
-        _affairsPopup.CustomMinimumSize = new Vector2(640, 420);
-        _affairsPopup.SetAnchorsPreset(Control.LayoutPreset.Center);
+        ConfigureCenteredPopupPanel(_affairsPopup, PopupSkin.Document, new Vector2(920, 560));
+
+        var root = new VBoxContainer();
+        SetFullRect(root);
+        root.OffsetLeft = 24;
+        root.OffsetTop = 20;
+        root.OffsetRight = -24;
+        root.OffsetBottom = -20;
+        root.AddThemeConstantOverride("separation", 12);
+        _affairsPopup.AddChild(root);
+
+        var title = new Label { Text = "御案折匣 · 尚书台卷宗" };
+        StylePopupTitle(title, PopupSkin.Document);
+        root.AddChild(title);
+
+        var subtitle = new Label
+        {
+            Text = "左列为待批折签，右展奏章正文；朱批一落，即入本旬政令。",
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        StylePopupBodyText(subtitle, PopupSkin.Document);
+        root.AddChild(subtitle);
 
         var hBox = new HBoxContainer();
-        hBox.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        hBox.OffsetLeft = 15; hBox.OffsetTop = 15; hBox.OffsetRight = -15; hBox.OffsetBottom = -15;
-        hBox.AddThemeConstantOverride("separation", 15);
-        _affairsPopup.AddChild(hBox);
+        hBox.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        hBox.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        hBox.AddThemeConstantOverride("separation", 16);
+        root.AddChild(hBox);
 
-        // 左半边：奏折列表
+        // 左半边：漆木折匣中的奏折签条
+        var leftFrame = new PanelContainer
+        {
+            CustomMinimumSize = new Vector2(285, 0),
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        leftFrame.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Document));
+        hBox.AddChild(leftFrame);
+
         var leftVBox = new VBoxContainer();
-        leftVBox.CustomMinimumSize = new Vector2(220, 0);
-        hBox.AddChild(leftVBox);
+        leftVBox.AddThemeConstantOverride("separation", 10);
+        leftFrame.AddChild(leftVBox);
 
-        var listTitle = new Label();
-        listTitle.Text = "尚书台待批折子";
+        var listTitle = new Label { Text = "折匣签条" };
         StyleColumnTitle(listTitle, PopupSkin.Document);
         leftVBox.AddChild(listTitle);
 
@@ -318,24 +345,51 @@ public partial class MainScene : Control
         _edictsItemList.ItemSelected += OnEdictSelected;
         leftVBox.AddChild(_edictsItemList);
 
-        var btnClose = new Button();
-        btnClose.Text = "合上卷宗";
+        var btnClose = new Button { Text = "合上卷宗" };
         StyleSceneActionButton(btnClose, ActionButtonSkin.Document);
         btnClose.Pressed += _windowManager.PopWindow;
         leftVBox.AddChild(btnClose);
 
-        // 右半边：奏折详情及选项
+        // 右半边：展开的奏章与朱批区
+        var rightFrame = new PanelContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        rightFrame.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Document));
+        hBox.AddChild(rightFrame);
+
         var rightVBox = new VBoxContainer();
-        rightVBox.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        hBox.AddChild(rightVBox);
+        rightVBox.AddThemeConstantOverride("separation", 10);
+        rightFrame.AddChild(rightVBox);
+
+        var contentTitle = new Label { Text = "展开奏章" };
+        StyleColumnTitle(contentTitle, PopupSkin.Document);
+        rightVBox.AddChild(contentTitle);
+
+        var contentFrame = new PanelContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        contentFrame.AddThemeStyleboxOverride("panel", CreatePopupParchmentStyle());
+        rightVBox.AddChild(contentFrame);
 
         _edictContentLabel = new RichTextLabel();
+        _edictContentLabel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         _edictContentLabel.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         _edictContentLabel.BbcodeEnabled = true;
-        rightVBox.AddChild(_edictContentLabel);
+        _edictContentLabel.ScrollActive = true;
+        _edictContentLabel.AddThemeColorOverride("default_color", GetPopupBodyColor(PopupSkin.Document));
+        contentFrame.AddChild(_edictContentLabel);
+
+        var optionTitle = new Label { Text = "御笔朱批" };
+        StyleColumnTitle(optionTitle, PopupSkin.Document);
+        rightVBox.AddChild(optionTitle);
 
         _edictOptionsVBox = new VBoxContainer();
-        _edictOptionsVBox.CustomMinimumSize = new Vector2(0, 150);
+        _edictOptionsVBox.CustomMinimumSize = new Vector2(0, 126);
+        _edictOptionsVBox.AddThemeConstantOverride("separation", 8);
         rightVBox.AddChild(_edictOptionsVBox);
 
         AddChild(_affairsPopup);
