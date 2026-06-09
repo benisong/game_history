@@ -123,22 +123,15 @@ public partial class MainScene : Control
             // 关闭起驾弹窗
             _windowManager.PopWindow();
 
-            // 生成转场故事文本
-            if (_storyOutput != null)
+            // 生成转场奏报，不再污染主界面年度事件横条
+            string travelStory = location switch
             {
-                if (location == "宣政殿")
-                {
-                    _storyOutput.Text = "【起驾 · 宣政殿】\n\n“起驾宣政殿——！”\n内监尖细的高唱声在深宫回荡。陛下登临天子龙辇，在满朝文武的拜跪高呼声中重返宝座。大汉帝国的齿轮，将再次随着陛下的御笔而转动。";
-                }
-                else if (location == "后宫")
-                {
-                    _storyOutput.Text = "【巡幸 · 温德殿】\n\n“天子起驾温德殿，闲人退避——！”\n车舆缓缓停在红墙绿瓦、花香袅袅的后宫。红幔轻摇，莺声燕语。陛下卸下了金銮殿上的重负，来到了属于帝王的绝对私密之所。";
-                }
-                else if (location == "西园")
-                {
-                    _storyOutput.Text = "【起驾 · 西园精舍】\n\n“起驾西园——！”\n陛下避开了何进等人的耳目，轻车简从，来到了陛下亲自督造的西园。这里有堆积如山的金银私库，有新募组建的精锐新军，是陛下摆脱掣肘、暗中夺回大权的铁血基地。";
-                }
-            }
+                "宣政殿" => "【起驾 · 宣政殿】\n\n“起驾宣政殿——！”\n内监尖细的高唱声在深宫回荡。陛下登临天子龙辇，在满朝文武的拜跪高呼声中重返宝座。大汉帝国的齿轮，将再次随着陛下的御笔而转动。",
+                "后宫" => "【巡幸 · 温德殿】\n\n“天子起驾温德殿，闲人退避——！”\n车舆缓缓停在红墙绿瓦、花香袅袅的后宫。红幔轻摇，莺声燕语。陛下卸下了金銮殿上的重负，来到了属于帝王的绝对私密之所。",
+                "西园" => "【起驾 · 西园精舍】\n\n“起驾西园——！”\n陛下避开了何进等人的耳目，轻车简从，来到了陛下亲自督造的西园。这里有堆积如山的金银私库，有新募组建的精锐新军，是陛下摆脱掣肘、暗中夺回大权的铁血基地。",
+                _ => $"【起驾】\n\n陛下移驾{location}。"
+            };
+            ShowStoryReportPopup("起驾奏报", travelStory, location == "西园" ? PopupSkin.WestGarden : PopupSkin.Court);
 
             UpdateUI();
             if (location == "西园" && _westGardenPopup != null)
@@ -161,10 +154,7 @@ public partial class MainScene : Control
         try
         {
             var result = _gameEngine.ExecuteQuickAction(actionId);
-            if (_storyOutput != null)
-            {
-                _storyOutput.Text = result.StoryText;
-            }
+            ShowStoryReportPopup("行动奏报", result.StoryText, actionId == "sell_office" ? PopupSkin.WestGarden : PopupSkin.Court);
             UpdateUI();
         }
         catch (Exception ex)
@@ -192,10 +182,7 @@ public partial class MainScene : Control
             }
 
             var result = _gameEngine.ExecuteDrillArmyActionWithOfficer(amount, officerId);
-            if (_storyOutput != null)
-            {
-                _storyOutput.Text = result.StoryText;
-            }
+            ShowStoryReportPopup("西园军报", result.StoryText, PopupSkin.WestGarden);
             UpdateUI();
         }
         catch (Exception ex)
@@ -211,19 +198,13 @@ public partial class MainScene : Control
         try
         {
             var result = _gameEngine.ExecuteRaiseWestGardenTroopsAction(troops);
-            if (_storyOutput != null)
-            {
-                _storyOutput.Text = result.StoryText;
-            }
+            ShowStoryReportPopup("西园军报", result.StoryText, PopupSkin.WestGarden);
             UpdateUI();
         }
         catch (Exception ex)
         {
             GD.PrintErr(ex.Message);
-            if (_storyOutput != null)
-            {
-                _storyOutput.Text = $"【募兵未成】\n\n{ex.Message}";
-            }
+            ShowStoryReportPopup("募兵未成", $"【募兵未成】\n\n{ex.Message}", PopupSkin.Warning);
         }
     }
 
@@ -493,6 +474,81 @@ public partial class MainScene : Control
         return row;
     }
 
+    private void ShowStoryReportPopup(string fallbackTitle, string storyText, PopupSkin skin)
+    {
+        if (string.IsNullOrWhiteSpace(storyText)) return;
+
+        var panel = new Panel();
+        panel.Name = "StoryReportPopup";
+        ConfigureCenteredPopupPanel(panel, skin, new Vector2(720, 460));
+
+        var root = CreateActionPopupRoot(panel, 24, 20);
+        root.AddThemeConstantOverride("separation", 12);
+
+        var title = new Label { Text = ExtractReportTitle(fallbackTitle, storyText) };
+        StylePopupTitle(title, skin);
+        root.AddChild(title);
+
+        var reportFrame = new Panel
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        reportFrame.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(skin));
+        root.AddChild(reportFrame);
+
+        var report = new RichTextLabel
+        {
+            BbcodeEnabled = true,
+            Text = StripLeadingReportTitle(storyText),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+            ScrollActive = true
+        };
+        report.AddThemeColorOverride("default_color", GetPopupBodyColor(skin));
+        SetFullRect(report);
+        report.OffsetLeft = 14;
+        report.OffsetTop = 12;
+        report.OffsetRight = -14;
+        report.OffsetBottom = -12;
+        reportFrame.AddChild(report);
+
+        var close = new Button
+        {
+            Text = "收起奏报",
+            CustomMinimumSize = new Vector2(0, 42),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        close.Pressed += _windowManager.PopWindow;
+        root.AddChild(close);
+
+        PushTemporaryPopup(panel);
+    }
+
+    private static string ExtractReportTitle(string fallbackTitle, string storyText)
+    {
+        if (!string.IsNullOrWhiteSpace(storyText) && storyText.StartsWith("【"))
+        {
+            int end = storyText.IndexOf('】');
+            if (end > 1) return storyText.Substring(1, end - 1);
+        }
+        return fallbackTitle;
+    }
+
+    private static string StripLeadingReportTitle(string storyText)
+    {
+        if (!string.IsNullOrWhiteSpace(storyText) && storyText.StartsWith("【"))
+        {
+            int end = storyText.IndexOf('】');
+            if (end >= 0)
+            {
+                string body = storyText.Substring(end + 1).TrimStart();
+                return string.IsNullOrWhiteSpace(body) ? storyText : body;
+            }
+        }
+        return storyText;
+    }
+
     private void PushTemporaryPopup(Panel panel)
     {
         panel.VisibilityChanged += () =>
@@ -511,10 +567,7 @@ public partial class MainScene : Control
         try
         {
             var result = _gameEngine.ExecuteDisasterReliefAction(amount, officerId);
-            if (_storyOutput != null)
-            {
-                _storyOutput.Text = result.StoryText;
-            }
+            ShowStoryReportPopup("宣政殿奏报", result.StoryText, PopupSkin.Court);
             UpdateUI();
         }
         catch (Exception ex)
@@ -537,19 +590,13 @@ public partial class MainScene : Control
         try
         {
             var result = await _gameEngine.ProcessPlayerTurnAsync(text);
-            if (_storyOutput != null)
-            {
-                _storyOutput.Text = result.StoryText;
-            }
+            ShowStoryReportPopup("朱批回奏", result.StoryText, PopupSkin.Document);
             UpdateUI();
         }
         catch (Exception ex)
         {
             GD.PrintErr($"[Error in Turn Processing]: {ex.Message}");
-            if (_storyOutput != null)
-            {
-                _storyOutput.Text += $"\n【内监急奏：圣旨解析失败，AI未响应或格式有误。】";
-            }
+            ShowStoryReportPopup("内监急奏", "【内监急奏】\n\n圣旨解析失败，AI 未响应或格式有误。", PopupSkin.Warning);
         }
         finally
         {

@@ -291,6 +291,17 @@ public partial class MainScene : Control
         });
     }
 
+    private static Color GetPopupBodyColor(PopupSkin skin)
+    {
+        return skin switch
+        {
+            PopupSkin.Document => new Color(0.20f, 0.11f, 0.05f, 1.0f),
+            PopupSkin.Intel => new Color(0.88f, 0.73f, 0.46f, 1.0f),
+            PopupSkin.WestGarden => new Color(0.82f, 0.74f, 0.58f, 1.0f),
+            _ => new Color(0.86f, 0.74f, 0.50f, 1.0f)
+        };
+    }
+
     private static void SetFullRect(Control control)
     {
         control.SetAnchorsPreset(Control.LayoutPreset.FullRect);
