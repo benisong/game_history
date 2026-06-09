@@ -96,11 +96,14 @@ public partial class MainScene : Control
             : "暂无可籍赃银，强行籍没收益极低。";
 
         string riskLine = BuildNpcRiskLine(minister);
+        string relationLine = BuildNpcRelationDossierText(minister.Id);
         string sourceLine = $"登场来源：{minister.InitialLocation}｜{minister.EntryCondition}";
         string roleLine = string.IsNullOrWhiteSpace(minister.HistoricalRole) ? "史料定位：暂无" : $"史料定位：{minister.HistoricalRole}";
+        string deathLine = minister.HistoricalDeathYear.HasValue ? $"史实卒年：{minister.HistoricalDeathYear.Value}（可因玩家干预改写）" : "史实卒年：暂无定论";
+        string sourceNoteLine = string.IsNullOrWhiteSpace(minister.SourceNote) ? "来源说明：暂无" : $"来源说明：{minister.SourceNote}";
 
         return $"[b]【身分】[/b]\n" +
-            $"姓名：{minister.Name}\n官职：{minister.Title}\n派系：{minister.Faction}\n{location}\n{sourceLine}\n{roleLine}\n\n" +
+            $"姓名：{minister.Name}\n官职：{minister.Title}\n派系：{minister.Faction}\n{location}\n{sourceLine}\n{roleLine}\n{deathLine}\n{sourceNoteLine}\n\n" +
             $"[b]【君臣与朝局】[/b]\n" +
             $"君臣情分：{DescribeAttitudeLevel(minister.Favorability)}（{minister.Favorability}/100）\n" +
             $"朝局分量：{DescribePowerLevel(minister.Power)}（{minister.Power}/100）\n" +
@@ -110,7 +113,55 @@ public partial class MainScene : Control
             $"[b]【五维摘录】[/b]\n" +
             $"武略 {minister.Martial}｜统御 {minister.Leadership}｜政术 {minister.Politics}\n" +
             $"声望 {minister.Charisma}｜野心 {minister.Ambition}\n\n" +
+            $"[b]【关系札记】[/b]\n{relationLine}\n\n" +
             $"[b]【廷尉提示】[/b]\n{confiscationHint}";
+    }
+
+    private string BuildNpcRelationDossierText(string npcId)
+    {
+        if (_gameState == null) return "暂无关系记录。";
+
+        var relations = _gameState.NpcRelations
+            .Where(r => r.FromNpcId == npcId || (r.IsMutual && r.ToNpcId == npcId))
+            .OrderByDescending(r => r.Strength)
+            .Take(8)
+            .ToList();
+
+        if (relations.Count == 0) return "暂无关系记录。";
+
+        var lines = new List<string>();
+        foreach (var relation in relations)
+        {
+            string otherId = relation.FromNpcId == npcId ? relation.ToNpcId : relation.FromNpcId;
+            string otherName = ResolveNpcDisplayName(otherId);
+            lines.Add($"{GetRelationTypeLabel(relation.Type)}：{otherName}（{relation.Label}，强度{relation.Strength}）");
+        }
+
+        return string.Join("\n", lines);
+    }
+
+    private string ResolveNpcDisplayName(string npcId)
+    {
+        if (_gameState != null && _gameState.Npcs.TryGetValue(npcId, out var activeNpc)) return activeNpc.Name;
+        var preset = HistoricalNpcPresets.All.FirstOrDefault(n => n.Id == npcId);
+        return preset?.Name ?? npcId;
+    }
+
+    private static string GetRelationTypeLabel(NpcRelationType type)
+    {
+        return type switch
+        {
+            NpcRelationType.Kinship => "宗族姻亲",
+            NpcRelationType.Patronage => "提携举荐",
+            NpcRelationType.FactionAlly => "同党盟友",
+            NpcRelationType.TeacherStudent => "师生门下",
+            NpcRelationType.SwornBond => "义从战友",
+            NpcRelationType.Rivalry => "政治竞争",
+            NpcRelationType.Hostility => "宿敌仇怨",
+            NpcRelationType.Command => "军中统属",
+            NpcRelationType.RegionalTie => "乡党州郡",
+            _ => "关系"
+        };
     }
 
     private static string BuildNpcRiskLine(NpcState minister)

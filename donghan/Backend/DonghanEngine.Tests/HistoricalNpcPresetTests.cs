@@ -42,6 +42,8 @@ public class HistoricalNpcPresetTests
             Assert.False(string.IsNullOrWhiteSpace(npc.InitialLocation), $"{npc.Id} missing InitialLocation");
             Assert.False(string.IsNullOrWhiteSpace(npc.EntryCondition), $"{npc.Id} missing EntryCondition");
             Assert.False(string.IsNullOrWhiteSpace(npc.HistoricalRole), $"{npc.Id} missing HistoricalRole");
+            Assert.True(npc.HistoricalDeathYear.HasValue, $"{npc.Id} missing HistoricalDeathYear");
+            Assert.False(string.IsNullOrWhiteSpace(npc.SourceNote), $"{npc.Id} missing SourceNote");
             Assert.InRange(npc.Martial, 0, 100);
             Assert.InRange(npc.Leadership, 0, 100);
             Assert.InRange(npc.Politics, 0, 100);
@@ -65,6 +67,10 @@ public class HistoricalNpcPresetTests
         Assert.Equal("年月触发", presets["guo_jia"].EntryCondition);
         Assert.True(presets["zhang_yan"].IsHostile);
         Assert.True(presets["beigong_boyu"].IsHostile);
+        Assert.Equal(192, presets["lu_zhi"].HistoricalDeathYear);
+        Assert.Equal(195, presets["huangfu_song"].HistoricalDeathYear);
+        Assert.Equal(184, presets["qiao_xuan"].HistoricalDeathYear);
+        Assert.Contains("史料关系表述有歧", presets["he_miao"].HistoricalRole);
     }
 
     [Fact]
@@ -82,6 +88,33 @@ public class HistoricalNpcPresetTests
         Assert.Contains("凉州军阀", dong.HistoricalRole);
         Assert.Contains(TraitNames.YongBingZiZhong, dong.Traits);
         Assert.True(dong.Ambition >= 90);
+        Assert.Equal(192, dong.HistoricalDeathYear);
+        Assert.False(string.IsNullOrWhiteSpace(dong.SourceNote));
+    }
+
+    [Fact]
+    public void Test_HistoricalNpcRelations_LoadIntoStateAndReferenceKnownPresets()
+    {
+        var state = new GameState();
+        var presetIds = HistoricalNpcPresets.All.Select(n => n.Id).ToHashSet();
+        presetIds.Add("he_jin");
+        presetIds.Add("zhang_rang");
+        presetIds.Add("cao_cao");
+        presetIds.Add("jian_shuo");
+
+        Assert.True(state.NpcRelations.Count >= 30);
+        Assert.Contains(state.NpcRelations, r => r.FromNpcId == "lu_zhi" && r.ToNpcId == "liu_bei" && r.Type == NpcRelationType.TeacherStudent);
+        Assert.Contains(state.NpcRelations, r => r.FromNpcId == "qiao_xuan" && r.ToNpcId == "cao_cao" && r.Type == NpcRelationType.Patronage);
+        Assert.Contains(state.NpcRelations, r => r.FromNpcId == "zhang_rang" && r.ToNpcId == "zhao_zhong" && r.Type == NpcRelationType.FactionAlly);
+
+        Assert.All(state.NpcRelations, relation =>
+        {
+            Assert.Contains(relation.FromNpcId, presetIds);
+            Assert.Contains(relation.ToNpcId, presetIds);
+            Assert.InRange(relation.Strength, 0, 100);
+            Assert.False(string.IsNullOrWhiteSpace(relation.Label));
+            Assert.False(string.IsNullOrWhiteSpace(relation.HistoricalBasis));
+        });
     }
 
     [Fact]

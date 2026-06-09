@@ -42,6 +42,8 @@ public class NpcState
     public string EntryCondition { get; set; } = "开局";       // 开局/事件触发/年月触发/冷备
     public string HistoricalRole { get; set; } = string.Empty;  // 简短史料定位
     public bool IsHostile { get; set; } = false;                // 敌对首领不进入任官/平叛/招安候选
+    public int? HistoricalDeathYear { get; set; } = null;       // 史实/传统说法卒年，仅作参考，不强制死亡
+    public string SourceNote { get; set; } = string.Empty;      // 生卒年与传记来源说明；生年不详者标明游戏估算
 }
 
 public class ArmyState
@@ -65,6 +67,7 @@ public class GameState
     public string CurrentLocation { get; set; } = "宣政殿";
 
     public System.Collections.Generic.Dictionary<string, NpcState> Npcs { get; set; } = new();
+    public System.Collections.Generic.List<NpcRelation> NpcRelations { get; set; } = new();
     public ArmyState WestGardenArmy { get; set; } = new(); // 西园八校尉新军
     public System.Collections.Generic.Dictionary<string, Province> Provinces { get; set; } = new();
     
@@ -123,6 +126,9 @@ public class GameState
             Martial = 65, Leadership = 45, Politics = 20, Charisma = 30, Ambition = 40,
             InitialLocation = "洛阳西园", EntryCondition = "开局", HistoricalRole = "灵帝亲信宦官，西园军上军校尉"
         };
+
+        // 史实关系网：静态关系边先入库，规则与 UI 按需读取；关系目标可指向冷备人物。
+        NpcRelations = HistoricalNpcRelations.All;
 
         // 扩展开局洛阳群臣：只部署高频朝会/党争人物；地方、在野、敌对人物仍留在冷备池。
         foreach (var id in new[]
