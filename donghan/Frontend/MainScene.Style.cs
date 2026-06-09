@@ -344,6 +344,44 @@ public partial class MainScene : Control
         checkBox.AddThemeColorOverride("font_disabled_color", GetPopupBodyColor(skin).Darkened(0.42f));
     }
 
+    private static void StylePopupItemList(ItemList? list, PopupSkin skin)
+    {
+        if (list == null) return;
+
+        list.MouseFilter = Control.MouseFilterEnum.Stop;
+        list.AddThemeFontSizeOverride("font_size", 15);
+        list.AddThemeColorOverride("font_color", GetPopupBodyColor(skin));
+        list.AddThemeColorOverride("font_hovered_color", GetPopupBodyColor(skin).Lightened(0.18f));
+        list.AddThemeColorOverride("font_selected_color", skin == PopupSkin.Intel
+            ? new Color(0.15f, 0.07f, 0.03f, 1.0f)
+            : GetPopupTitleColor(skin));
+        list.AddThemeColorOverride("guide_color", GetPopupTitleColor(skin).Darkened(0.25f));
+        list.AddThemeStyleboxOverride("panel", CreatePopupInputStyle(skin, false, false));
+        list.AddThemeStyleboxOverride("focus", CreatePopupInputStyle(skin, true, false));
+        list.AddThemeStyleboxOverride("cursor", CreatePopupListSelectionStyle(skin, false));
+        list.AddThemeStyleboxOverride("cursor_unfocused", CreatePopupListSelectionStyle(skin, false));
+        list.AddThemeStyleboxOverride("selected", CreatePopupListSelectionStyle(skin, true));
+        list.AddThemeStyleboxOverride("selected_focus", CreatePopupListSelectionStyle(skin, true));
+    }
+
+    private static StyleBoxFlat CreatePopupListSelectionStyle(PopupSkin skin, bool selected)
+    {
+        var style = new StyleBoxFlat();
+        Color accent = GetPopupTitleColor(skin);
+        style.BgColor = selected ? accent.Darkened(skin == PopupSkin.Intel ? 0.05f : 0.35f) : accent.Darkened(0.55f);
+        style.BorderColor = accent;
+        style.SetBorderWidthAll(selected ? 2 : 1);
+        style.CornerRadiusTopLeft = 5;
+        style.CornerRadiusTopRight = 5;
+        style.CornerRadiusBottomLeft = 5;
+        style.CornerRadiusBottomRight = 5;
+        style.ContentMarginLeft = 6;
+        style.ContentMarginRight = 6;
+        style.ContentMarginTop = 4;
+        style.ContentMarginBottom = 4;
+        return style;
+    }
+
     private static StyleBoxFlat CreatePopupInputStyle(PopupSkin skin, bool focused, bool disabled)
     {
         var style = new StyleBoxFlat();

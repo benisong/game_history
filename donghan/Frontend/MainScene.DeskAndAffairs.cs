@@ -309,10 +309,12 @@ public partial class MainScene : Control
 
         var listTitle = new Label();
         listTitle.Text = "尚书台待批折子";
+        StyleColumnTitle(listTitle, PopupSkin.Document);
         leftVBox.AddChild(listTitle);
 
         _edictsItemList = new ItemList();
         _edictsItemList.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        StylePopupItemList(_edictsItemList, PopupSkin.Document);
         _edictsItemList.ItemSelected += OnEdictSelected;
         leftVBox.AddChild(_edictsItemList);
 

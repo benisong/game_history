@@ -69,6 +69,7 @@ public partial class MainScene : Control
         var provinceColumn = CreateIntelColumn(body, "州郡密札", 285);
         _provinceItemList = new ItemList();
         _provinceItemList.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        StylePopupItemList(_provinceItemList, PopupSkin.Intel);
         _provinceItemList.ItemSelected += OnProvinceSelected;
         provinceColumn.AddChild(_provinceItemList);
 
