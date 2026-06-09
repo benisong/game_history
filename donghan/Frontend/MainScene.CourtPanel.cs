@@ -192,6 +192,7 @@ public partial class MainScene : Control
         button.Text = $"{npc.Name}  {GetCourtOfficeName(ministerId)}  {attitude}{external}";
         button.Alignment = HorizontalAlignment.Left;
         button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        StyleSceneActionButton(button, ActionButtonSkin.Court);
         button.Pressed += () => ShowMinisterDetails(ministerId);
         _courtOfficialsVBox.AddChild(button);
     }
@@ -229,6 +230,8 @@ public partial class MainScene : Control
             button.AutowrapMode = TextServer.AutowrapMode.WordSmart;
             button.CustomMinimumSize = new Vector2(0, 70);
             button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            StyleSceneActionButton(button, ActionButtonSkin.Court);
+            button.CustomMinimumSize = new Vector2(0, 70);
             button.Pressed += () => SelectCourtTopic(topic);
             _courtTopicsVBox.AddChild(button);
         }
@@ -281,6 +284,7 @@ public partial class MainScene : Control
         var button = new Button();
         button.Text = label;
         button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        StyleSceneActionButton(button, ActionButtonSkin.Court);
         button.Pressed += callback;
         _courtDecisionsVBox.AddChild(button);
 
@@ -314,11 +318,13 @@ public partial class MainScene : Control
 
         var confirm = new Button();
         confirm.Text = "宣旨起大朝仪";
+        StyleSceneActionButton(confirm, ActionButtonSkin.Court);
         confirm.Pressed += OnConfirmCourtAssembly;
         row.AddChild(confirm);
 
         var collapse = new Button();
         collapse.Text = "收起";
+        StyleSceneActionButton(collapse, ActionButtonSkin.Court);
         collapse.Pressed += () => _courtFreeEdictVBox.Hide();
         row.AddChild(collapse);
     }

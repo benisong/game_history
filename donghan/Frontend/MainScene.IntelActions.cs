@@ -66,6 +66,7 @@ public partial class MainScene : Control
                 Text = $"朱批召还 · {governorName} 回京述职",
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
             };
+            StyleSceneActionButton(recall, ActionButtonSkin.Document);
             recall.Pressed += () =>
             {
                 _windowManager.PopWindow();
@@ -125,6 +126,7 @@ public partial class MainScene : Control
                 Text = $"朱批外任 · {npc.Name} 出守 {p.Name}",
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
             };
+            StyleSceneActionButton(appoint, ActionButtonSkin.Document);
             string npcId = npc.Id;
             appoint.Pressed += () =>
             {
@@ -207,6 +209,7 @@ public partial class MainScene : Control
             generalBox.AddChild(detail);
 
             var dispatch = new Button { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+            StyleSceneActionButton(dispatch, ActionButtonSkin.Document);
             generalBox.AddChild(dispatch);
 
             void RefreshPreview(double troopsValue)
@@ -328,6 +331,7 @@ public partial class MainScene : Control
                 Text = $"持节出使 · {envoy.Name}  政略 {politicalSkill:F0}",
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
             };
+            StyleSceneActionButton(pacify, ActionButtonSkin.Document);
             string envoyId = envoy.Id;
             pacify.Pressed += () =>
             {

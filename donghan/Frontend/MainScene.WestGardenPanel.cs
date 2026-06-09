@@ -74,6 +74,7 @@ public partial class MainScene : Control
 
         var closeButton = new Button();
         closeButton.Text = "合上军簿";
+        StyleSceneActionButton(closeButton, ActionButtonSkin.WestGarden);
         closeButton.Pressed += _windowManager.PopWindow;
         armyColumn.AddChild(closeButton);
 
@@ -219,6 +220,7 @@ public partial class MainScene : Control
         button.Text = $"{npc.Name}｜{role}\n好感{npc.Favorability} 权势{npc.Power} 贪腐{npc.Corruption}";
         button.Alignment = HorizontalAlignment.Left;
         button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        StyleSceneActionButton(button, ActionButtonSkin.WestGarden);
         button.Pressed += () => ShowMinisterDetails(ministerId);
         _westGardenOfficersVBox.AddChild(button);
     }
@@ -380,6 +382,7 @@ public partial class MainScene : Control
         button.Text = text;
         button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         button.Disabled = disabled;
+        StyleSceneActionButton(button, ActionButtonSkin.WestGarden);
         button.Pressed += action;
         _westGardenActionsVBox.AddChild(button);
     }

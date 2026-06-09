@@ -317,6 +317,7 @@ public partial class MainScene : Control
 
         var btnClose = new Button();
         btnClose.Text = "合上卷宗";
+        StyleSceneActionButton(btnClose, ActionButtonSkin.Document);
         btnClose.Pressed += _windowManager.PopWindow;
         leftVBox.AddChild(btnClose);
 

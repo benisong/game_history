@@ -74,6 +74,7 @@ public partial class MainScene : Control
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
             CustomMinimumSize = new Vector2(180, 40)
         };
+        StyleSceneActionButton(cancel, ActionButtonSkin.Travel);
         cancel.Pressed += _windowManager.PopWindow;
         root.AddChild(cancel);
 
@@ -117,6 +118,7 @@ public partial class MainScene : Control
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             CustomMinimumSize = new Vector2(0, 42)
         };
+        StyleSceneActionButton(go, ActionButtonSkin.Travel);
         go.Pressed += () => DoTravel(destination);
         box.AddChild(go);
     }
@@ -194,6 +196,7 @@ public partial class MainScene : Control
             CustomMinimumSize = new Vector2(260, 46),
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter
         };
+        StyleSceneActionButton(btnConfirm, ActionButtonSkin.Court);
         btnConfirm.Pressed += () =>
         {
             _openingOverlay.ReleaseFocus();
@@ -252,6 +255,7 @@ public partial class MainScene : Control
         var confirm = new Button();
         confirm.Text = confirmText;
         confirm.CustomMinimumSize = new Vector2(170, 42);
+        StyleSceneActionButton(confirm, ActionButtonSkin.Warning);
         confirm.Pressed += () =>
         {
             DoTravel(destination);
@@ -262,6 +266,7 @@ public partial class MainScene : Control
         var cancel = new Button();
         cancel.Text = "暂缓";
         cancel.CustomMinimumSize = new Vector2(120, 42);
+        StyleSceneActionButton(cancel, ActionButtonSkin.Warning);
         cancel.Pressed += _windowManager.PopWindow;
         row.AddChild(cancel);
 

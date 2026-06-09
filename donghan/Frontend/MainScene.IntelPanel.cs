@@ -74,6 +74,7 @@ public partial class MainScene : Control
 
         var closeButton = new Button();
         closeButton.Text = "收起密札";
+        StyleSceneActionButton(closeButton, ActionButtonSkin.Document);
         closeButton.Pressed += _windowManager.PopWindow;
         provinceColumn.AddChild(closeButton);
 
