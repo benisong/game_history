@@ -40,9 +40,32 @@ public partial class MainScene : Control
         string governorName = p.GovernorId != null && _gameState.Npcs.TryGetValue(p.GovernorId, out var governor) ? governor.Name : "";
         if (p.GovernorId != null)
         {
-            var recall = new Button();
-            recall.Text = $"召回太守【{governorName}】";
-            recall.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            var cardRoot = CreateIntelDecisionCard("刺史敕札 · 召还地方官", $"州郡：{p.Name}\n现任地方官：{governorName}\n召还后该郡将暂无主官，无人治理会使民心加速下坠；但被召还者将重返京师，朝中权势略回升。");
+
+            if (_gameState.Npcs.TryGetValue(p.GovernorId, out var currentGovernor))
+            {
+                var detailFrame = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+                detailFrame.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Intel));
+                cardRoot.AddChild(detailFrame);
+
+                var detail = new Label
+                {
+                    Text = $"政务能力：{DescribeGovernorPolitics(currentGovernor)}\n野心风险：{DescribeGovernorAmbition(currentGovernor)}\n派系牵连：{currentGovernor.Faction}\n回京影响：{currentGovernor.Name}权势 +3，{p.Name}暂失主官"
+                };
+                StylePopupBodyText(detail, PopupSkin.Intel);
+                SetFullRect(detail);
+                detail.OffsetLeft = 10;
+                detail.OffsetTop = 8;
+                detail.OffsetRight = -10;
+                detail.OffsetBottom = -8;
+                detailFrame.AddChild(detail);
+            }
+
+            var recall = new Button
+            {
+                Text = $"朱批召还 · {governorName} 回京述职",
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+            };
             recall.Pressed += () =>
             {
                 _windowManager.PopWindow();
@@ -50,7 +73,7 @@ public partial class MainScene : Control
                 if (_storyOutput != null) _storyOutput.Text = result.StoryText;
                 UpdateUI();
             };
-            _intelActionsVBox.AddChild(recall);
+            cardRoot.AddChild(recall);
             return;
         }
 
@@ -67,11 +90,41 @@ public partial class MainScene : Control
             return;
         }
 
+        var root = CreateIntelDecisionCard("吏部铨选 · 外任太守", $"州郡：{p.Name}\n当前地方民心：{p.LocalSupport}/100｜守军：{p.Garrison}\n任命地方官可立即稳民心 +10，并使该臣远离中枢、权势 -5；高野心臣在低民心地区有割据风险。");
+
         foreach (var npc in candidates)
         {
-            var appoint = new Button();
-            appoint.Text = $"任 {npc.Name}  政{npc.Politics} 野{npc.Ambition} {npc.Faction}";
-            appoint.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            var candidateCard = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+            candidateCard.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Intel));
+            root.AddChild(candidateCard);
+
+            var candidateBox = new VBoxContainer();
+            SetFullRect(candidateBox);
+            candidateBox.OffsetLeft = 10;
+            candidateBox.OffsetTop = 8;
+            candidateBox.OffsetRight = -10;
+            candidateBox.OffsetBottom = -8;
+            candidateBox.AddThemeConstantOverride("separation", 6);
+            candidateCard.AddChild(candidateBox);
+
+            var detail = new RichTextLabel
+            {
+                BbcodeEnabled = true,
+                FitContent = true,
+                ScrollActive = false,
+                CustomMinimumSize = new Vector2(0, 78),
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+            };
+            detail.Text = $"[color=#2a1608][b]{npc.Name}[/b]  {npc.Title}｜{npc.Faction}[/color]\n" +
+                $"[color=#4a2a12]政务：{DescribeGovernorPolitics(npc)}｜野心：{DescribeGovernorAmbition(npc)}｜风格：{npc.Style}[/color]\n" +
+                $"[color=#4a2a12]预判：{DescribeGovernorAppointmentImpact(p, npc)}[/color]";
+            candidateBox.AddChild(detail);
+
+            var appoint = new Button
+            {
+                Text = $"朱批外任 · {npc.Name} 出守 {p.Name}",
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+            };
             string npcId = npc.Id;
             appoint.Pressed += () =>
             {
@@ -80,7 +133,7 @@ public partial class MainScene : Control
                 if (_storyOutput != null) _storyOutput.Text = result.StoryText;
                 UpdateUI();
             };
-            _intelActionsVBox.AddChild(appoint);
+            candidateBox.AddChild(appoint);
         }
     }
 
@@ -298,6 +351,35 @@ public partial class MainScene : Control
             };
             cardRoot.AddChild(pacify);
         }
+    }
+
+    private static string DescribeGovernorPolitics(NpcState npc)
+    {
+        return npc.Politics switch
+        {
+            >= 80 => $"{npc.Politics}（经邦治郡）",
+            >= 60 => $"{npc.Politics}（足堪任事）",
+            >= 40 => $"{npc.Politics}（守成尚可）",
+            _ => $"{npc.Politics}（政务薄弱）"
+        };
+    }
+
+    private static string DescribeGovernorAmbition(NpcState npc)
+    {
+        return npc.Ambition switch
+        {
+            >= 80 => $"{npc.Ambition}（鹰视狼顾）",
+            >= 60 => $"{npc.Ambition}（需防坐大）",
+            >= 40 => $"{npc.Ambition}（尚可驾驭）",
+            _ => $"{npc.Ambition}（低）"
+        };
+    }
+
+    private static string DescribeGovernorAppointmentImpact(Province province, NpcState npc)
+    {
+        string governance = npc.Politics >= 70 ? "治政可期" : npc.Politics >= 45 ? "可暂稳地方" : "恐难理繁剧";
+        string ambitionRisk = npc.Ambition >= 60 && province.LocalSupport <= 30 ? "低民心下有叛离隐患" : npc.Ambition >= 60 ? "需防外任养望" : "割据风险较低";
+        return $"民心 +10，{npc.Name}权势 -5；{governance}，{ambitionRisk}";
     }
 
     private VBoxContainer CreateIntelDecisionCard(string titleText, string bodyText)
