@@ -16,6 +16,111 @@ public partial class MainScene : Control
 
     private Panel? _openingOverlay;
 
+    private void ShowTravelOverlay()
+    {
+        var panel = new Panel();
+        panel.Name = "TravelChoicePopup";
+        panel.Visible = false;
+        ConfigureCenteredPopupPanel(panel, PopupSkin.Warning, new Vector2(720, 470));
+
+        var root = new VBoxContainer();
+        SetFullRect(root);
+        root.OffsetLeft = 24;
+        root.OffsetTop = 20;
+        root.OffsetRight = -24;
+        root.OffsetBottom = -20;
+        root.AddThemeConstantOverride("separation", 12);
+        panel.AddChild(root);
+
+        var title = new Label { Text = "龙辇巡幸 · 三处移驾" };
+        StylePopupTitle(title, PopupSkin.Warning);
+        root.AddChild(title);
+
+        var desc = new Label
+        {
+            Text = "请陛下定夺今日驻跸之所。宣政殿总揽朝纲，温德殿调养龙体，西园精舍掌私库与新军。"
+        };
+        StylePopupBodyText(desc, PopupSkin.Warning);
+        root.AddChild(desc);
+
+        var cards = new HBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        cards.AddThemeConstantOverride("separation", 12);
+        root.AddChild(cards);
+
+        AddTravelDestinationCard(cards,
+            "宣政殿",
+            "朝会理政",
+            "批阅天下奏折、召见群臣、处置赈灾与地方任免。",
+            "适合：总揽大权、稳定朝局",
+            "起驾宣政殿");
+
+        AddTravelDestinationCard(cards,
+            "后宫",
+            "温德殿",
+            "暂离朝争，调养龙体；后续可扩展妃嫔、皇嗣与内廷事件。",
+            "适合：恢复健康、缓冲政务压力",
+            "巡幸温德殿");
+
+        AddTravelDestinationCard(cards,
+            "西园",
+            "西园精舍",
+            "避开外朝耳目，掌控私库、新军、阅兵发饷与募兵补军。",
+            "适合：强军、蓄财、重建皇权根基",
+            "起驾西园");
+
+        var cancel = new Button
+        {
+            Text = "龙辇免起",
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
+            CustomMinimumSize = new Vector2(180, 40)
+        };
+        cancel.Pressed += _windowManager.PopWindow;
+        root.AddChild(cancel);
+
+        PushTemporaryPopup(panel);
+    }
+
+    private void AddTravelDestinationCard(HBoxContainer parent, string destination, string heading, string body, string usage, string buttonText)
+    {
+        var card = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        card.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Warning));
+        parent.AddChild(card);
+
+        var box = new VBoxContainer();
+        SetFullRect(box);
+        box.OffsetLeft = 12;
+        box.OffsetTop = 12;
+        box.OffsetRight = -12;
+        box.OffsetBottom = -12;
+        box.AddThemeConstantOverride("separation", 8);
+        card.AddChild(box);
+
+        var title = new Label { Text = heading };
+        StyleColumnTitle(title, PopupSkin.Warning);
+        box.AddChild(title);
+
+        var bodyLabel = new Label
+        {
+            Text = body,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        StylePopupBodyText(bodyLabel, PopupSkin.Warning);
+        box.AddChild(bodyLabel);
+
+        var usageLabel = CreateActionPreviewLabel(PopupSkin.Warning);
+        usageLabel.Text = usage;
+        box.AddChild(usageLabel);
+
+        var go = new Button
+        {
+            Text = buttonText,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            CustomMinimumSize = new Vector2(0, 42)
+        };
+        go.Pressed += () => DoTravel(destination);
+        box.AddChild(go);
+    }
+
     private void ShowOpeningOverlay()
     {
         _openingOverlay = new Panel();

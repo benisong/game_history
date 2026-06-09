@@ -156,7 +156,7 @@ public partial class MainScene : Control
         // 场景切换按钮绑定
         if (_travelButton != null && _travelOverlayPanel != null)
         {
-            _travelButton.Pressed += () => _windowManager.PushWindow(_travelOverlayPanel);
+            _travelButton.Pressed += ShowTravelOverlay;
         }
 
         var btnGoCourt = GetNodeOrNull<Button>("TravelOverlayPanel/VBox/GoCourtButton");
