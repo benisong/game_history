@@ -392,6 +392,7 @@ public partial class MainScene : Control
         // 清理旧节点
         foreach (Node child in _npcListVBox.GetChildren())
         {
+            _npcListVBox.RemoveChild(child);
             child.QueueFree();
         }
 

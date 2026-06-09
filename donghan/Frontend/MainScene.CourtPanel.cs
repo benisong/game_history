@@ -789,7 +789,11 @@ public partial class MainScene : Control
 
     private static void ClearChildren(VBoxContainer box)
     {
-        foreach (Node child in box.GetChildren()) child.QueueFree();
+        foreach (Node child in box.GetChildren())
+        {
+            box.RemoveChild(child);
+            child.QueueFree();
+        }
     }
 
     private static void ClearChildrenExceptHeader(VBoxContainer box)
@@ -797,7 +801,9 @@ public partial class MainScene : Control
         var children = box.GetChildren();
         for (int i = 1; i < children.Count; i++)
         {
-            children[i].QueueFree();
+            var child = children[i];
+            box.RemoveChild(child);
+            child.QueueFree();
         }
     }
 
