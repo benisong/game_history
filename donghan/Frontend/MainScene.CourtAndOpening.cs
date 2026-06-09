@@ -6,12 +6,11 @@ public partial class MainScene : Control
 {
     private void OnPleasureCenserPressed()
     {
-        GD.Print("【互动】点燃博山炉，紫烟升起，起驾后宫/西园...");
-        if (_gameEngine != null)
-        {
-            _gameEngine.TravelToLocation("后宫");
-            UpdateUI();
-        }
+        ShowTravelPrompt(
+            "【温德殿宣召】",
+            "博山炉紫烟初起，黄门伏地奏请：陛下可暂离外朝，移驾温德殿调养龙体。是否即刻巡幸后宫？",
+            "后宫",
+            "巡幸温德殿");
     }
 
     private Panel? _openingOverlay;

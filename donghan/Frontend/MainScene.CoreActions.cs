@@ -131,7 +131,7 @@ public partial class MainScene : Control
                 "西园" => "【起驾 · 西园精舍】\n\n“起驾西园——！”\n陛下避开了何进等人的耳目，轻车简从，来到了陛下亲自督造的西园。这里有堆积如山的金银私库，有新募组建的精锐新军，是陛下摆脱掣肘、暗中夺回大权的铁血基地。",
                 _ => $"【起驾】\n\n陛下移驾{location}。"
             };
-            ShowStoryReportPopup("起驾奏报", travelStory, location == "西园" ? PopupSkin.WestGarden : PopupSkin.Court);
+            ShowStoryReportPopup("起驾奏报", travelStory, GetTravelReportSkin(location));
 
             UpdateUI();
         }
@@ -139,6 +139,16 @@ public partial class MainScene : Control
         {
             GD.PrintErr(ex.Message);
         }
+    }
+
+    private static PopupSkin GetTravelReportSkin(string location)
+    {
+        return location switch
+        {
+            "西园" => PopupSkin.WestGarden,
+            "后宫" => PopupSkin.Warning,
+            _ => PopupSkin.Court
+        };
     }
 
     // 执行快捷场景动作
