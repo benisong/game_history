@@ -62,6 +62,7 @@ public partial class MainScene : Control
 
         _btnCourtSeal = CreateDeskButton("📜 朝会", OnCourtSealPressed);
         _btnIntelToken = CreateDeskButton("📜 情报", OnIntelTokenPressed);
+        _btnWestGardenPalace = CreateDeskButton("🏯 西园", OnWestGardenPressed);
         _btnTravelCarriage = CreateCarriageButton("🐎 起驾", () =>
         {
             if (_travelOverlayPanel != null) _windowManager.PushWindow(_travelOverlayPanel);
@@ -69,6 +70,7 @@ public partial class MainScene : Control
 
         deskRow.AddChild(_btnCourtSeal);
         deskRow.AddChild(_btnIntelToken);
+        deskRow.AddChild(_btnWestGardenPalace);
         deskRow.AddChild(_btnTravelCarriage);
     }
 

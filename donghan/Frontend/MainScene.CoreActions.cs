@@ -140,6 +140,11 @@ public partial class MainScene : Control
             }
 
             UpdateUI();
+            if (location == "西园" && _westGardenPopup != null)
+            {
+                RefreshWestGardenPanel();
+                _windowManager.PushWindow(_westGardenPopup);
+            }
         }
         catch (Exception ex)
         {

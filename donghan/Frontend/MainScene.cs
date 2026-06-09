@@ -290,6 +290,7 @@ public partial class MainScene : Control
         InitializeAffairsPanel();
         InitializeIntelPanel();
         InitializeCourtPanel();
+        InitializeWestGardenPanel();
         ApplyOpaquePanelTheme(this);
 
         // 渲染初始界面状态
