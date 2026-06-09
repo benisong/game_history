@@ -131,7 +131,7 @@ public partial class MainScene : Control
                 "西园" => "【起驾 · 西园精舍】\n\n“起驾西园——！”\n陛下避开了何进等人的耳目，轻车简从，来到了陛下亲自督造的西园。这里有堆积如山的金银私库，有新募组建的精锐新军，是陛下摆脱掣肘、暗中夺回大权的铁血基地。",
                 _ => $"【起驾】\n\n陛下移驾{location}。"
             };
-            ShowStoryReportPopup("起驾奏报", travelStory, GetTravelReportSkin(location));
+            ShowTravelReportPopup("起驾奏报", travelStory, location);
 
             UpdateUI();
         }
@@ -159,7 +159,7 @@ public partial class MainScene : Control
         try
         {
             var result = _gameEngine.ExecuteQuickAction(actionId);
-            ShowStoryReportPopup("行动奏报", result.StoryText, actionId == "sell_office" ? PopupSkin.WestGarden : PopupSkin.Court);
+            ShowStoryReportPopup(actionId == "sell_office" ? "西园鬻官回奏" : "温德殿起居回奏", result.StoryText, actionId == "sell_office" ? PopupSkin.WestGarden : PopupSkin.Warning);
             UpdateUI();
         }
         catch (Exception ex)
@@ -187,7 +187,7 @@ public partial class MainScene : Control
             }
 
             var result = _gameEngine.ExecuteDrillArmyActionWithOfficer(amount, officerId);
-            ShowStoryReportPopup("西园军报", result.StoryText, PopupSkin.WestGarden);
+            ShowWestGardenReportPopup("西园军报", result.StoryText);
             UpdateUI();
         }
         catch (Exception ex)
@@ -203,13 +203,13 @@ public partial class MainScene : Control
         try
         {
             var result = _gameEngine.ExecuteRaiseWestGardenTroopsAction(troops);
-            ShowStoryReportPopup("西园军报", result.StoryText, PopupSkin.WestGarden);
+            ShowWestGardenReportPopup("西园军报", result.StoryText);
             UpdateUI();
         }
         catch (Exception ex)
         {
             GD.PrintErr(ex.Message);
-            ShowStoryReportPopup("募兵未成", $"【募兵未成】\n\n{ex.Message}", PopupSkin.Warning);
+            ShowWarningReportPopup("募兵未成", $"【募兵未成】\n\n{ex.Message}");
         }
     }
 
@@ -484,27 +484,65 @@ public partial class MainScene : Control
         return row;
     }
 
+    private void ShowCourtReportPopup(string fallbackTitle, string storyText)
+    {
+        ShowStoryReportPopup(fallbackTitle, storyText, PopupSkin.Court);
+    }
+
+    private void ShowIntelReportPopup(string fallbackTitle, string storyText)
+    {
+        ShowStoryReportPopup(fallbackTitle, storyText, PopupSkin.Intel);
+    }
+
+    private void ShowWestGardenReportPopup(string fallbackTitle, string storyText)
+    {
+        ShowStoryReportPopup(fallbackTitle, storyText, PopupSkin.WestGarden);
+    }
+
+    private void ShowDocumentReportPopup(string fallbackTitle, string storyText)
+    {
+        ShowStoryReportPopup(fallbackTitle, storyText, PopupSkin.Document);
+    }
+
+    private void ShowWarningReportPopup(string fallbackTitle, string storyText)
+    {
+        ShowStoryReportPopup(fallbackTitle, storyText, PopupSkin.Warning);
+    }
+
+    private void ShowTravelReportPopup(string fallbackTitle, string storyText, string location)
+    {
+        ShowStoryReportPopup(fallbackTitle, storyText, GetTravelReportSkin(location));
+    }
+
     private void ShowStoryReportPopup(string fallbackTitle, string storyText, PopupSkin skin)
     {
         if (string.IsNullOrWhiteSpace(storyText)) return;
 
         var panel = new Panel();
         panel.Name = "StoryReportPopup";
-        ConfigureCenteredPopupPanel(panel, skin, new Vector2(720, 460));
+        ConfigureCenteredPopupPanel(panel, skin, GetReportPopupSize(skin));
 
         var root = CreateActionPopupRoot(panel, 24, 20);
         root.AddThemeConstantOverride("separation", 12);
 
+        var seal = new Label { Text = GetReportSealText(skin, fallbackTitle) };
+        StyleReportSealLabel(seal, skin);
+        root.AddChild(seal);
+
         var title = new Label { Text = ExtractReportTitle(fallbackTitle, storyText) };
         StylePopupTitle(title, skin);
         root.AddChild(title);
+
+        var meta = new Label { Text = BuildReportMetaLine(skin) };
+        StyleReportMetaLabel(meta, skin);
+        root.AddChild(meta);
 
         var reportFrame = new Panel
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill
         };
-        reportFrame.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(skin));
+        reportFrame.AddThemeStyleboxOverride("panel", CreateReportBodyFrameStyle(skin));
         root.AddChild(reportFrame);
 
         var report = new RichTextLabel
@@ -515,17 +553,22 @@ public partial class MainScene : Control
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             ScrollActive = true
         };
+        report.AddThemeFontSizeOverride("normal_font_size", 16);
         report.AddThemeColorOverride("default_color", GetPopupBodyColor(skin));
         SetFullRect(report);
-        report.OffsetLeft = 14;
-        report.OffsetTop = 12;
-        report.OffsetRight = -14;
-        report.OffsetBottom = -12;
+        report.OffsetLeft = 16;
+        report.OffsetTop = 14;
+        report.OffsetRight = -16;
+        report.OffsetBottom = -14;
         reportFrame.AddChild(report);
+
+        var footer = new Label { Text = GetReportFooterText(skin) };
+        StyleReportMetaLabel(footer, skin);
+        root.AddChild(footer);
 
         var close = new Button
         {
-            Text = "收起奏报",
+            Text = GetReportCloseText(skin),
             CustomMinimumSize = new Vector2(0, 42),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
@@ -534,6 +577,120 @@ public partial class MainScene : Control
         root.AddChild(close);
 
         PushTemporaryPopup(panel);
+    }
+
+    private static Vector2 GetReportPopupSize(PopupSkin skin)
+    {
+        return skin switch
+        {
+            PopupSkin.Court => new Vector2(760, 500),
+            PopupSkin.Intel => new Vector2(780, 510),
+            PopupSkin.WestGarden => new Vector2(760, 500),
+            PopupSkin.Document => new Vector2(740, 500),
+            PopupSkin.Travel => new Vector2(720, 470),
+            PopupSkin.Warning => new Vector2(700, 450),
+            _ => new Vector2(720, 460)
+        };
+    }
+
+    private static string GetReportSealText(PopupSkin skin, string fallbackTitle)
+    {
+        return skin switch
+        {
+            PopupSkin.Court => "尚书台 · 百官回奏",
+            PopupSkin.Intel => fallbackTitle.Contains("军情") ? "黄门密札 · 军情战报" : "黄门密札 · 州郡回传",
+            PopupSkin.WestGarden => "西园密署 · 军簿回报",
+            PopupSkin.Document => "御案折匣 · 朱批回奏",
+            PopupSkin.Travel => "黄门导驾 · 龙辇奏报",
+            PopupSkin.Warning => fallbackTitle.Contains("御史") ? "御史台 · 风闻弹奏" : "黄门短札 · 急奏",
+            _ => "内廷奏报"
+        };
+    }
+
+    private static string BuildReportMetaLine(PopupSkin skin)
+    {
+        string source = skin switch
+        {
+            PopupSkin.Court => "来源：宣政殿 / 尚书台",
+            PopupSkin.Intel => "来源：黄门密札 / 州郡舆图",
+            PopupSkin.WestGarden => "来源：西园精舍 / 天子亲军",
+            PopupSkin.Document => "来源：御案折匣 / 奏章朱批",
+            PopupSkin.Travel => "来源：龙辇仪仗 / 宫门黄门",
+            PopupSkin.Warning => "来源：御史台 / 黄门急奏",
+            _ => "来源：内廷"
+        };
+        return $"{source} ｜ {DateTime.Now:HH:mm:ss}";
+    }
+
+    private static string GetReportFooterText(PopupSkin skin)
+    {
+        return skin switch
+        {
+            PopupSkin.Court => "钤印：圣裁已入起居注，百官反应将在后续旬日发酵。",
+            PopupSkin.Intel => "钤印：密札已封存，地方风险请继续于黄门密札复核。",
+            PopupSkin.WestGarden => "钤印：军簿已登记，兵额、军费与士气变化即时生效。",
+            PopupSkin.Document => "钤印：朱批已下，尚书台据此流转卷宗。",
+            PopupSkin.Travel => "钤印：导驾已毕，当前驻跸之所已经更新。",
+            PopupSkin.Warning => "钤印：此为前置警示，未必消耗本旬行动。",
+            _ => "钤印：奏报已收。"
+        };
+    }
+
+    private static string GetReportCloseText(PopupSkin skin)
+    {
+        return skin switch
+        {
+            PopupSkin.Court => "御览毕 · 收起回奏",
+            PopupSkin.Intel => "封存密札",
+            PopupSkin.WestGarden => "归档军簿",
+            PopupSkin.Document => "合上折匣",
+            PopupSkin.Travel => "收起导驾奏报",
+            PopupSkin.Warning => "朕已知晓",
+            _ => "收起奏报"
+        };
+    }
+
+    private static void StyleReportSealLabel(Label label, PopupSkin skin)
+    {
+        label.HorizontalAlignment = HorizontalAlignment.Center;
+        label.AddThemeFontSizeOverride("font_size", 15);
+        label.AddThemeColorOverride("font_color", GetReportAccentColor(skin));
+    }
+
+    private static void StyleReportMetaLabel(Label label, PopupSkin skin)
+    {
+        label.HorizontalAlignment = HorizontalAlignment.Center;
+        label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        label.AddThemeFontSizeOverride("font_size", 13);
+        label.AddThemeColorOverride("font_color", GetPopupBodyColor(skin).Darkened(skin == PopupSkin.Intel || skin == PopupSkin.Document ? 0.16f : 0.10f));
+    }
+
+    private static Color GetReportAccentColor(PopupSkin skin)
+    {
+        return skin switch
+        {
+            PopupSkin.Intel => new Color(0.98f, 0.82f, 0.52f, 1.0f),
+            PopupSkin.Document => new Color(0.28f, 0.13f, 0.04f, 1.0f),
+            _ => GetPopupTitleColor(skin).Lightened(0.08f)
+        };
+    }
+
+    private static StyleBoxFlat CreateReportBodyFrameStyle(PopupSkin skin)
+    {
+        var style = skin == PopupSkin.Document || skin == PopupSkin.Intel
+            ? CreatePopupParchmentStyle()
+            : CreatePopupInnerPanelStyle(skin);
+        if (skin == PopupSkin.Intel)
+        {
+            style.BgColor = new Color(0.760f, 0.650f, 0.430f, 1.0f);
+            style.BorderColor = new Color(0.42f, 0.24f, 0.10f, 1.0f);
+        }
+        if (skin == PopupSkin.Warning)
+        {
+            style.BorderColor = new Color(0.90f, 0.22f, 0.12f, 1.0f);
+            style.SetBorderWidthAll(2);
+        }
+        return style;
     }
 
     private static string ExtractReportTitle(string fallbackTitle, string storyText)
@@ -574,7 +731,7 @@ public partial class MainScene : Control
         try
         {
             var result = _gameEngine.ExecuteDisasterReliefAction(amount, officerId);
-            ShowStoryReportPopup("宣政殿奏报", result.StoryText, PopupSkin.Court);
+            ShowCourtReportPopup("宣政殿赈灾回奏", result.StoryText);
             UpdateUI();
         }
         catch (Exception ex)
@@ -597,13 +754,13 @@ public partial class MainScene : Control
         try
         {
             var result = await _gameEngine.ProcessPlayerTurnAsync(text);
-            ShowStoryReportPopup("朱批回奏", result.StoryText, PopupSkin.Document);
+            ShowDocumentReportPopup("御案朱批回奏", result.StoryText);
             UpdateUI();
         }
         catch (Exception ex)
         {
             GD.PrintErr($"[Error in Turn Processing]: {ex.Message}");
-            ShowStoryReportPopup("内监急奏", "【内监急奏】\n\n圣旨解析失败，AI 未响应或格式有误。", PopupSkin.Warning);
+            ShowWarningReportPopup("内监急奏", "【内监急奏】\n\n圣旨解析失败，AI 未响应或格式有误。");
         }
         finally
         {

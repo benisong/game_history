@@ -466,7 +466,7 @@ public partial class MainScene : Control
     {
         _windowManager.PopWindow();
         await ShowCourtRitualSequenceAsync(BuildCourtDismissalRitualSlides(), runPreload: true);
-        ShowStoryReportPopup("退朝", "【退朝】\n\n静鞭三响，百官次第退出宣政殿。陛下暂收朝议，天下仍在暗流中流转。", PopupSkin.Court);
+        ShowCourtReportPopup("退朝回奏", "【退朝 · 百官散班】\n\n静鞭三响，百官次第退出宣政殿。尚书台收起奏牍，中官与外戚各自低语退下。\n\n本次朝议暂歇，天下州郡、国库民心与朝中党争仍将在旬日之间继续发酵。");
     }
 
     private async void OnConfirmCourtAssembly()
@@ -479,7 +479,7 @@ public partial class MainScene : Control
         var resultTask = _gameEngine!.ProcessPlayerTurnAsync(txt);
         await ShowCourtRitualSequenceAsync(BuildCourtEdictRitualSlides(txt), preloadTask: resultTask);
         var result = await resultTask;
-        ShowStoryReportPopup("朝议回奏", result.StoryText, PopupSkin.Court);
+        ShowCourtReportPopup("朝议圣裁回奏", result.StoryText);
         UpdateUI();
     }
 

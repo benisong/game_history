@@ -66,7 +66,7 @@ public partial class MainScene : Control
             {
                 _windowManager.PopWindow();
                 var result = _gameEngine!.RecallGovernor(p.Id);
-                ShowStoryReportPopup("刺史敕札", result.StoryText, PopupSkin.Intel);
+                ShowIntelReportPopup("黄门召还密札", result.StoryText);
                 UpdateUI();
             };
             cardRoot.AddChild(recall);
@@ -122,7 +122,7 @@ public partial class MainScene : Control
             {
                 _windowManager.PopWindow();
                 var result = _gameEngine!.AssignGovernor(p.Id, npcId);
-                ShowStoryReportPopup("吏部回奏", result.StoryText, PopupSkin.Intel);
+                ShowIntelReportPopup("吏部外任密札", result.StoryText);
                 UpdateUI();
             };
             candidateBox.AddChild(appoint);
@@ -221,7 +221,7 @@ public partial class MainScene : Control
                 int troops = (int)troopSpin.Value;
                 _windowManager.PopWindow();
                 var result = _gameEngine!.SuppressRebellion(p.Id, generalId, troops);
-                ShowStoryReportPopup("军情战报", result.StoryText, PopupSkin.Intel);
+                ShowIntelReportPopup("军情战报", result.StoryText);
                 UpdateUI();
             };
         }
@@ -327,14 +327,14 @@ public partial class MainScene : Control
 
                 if (strategies == 0)
                 {
-                    ShowStoryReportPopup("招安未发", "【招安未发】\n\n陛下尚未选定任何安抚策略，黄门捧诏不敢出宫。", PopupSkin.Warning);
+                    ShowWarningReportPopup("招安未发", "【招安未发】\n\n陛下尚未选定任何安抚策略，黄门捧诏不敢出宫。");
                     return;
                 }
 
                 int reliefGold = chkDisasterRelief.ButtonPressed ? (int)reliefSpin.Value : 0;
                 _windowManager.PopWindow();
                 var result = _gameEngine!.PacifyRebellion(p.Id, envoyId, strategies, reliefGold);
-                ShowStoryReportPopup("黄门密奏", result.StoryText, PopupSkin.Intel);
+                ShowIntelReportPopup("黄门招安密奏", result.StoryText);
                 UpdateUI();
             };
             cardRoot.AddChild(pacify);

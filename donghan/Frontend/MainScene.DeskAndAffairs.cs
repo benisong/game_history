@@ -400,7 +400,7 @@ public partial class MainScene : Control
         if (_gameState == null) return;
         if (_gameState.CurrentLocation != "宣政殿")
         {
-            ShowStoryReportPopup("太监急奏", "【太监急奏】\n\n“陛下，漆木折匣重器存放在宣政殿案上，请移驾宣政殿再行批阅批示！”", PopupSkin.Warning);
+            ShowWarningReportPopup("太监急奏", "【太监急奏】\n\n“陛下，漆木折匣重器存放在宣政殿案上，请移驾宣政殿再行批阅批示！”");
             return;
         }
 
@@ -455,7 +455,7 @@ public partial class MainScene : Control
                 _windowManager.PopWindow(); // 关闭尚书台弹窗
 
                 var result = _gameEngine!.ResolveEdictAction(edict.Id, optIndex);
-                ShowStoryReportPopup("尚书台回奏", result.StoryText, PopupSkin.Document);
+                ShowDocumentReportPopup("尚书台朱批回奏", result.StoryText);
                 UpdateUI();
             };
             _edictOptionsVBox.AddChild(btn);

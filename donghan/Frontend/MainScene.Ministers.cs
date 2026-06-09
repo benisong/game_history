@@ -321,12 +321,12 @@ public partial class MainScene : Control
             // 如果不在宣政殿，发出警告
             if (_gameState?.CurrentLocation != "宣政殿")
             {
-                ShowStoryReportPopup("御史弹劾", "【御史弹劾】\n\n“陛下，抄没朝臣家产兹事体大，必须在宣政殿百官大朝会上宣旨籍没，方可调动京师御林军，否则名不正言不顺！”", PopupSkin.Warning);
+                ShowWarningReportPopup("御史弹劾", "【御史弹劾】\n\n“陛下，抄没朝臣家产兹事体大，必须在宣政殿百官大朝会上宣旨籍没，方可调动京师御林军，否则名不正言不顺！”");
                 return;
             }
 
             var result = _gameEngine.ExecuteConfiscationAction(_currentDetailsMinisterId, destination);
-            ShowStoryReportPopup("廷尉回奏", result.StoryText, PopupSkin.Warning);
+            ShowWarningReportPopup("廷尉籍没回奏", result.StoryText);
             UpdateUI();
         }
         catch (Exception ex)
