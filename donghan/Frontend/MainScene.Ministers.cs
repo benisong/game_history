@@ -10,61 +10,101 @@ public partial class MainScene : Control
 {
     private void ShowMinisterDetails(string ministerId)
     {
-        if (_gameState == null || _ministerPanel == null) return;
+        if (_gameState == null) return;
+        if (!_gameState.Npcs.TryGetValue(ministerId, out var minister)) return;
 
-        if (_gameState.Npcs.TryGetValue(ministerId, out var minister))
+        _currentDetailsMinisterId = ministerId;
+
+        var panel = new Panel();
+        panel.Name = "MinisterDossierPopup";
+        ConfigureCenteredPopupPanel(panel, PopupSkin.Document, new Vector2(660, 500));
+
+        var root = new VBoxContainer();
+        SetFullRect(root);
+        root.OffsetLeft = 24;
+        root.OffsetTop = 20;
+        root.OffsetRight = -24;
+        root.OffsetBottom = -20;
+        root.AddThemeConstantOverride("separation", 12);
+        panel.AddChild(root);
+
+        var title = new Label { Text = $"奏牍档案 · {minister.Name}" };
+        StylePopupTitle(title, PopupSkin.Document);
+        root.AddChild(title);
+
+        var subtitle = new Label
         {
-            _currentDetailsMinisterId = ministerId; // 记录当前正在查看的大臣ID，用于抄家指令
-            ApplyMinisterDocumentSkin();
+            Text = $"{minister.Title}｜{minister.Faction}｜{(minister.GovernedProvinceId != null && _gameState.Provinces.TryGetValue(minister.GovernedProvinceId, out var province) ? $"外任 {province.Name}" : "在京候旨")}",
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        StylePopupBodyText(subtitle, PopupSkin.Document);
+        root.AddChild(subtitle);
 
-            if (_ministerTitleLabel != null)
-            {
-                _ministerTitleLabel.Text = $"{minister.Name} · {minister.Title}";
-                _ministerTitleLabel.AddThemeColorOverride("font_color", GetPopupTitleColor(PopupSkin.Document));
-            }
-            if (_ministerFavorabilityLabel != null)
-            {
-                _ministerFavorabilityLabel.Text = $"君臣情分：{DescribeAttitudeLevel(minister.Favorability)}（{minister.Favorability}/100）";
-            }
-            if (_ministerPowerLabel != null)
-            {
-                _ministerPowerLabel.Text = $"朝局分量：{DescribePowerLevel(minister.Power)}（{minister.Power}/100）";
-            }
+        var dossierFrame = new Panel
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        dossierFrame.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Document));
+        root.AddChild(dossierFrame);
 
-            var corruptionLabel = GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterCorruption");
-            if (corruptionLabel != null)
-            {
-                corruptionLabel.Text = $"廉污风评：{DescribeCorruptionLevel(minister.Corruption)}（{minister.Corruption}/100）";
-            }
+        var dossier = new RichTextLabel
+        {
+            BbcodeEnabled = true,
+            FitContent = false,
+            ScrollActive = true,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+            Text = BuildMinisterDossierText(minister)
+        };
+        dossier.AddThemeColorOverride("default_color", GetPopupBodyColor(PopupSkin.Document));
+        SetFullRect(dossier);
+        dossier.OffsetLeft = 16;
+        dossier.OffsetTop = 14;
+        dossier.OffsetRight = -16;
+        dossier.OffsetBottom = -14;
+        dossierFrame.AddChild(dossier);
 
-            var wealthLabel = GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterWealth");
-            if (wealthLabel != null)
-            {
-                wealthLabel.Text = $"可籍赃银：{minister.StashedWealth} 万钱";
-            }
+        var row = CreateActionPopupButtonRow();
+        var treasury = new Button { Text = "籍没入国库", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, Disabled = minister.StashedWealth <= 0 };
+        var privateTreasury = new Button { Text = "籍没入西园私库", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, Disabled = minister.StashedWealth <= 0 };
+        var close = new Button { Text = "合上奏牍", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        StyleSceneActionButton(treasury, ActionButtonSkin.Warning);
+        StyleSceneActionButton(privateTreasury, ActionButtonSkin.Warning);
+        StyleSceneActionButton(close, ActionButtonSkin.Document);
+        treasury.Pressed += () => ShowConfiscateConfirmAction("国库");
+        privateTreasury.Pressed += () => ShowConfiscateConfirmAction("私库");
+        close.Pressed += _windowManager.PopWindow;
+        row.AddChild(treasury);
+        row.AddChild(privateTreasury);
+        row.AddChild(close);
+        root.AddChild(row);
 
-            var fiveAttributesLabel = _ministerPanel.GetNodeOrNull<Label>("VBox/FiveAttributes");
-            if (fiveAttributesLabel == null)
-            {
-                fiveAttributesLabel = new Label();
-                fiveAttributesLabel.Name = "FiveAttributes";
-                _ministerPanel.GetNode<VBoxContainer>("VBox").AddChild(fiveAttributesLabel);
-                _ministerPanel.GetNode<VBoxContainer>("VBox").MoveChild(fiveAttributesLabel, 5);
-            }
-            ConfigureWrappingLabel(fiveAttributesLabel, HorizontalAlignment.Left);
-            fiveAttributesLabel.AddThemeColorOverride("font_color", new Color(0.20f, 0.12f, 0.06f, 1.0f));
+        PushTemporaryPopup(panel);
+    }
 
-            string govText = minister.GovernedProvinceId != null && _gameState.Provinces.TryGetValue(minister.GovernedProvinceId, out var province)
-                ? $"外任记录：{province.Name} 太守"
-                : "任所记录：在京候旨";
-            fiveAttributesLabel.Text =
-                $"【奏牍摘录】\n{govText}\n" +
-                $"武略 {minister.Martial}｜统御 {minister.Leadership}｜政术 {minister.Politics}\n" +
-                $"声望 {minister.Charisma}｜野心 {minister.Ambition}\n" +
-                $"派系：{minister.Faction}";
+    private string BuildMinisterDossierText(NpcState minister)
+    {
+        if (_gameState == null) return string.Empty;
 
-            _windowManager.PushWindow(_ministerPanel);
-        }
+        string location = minister.GovernedProvinceId != null && _gameState.Provinces.TryGetValue(minister.GovernedProvinceId, out var province)
+            ? $"外任记录：{province.Name} 太守"
+            : "任所记录：在京候旨";
+        string confiscationHint = minister.StashedWealth > 0
+            ? "可由廷尉奏牍发起籍没，执行前仍需圣裁确认。"
+            : "暂无可籍赃银，强行籍没收益极低。";
+
+        return $"[b]【身分】[/b]\n" +
+            $"姓名：{minister.Name}\n官职：{minister.Title}\n派系：{minister.Faction}\n{location}\n\n" +
+            $"[b]【君臣与朝局】[/b]\n" +
+            $"君臣情分：{DescribeAttitudeLevel(minister.Favorability)}（{minister.Favorability}/100）\n" +
+            $"朝局分量：{DescribePowerLevel(minister.Power)}（{minister.Power}/100）\n" +
+            $"廉污风评：{DescribeCorruptionLevel(minister.Corruption)}（{minister.Corruption}/100）\n" +
+            $"可籍赃银：{minister.StashedWealth} 万钱\n\n" +
+            $"[b]【五维摘录】[/b]\n" +
+            $"武略 {minister.Martial}｜统御 {minister.Leadership}｜政术 {minister.Politics}\n" +
+            $"声望 {minister.Charisma}｜野心 {minister.Ambition}\n\n" +
+            $"[b]【廷尉提示】[/b]\n{confiscationHint}";
     }
 
     private void ApplyMinisterDocumentSkin()
