@@ -580,7 +580,7 @@ public partial class MainScene : Control
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered,
             Modulate = new Color(0.92f, 0.78f, 0.52f, 0.92f),
-            ZIndex = -2
+            ZIndex = 0
         };
         SetFullRect(artwork);
         picture.AddChild(artwork);
@@ -590,12 +590,12 @@ public partial class MainScene : Control
             Name = "RitualArtworkWash",
             Color = new Color(0.02f, 0.005f, 0.0f, 0.38f),
             MouseFilter = Control.MouseFilterEnum.Ignore,
-            ZIndex = -1
+            ZIndex = 1
         };
         SetFullRect(artworkWash);
         picture.AddChild(artworkWash);
 
-        var pictureBox = new VBoxContainer { Name = "RitualPictureBox" };
+        var pictureBox = new VBoxContainer { Name = "RitualPictureBox", ZIndex = 2 };
         SetFullRect(pictureBox);
         pictureBox.OffsetLeft = 28;
         pictureBox.OffsetTop = 24;
@@ -653,6 +653,7 @@ public partial class MainScene : Control
         root.AddChild(lockLabel);
 
         AddChild(overlay);
+        MoveChild(overlay, GetChildCount() - 1);
         overlay.Hide();
         _courtRitualOverlay = overlay;
     }
@@ -695,6 +696,10 @@ public partial class MainScene : Control
         if (artwork != null)
         {
             artwork.Texture = string.IsNullOrWhiteSpace(slide.ImagePath) ? null : LoadTextureFromProjectFile(slide.ImagePath);
+            if (artwork.Texture == null && !string.IsNullOrWhiteSpace(slide.ImagePath))
+            {
+                GD.PrintErr($"朝会仪式图片未载入：{slide.ImagePath}");
+            }
         }
         _courtRitualOverlay.GetNodeOrNull<RichTextLabel>("RitualRoot/RitualPicture/RitualPictureBox/RitualImageText")!.Text = $"[center]{slide.ImageText}[/center]";
         _courtRitualOverlay.GetNodeOrNull<Label>("RitualRoot/RitualCaption")!.Text = slide.Caption;
