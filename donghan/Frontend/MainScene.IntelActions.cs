@@ -89,44 +89,72 @@ public partial class MainScene : Control
         if (_intelActionsVBox == null || _gameState == null) return;
         AddIntelSectionTitle("【军事平叛】");
 
-        var militaryNpcs = _gameState.Npcs.Values.Where(n => n.IsActive && n.GovernedProvinceId == null).Take(4).ToList();
+        var militaryNpcs = _gameState.Npcs.Values
+            .Where(n => n.IsActive && n.GovernedProvinceId == null)
+            .OrderByDescending(NpcTraitEvaluator.GetCombatPower)
+            .Take(4)
+            .ToList();
         if (militaryNpcs.Count == 0)
         {
             _intelActionsVBox.AddChild(new Label { Text = "京中暂无可派遣将领。", AutowrapMode = TextServer.AutowrapMode.WordSmart });
             return;
         }
 
-        var troopBox = new HBoxContainer();
+        var cardRoot = CreateIntelDecisionCard("军令牌 · 平定州郡", $"叛乱州郡：{p.Name}\n贼势约：{p.Garrison} 人｜距京：{p.Distance}\n请陛下先定出兵之数，再择将授符。军费与胜率将随兵力即时推算。");
+
+        var troopBox = new HBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         troopBox.AddThemeConstantOverride("separation", 8);
-        _intelActionsVBox.AddChild(troopBox);
-        troopBox.AddChild(new Label { Text = "出兵:" });
+        cardRoot.AddChild(troopBox);
+        var troopLabel = new Label { Text = "出兵" };
+        StylePopupBodyText(troopLabel, PopupSkin.Intel);
+        troopBox.AddChild(troopLabel);
 
-        var troopSpin = new SpinBox();
-        troopSpin.MinValue = 1000;
-        troopSpin.MaxValue = Math.Max(1000, _gameState.WestGardenArmy.Size);
-        troopSpin.Step = 1000;
-        troopSpin.Value = Math.Min(3000, Math.Max(1000, _gameState.WestGardenArmy.Size));
-        troopSpin.CustomMinimumSize = new Vector2(115, 0);
+        var troopSpin = new SpinBox
+        {
+            MinValue = 1000,
+            MaxValue = Math.Max(1000, _gameState.WestGardenArmy.Size),
+            Step = 1000,
+            Value = Math.Min(3000, Math.Max(1000, _gameState.WestGardenArmy.Size)),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
         troopBox.AddChild(troopSpin);
-        troopBox.AddChild(new Label { Text = "人" });
+        var troopUnit = new Label { Text = "人" };
+        StylePopupBodyText(troopUnit, PopupSkin.Intel);
+        troopBox.AddChild(troopUnit);
 
-        var costLabel = new Label();
-        costLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _intelActionsVBox.AddChild(costLabel);
+        var costLabel = CreateActionPreviewLabel(PopupSkin.Intel);
+        cardRoot.AddChild(costLabel);
 
         foreach (var general in militaryNpcs)
         {
             double combatPower = NpcTraitEvaluator.GetCombatPower(general);
             double distancePenalty = p.Distance * 5;
 
-            var detail = new RichTextLabel();
-            detail.BbcodeEnabled = true;
-            detail.CustomMinimumSize = new Vector2(0, 76);
-            _intelActionsVBox.AddChild(detail);
+            var generalCard = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+            generalCard.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Intel));
+            cardRoot.AddChild(generalCard);
 
-            var dispatch = new Button();
-            dispatch.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-            _intelActionsVBox.AddChild(dispatch);
+            var generalBox = new VBoxContainer();
+            SetFullRect(generalBox);
+            generalBox.OffsetLeft = 10;
+            generalBox.OffsetTop = 8;
+            generalBox.OffsetRight = -10;
+            generalBox.OffsetBottom = -8;
+            generalBox.AddThemeConstantOverride("separation", 6);
+            generalCard.AddChild(generalBox);
+
+            var detail = new RichTextLabel
+            {
+                BbcodeEnabled = true,
+                CustomMinimumSize = new Vector2(0, 70),
+                FitContent = true,
+                ScrollActive = false,
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+            };
+            generalBox.AddChild(detail);
+
+            var dispatch = new Button { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+            generalBox.AddChild(dispatch);
 
             void RefreshPreview(double troopsValue)
             {
@@ -135,10 +163,11 @@ public partial class MainScene : Control
                 double troopRatio = selectedTroops / (double)Math.Max(p.Garrison, 1);
                 double troopBonus = Math.Clamp((troopRatio - 1.0) * 20, -20, 25);
                 double successRate = Math.Clamp(combatPower - distancePenalty + troopBonus, 5, 95);
-                costLabel.Text = $"军费预估：{campaignCost} 万钱｜西园现有 {_gameState.WestGardenArmy.Size} 人";
-                detail.Text = $"[b]{general.Name}[/b] 武{general.Martial} 统{general.Leadership}｜战力[color=yellow]{combatPower:F0}[/color] 距京惩罚{distancePenalty:F0}\n" +
-                    $"兵力修正 {troopBonus:+0;-0;0}%｜预计胜率 [color={(successRate >= 70 ? "green" : successRate >= 45 ? "yellow" : "red")}]{successRate:F0}%[/color]";
-                dispatch.Text = $"命 {general.Name} 率 {selectedTroops} 人出征";
+                string risk = successRate >= 70 ? "胜算较厚" : successRate >= 45 ? "胜负未定" : "败风险高";
+                costLabel.Text = $"军费预估：{campaignCost} 万钱｜西园现有：{_gameState.WestGardenArmy.Size} 人｜出征后留守：{Math.Max(0, _gameState.WestGardenArmy.Size - selectedTroops)} 人";
+                detail.Text = $"[color=#2a1608][b]{general.Name}[/b]  武 {general.Martial}｜统 {general.Leadership}｜战力 {combatPower:F0}[/color]\n" +
+                    $"[color=#4a2a12]距京惩罚 {distancePenalty:F0}｜兵力修正 {troopBonus:+0;-0;0}%｜胜率 {successRate:F0}%（{risk}）[/color]";
+                dispatch.Text = $"授符出征 · {general.Name} 率 {selectedTroops} 人";
             }
 
             RefreshPreview(troopSpin.Value);
@@ -161,11 +190,12 @@ public partial class MainScene : Control
         if (_intelActionsVBox == null || _gameState == null) return;
         AddIntelSectionTitle("【遣使招安】");
 
-        var strategyGrid = new GridContainer();
-        strategyGrid.Columns = 2;
+        var cardRoot = CreateIntelDecisionCard("密札朱批 · 遣使招安", $"叛乱州郡：{p.Name}\n可叠加策略以增安抚力度，但赈灾需动用国库，惩治可能激化地方。请先圈定策略，再择使臣持节出京。");
+
+        var strategyGrid = new GridContainer { Columns = 2, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         strategyGrid.AddThemeConstantOverride("h_separation", 12);
         strategyGrid.AddThemeConstantOverride("v_separation", 4);
-        _intelActionsVBox.AddChild(strategyGrid);
+        cardRoot.AddChild(strategyGrid);
 
         var chkSowDiscord = new CheckBox { Text = "离间计" };
         var chkPersuade = new CheckBox { Text = "说服", ButtonPressed = true };
@@ -176,22 +206,37 @@ public partial class MainScene : Control
         strategyGrid.AddChild(chkDisasterRelief);
         strategyGrid.AddChild(chkPunish);
 
-        var reliefBox = new HBoxContainer();
+        var reliefBox = new HBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         reliefBox.AddThemeConstantOverride("separation", 8);
-        _intelActionsVBox.AddChild(reliefBox);
-        reliefBox.AddChild(new Label { Text = "赈灾:" });
-        var reliefSpin = new SpinBox();
-        reliefSpin.MinValue = 500;
-        reliefSpin.MaxValue = 1500;
-        reliefSpin.Step = 500;
-        reliefSpin.Value = 500;
-        reliefSpin.CustomMinimumSize = new Vector2(105, 0);
+        cardRoot.AddChild(reliefBox);
+        var reliefLabel = new Label { Text = "赈银" };
+        StylePopupBodyText(reliefLabel, PopupSkin.Intel);
+        reliefBox.AddChild(reliefLabel);
+        var reliefSpin = new SpinBox
+        {
+            MinValue = 500,
+            MaxValue = 1500,
+            Step = 500,
+            Value = 500,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
         reliefBox.AddChild(reliefSpin);
-        reliefBox.AddChild(new Label { Text = "万" });
+        var reliefUnit = new Label { Text = "万" };
+        StylePopupBodyText(reliefUnit, PopupSkin.Intel);
+        reliefBox.AddChild(reliefUnit);
 
-        var preview = new Label();
-        preview.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _intelActionsVBox.AddChild(preview);
+        var previewFrame = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        previewFrame.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Intel));
+        cardRoot.AddChild(previewFrame);
+        var previewMargin = new MarginContainer();
+        SetFullRect(previewMargin);
+        previewMargin.AddThemeConstantOverride("margin_left", 10);
+        previewMargin.AddThemeConstantOverride("margin_right", 10);
+        previewMargin.AddThemeConstantOverride("margin_top", 8);
+        previewMargin.AddThemeConstantOverride("margin_bottom", 8);
+        previewFrame.AddChild(previewMargin);
+        var preview = CreateActionPreviewLabel(PopupSkin.Intel);
+        previewMargin.AddChild(preview);
 
         void RefreshStrategyPreview()
         {
@@ -200,9 +245,14 @@ public partial class MainScene : Control
                 chkSowDiscord.ButtonPressed ? "离间" : "",
                 chkPersuade.ButtonPressed ? "说服" : "",
                 chkDisasterRelief.ButtonPressed ? $"赈灾{(int)reliefSpin.Value}万" : "",
-                chkPunish.ButtonPressed ? "惩治" : ""
+                chkPunish.ButtonPressed ? "惩治豪强" : ""
             }.Where(s => !string.IsNullOrEmpty(s)));
-            preview.Text = string.IsNullOrEmpty(strategies) ? "预计策略：未选策略" : $"预计策略：{strategies}";
+            string treasuryLine = chkDisasterRelief.ButtonPressed
+                ? $"国库预支：{(int)reliefSpin.Value} 万钱｜事后结余约 {Math.Max(0, _gameState.Treasury - (int)reliefSpin.Value)} 万钱"
+                : "国库预支：无";
+            preview.Text = string.IsNullOrEmpty(strategies)
+                ? "预计策略：未选策略\n黄门捧诏不敢出宫。"
+                : $"预计策略：{strategies}\n{treasuryLine}";
         }
 
         chkSowDiscord.Toggled += _ => RefreshStrategyPreview();
@@ -212,13 +262,19 @@ public partial class MainScene : Control
         reliefSpin.ValueChanged += _ => RefreshStrategyPreview();
         RefreshStrategyPreview();
 
-        var envoys = _gameState.Npcs.Values.Where(n => n.IsActive && n.GovernedProvinceId == null).Take(4).ToList();
+        var envoys = _gameState.Npcs.Values
+            .Where(n => n.IsActive && n.GovernedProvinceId == null)
+            .OrderByDescending(NpcTraitEvaluator.GetPoliticalSkill)
+            .Take(4)
+            .ToList();
         foreach (var envoy in envoys)
         {
-            var pacify = new Button();
             double politicalSkill = NpcTraitEvaluator.GetPoliticalSkill(envoy);
-            pacify.Text = $"遣 {envoy.Name} 招安  政略{politicalSkill:F0}";
-            pacify.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            var pacify = new Button
+            {
+                Text = $"持节出使 · {envoy.Name}  政略 {politicalSkill:F0}",
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+            };
             string envoyId = envoy.Id;
             pacify.Pressed += () =>
             {
@@ -240,8 +296,36 @@ public partial class MainScene : Control
                 if (_storyOutput != null) _storyOutput.Text = result.StoryText;
                 UpdateUI();
             };
-            _intelActionsVBox.AddChild(pacify);
+            cardRoot.AddChild(pacify);
         }
+    }
+
+    private VBoxContainer CreateIntelDecisionCard(string titleText, string bodyText)
+    {
+        if (_intelActionsVBox == null) throw new InvalidOperationException("Intel actions container is not initialized.");
+
+        var card = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        card.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Intel));
+        _intelActionsVBox.AddChild(card);
+
+        var root = new VBoxContainer();
+        SetFullRect(root);
+        root.OffsetLeft = 12;
+        root.OffsetTop = 10;
+        root.OffsetRight = -12;
+        root.OffsetBottom = -10;
+        root.AddThemeConstantOverride("separation", 8);
+        card.AddChild(root);
+
+        var title = new Label { Text = titleText };
+        StyleColumnTitle(title, PopupSkin.Intel);
+        root.AddChild(title);
+
+        var body = new Label { Text = bodyText };
+        StylePopupBodyText(body, PopupSkin.Intel);
+        root.AddChild(body);
+
+        return root;
     }
 
     private void AddIntelSectionTitle(string text)
