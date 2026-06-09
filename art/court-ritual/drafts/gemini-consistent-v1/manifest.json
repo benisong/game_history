@@ -1,0 +1,35 @@
+[
+  {
+    "file": "announce_court.png",
+    "result": {
+      "success": true,
+      "image": "/root/.hermes/cache/images/custom_chat_image_20260609_085315_4e5ce652.png",
+      "model": "gemini-3.1-flash-image-preview",
+      "aspect_ratio": "landscape",
+      "provider": "custom-chat-image",
+      "size": "1536x1024"
+    }
+  },
+  {
+    "file": "whip_silence.png",
+    "result": {
+      "success": true,
+      "image": "/root/.hermes/cache/images/custom_chat_image_20260609_085327_964ef0e9.png",
+      "model": "gemini-3.1-flash-image-preview",
+      "aspect_ratio": "landscape",
+      "provider": "custom-chat-image",
+      "size": "1536x1024"
+    }
+  },
+  {
+    "file": "officials_enter.png",
+    "result": {
+      "success": true,
+      "image": "/root/.hermes/cache/images/custom_chat_image_20260609_085338_05ba1f2e.png",
+      "model": "gemini-3.1-flash-image-preview",
+      "aspect_ratio": "landscape",
+      "provider": "custom-chat-image",
+      "size": "1536x1024"
+    }
+  }
+]
