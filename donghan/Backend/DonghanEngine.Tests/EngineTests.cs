@@ -717,8 +717,8 @@ public class EngineTests
         engine.ExecuteQuickAction("harem_rest");
 
         // Assert
-        // 基础 +10，谄媚专权额外 +5 = +15
-        Assert.Equal(initialHealth + 15, state.Health);
+        // 基础 +10，群臣随驾额外恢复封顶 +15 = +25（开局扩充后有多名中官参与）
+        Assert.Equal(initialHealth + 25, state.Health);
         // 谄媚专权随驾：好感+15，权势+5
         Assert.Equal(initialZhangRangFavorability + 15, state.Npcs["zhang_rang"].Favorability);
         Assert.Equal(initialZhangRangPower + 5, state.Npcs["zhang_rang"].Power);

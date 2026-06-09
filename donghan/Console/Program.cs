@@ -661,7 +661,7 @@ class DonghanConsole
         var province = ungoverned[ps - 1];
 
         // Show available NPCs
-        var available = _state.Npcs.Values.Where(n => n.IsActive && n.GovernedProvinceId == null).ToList();
+        var available = _state.Npcs.Values.Where(n => n.IsActive && !n.IsHostile && n.GovernedProvinceId == null).ToList();
         if (available.Count == 0)
         {
             Console.WriteLine("\n朝中无闲散大臣可派！"); Console.ReadKey(true); return;
@@ -708,7 +708,7 @@ class DonghanConsole
 
         var province = rebelling[ps - 1];
 
-        var generals = _state.Npcs.Values.Where(n => n.IsActive && n.GovernedProvinceId == null && n.Martial >= 20).ToList();
+        var generals = _state.Npcs.Values.Where(n => n.IsActive && !n.IsHostile && n.GovernedProvinceId == null && n.Martial >= 20).ToList();
         if (generals.Count == 0)
         {
             Console.WriteLine("\n朝中无可用将领（需武力≥20且未外派）！");
@@ -757,7 +757,7 @@ class DonghanConsole
 
         var province = rebelling[ps - 1];
 
-        var envoys = _state.Npcs.Values.Where(n => n.IsActive && n.GovernedProvinceId == null).ToList();
+        var envoys = _state.Npcs.Values.Where(n => n.IsActive && !n.IsHostile && n.GovernedProvinceId == null).ToList();
         if (envoys.Count == 0)
         {
             Console.WriteLine("\n朝中无闲散大臣可派！");

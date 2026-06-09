@@ -78,31 +78,17 @@ public class NpcLifecycleManager : INpcLifecycleManager
 
         if (template != null)
         {
-            // 2. 存在模板，反序列化实例化新 NPC 登堂
-            var newCourtNpc = new NpcState
-            {
-                Id = template.Id,
-                Name = template.Name,
-                Title = template.Title,
-                BirthYear = template.BirthYear,
-                BaseLongevity = template.BaseLongevity,
-                Traits = new List<string>(template.Traits),
-                Personality = template.Personality,
-                Style = template.Style,
-                Faction = template.Faction,
-                
-                // 赋以初始动态属性
-                Health = 100,
-                Favorability = 50,
-                Power = 15,
-                Corruption = template.Id == "dong_zhuo" ? 70 : 20, // 董卓作为割据军阀给予符合历史的高初始贪腐，其余 20
-                StashedWealth = template.Id == "dong_zhuo" ? 500 : 50, // 初始资本
-                IsActive = true
-            };
+            // 2. 存在模板，克隆实例化新 NPC 登堂
+            var newCourtNpc = HistoricalNpcPresets.Clone(template);
+            newCourtNpc.Health = 100;
+            newCourtNpc.IsActive = true;
+            newCourtNpc.DeathReason = string.Empty;
+            newCourtNpc.GovernedProvinceId = null;
 
             // 3. 调用 Registry 统一注册通道使其进入朝堂
             _registry.RegisterNpc(newCourtNpc, state);
-            state.AddToChronicle($"【部署】并州刺史【{template.Name}】受到朝局大势感召，奉天子诏命正式踏上宣政殿！");
+            string entryLabel = newCourtNpc.IsHostile ? "敌势" : newCourtNpc.InitialLocation.Contains("地方") || newCourtNpc.InitialLocation.Contains("州") ? "外镇" : "部署";
+            state.AddToChronicle($"【{entryLabel}】{template.Name}因“{template.EntryCondition}”进入大局：{template.HistoricalRole}");
         }
     }
 
@@ -167,24 +153,7 @@ public class NpcLifecycleManager : INpcLifecycleManager
         return Task.CompletedTask;
     }
 
-    private static readonly List<NpcState> _hardcodedFallbackList = new()
-    {
-        new NpcState { Id = "dong_zhuo", Name = "董卓", Title = "并州刺史/河东太守", BirthYear = 139, BaseLongevity = 53, Traits = new() { TraitNames.KongWuYouLi, TraitNames.YongBingZiZhong }, Personality = "残暴", Style = TraitNames.YongBingZiZhong, Faction = "割据军阀", Martial = 85, Leadership = 75, Politics = 40, Charisma = 50, Ambition = 95 },
-        new NpcState { Id = "yuan_shao", Name = "袁绍", Title = "中军校尉/渤海太守", BirthYear = 154, BaseLongevity = 48, Traits = new() { TraitNames.LaoMouShenSuan, TraitNames.MenFaShiJia, TraitNames.ShouXiaYouBing }, Personality = "外宽内忌", Style = "结党营私", Faction = "清流派", Martial = 55, Leadership = 65, Politics = 60, Charisma = 85, Ambition = 85 },
-        new NpcState { Id = "liu_bei", Name = "刘备", Title = "平原县令", BirthYear = 161, BaseLongevity = 62, Traits = new() { TraitNames.JingTianWeiDi, TraitNames.AiMinRuZi }, Personality = "宽厚", Style = "明哲保身", Faction = "清流派", Martial = 60, Leadership = 70, Politics = 65, Charisma = 90, Ambition = 80 },
-        new NpcState { Id = "cao_cao", Name = "曹操", Title = "议郎/典军校尉", BirthYear = 155, BaseLongevity = 65, Traits = new() { TraitNames.JingTianWeiDi, TraitNames.LaoMouShenSuan }, Personality = "深沉", Style = "雷厉风行", Faction = "清流派", Martial = 72, Leadership = 90, Politics = 85, Charisma = 80, Ambition = 75 },
-        new NpcState { Id = "sun_jian", Name = "孙坚", Title = "长沙太守/破虏将军", BirthYear = 155, BaseLongevity = 37, Traits = new() { TraitNames.KongWuYouLi, TraitNames.ZhiJunYanZheng }, Personality = "勇烈", Style = TraitNames.GangZhiBuE, Faction = "割据军阀", Martial = 90, Leadership = 80, Politics = 35, Charisma = 65, Ambition = 70 },
-        new NpcState { Id = "gongsun_zan", Name = "公孙瓒", Title = "奋武将军/蓟侯", BirthYear = 153, BaseLongevity = 46, Traits = new() { TraitNames.KongWuYouLi, TraitNames.DongDianBingFa }, Personality = "刚烈", Style = "保皇尽忠", Faction = "割据军阀", Martial = 80, Leadership = 70, Politics = 30, Charisma = 55, Ambition = 65 },
-        new NpcState { Id = "wang_yun", Name = "王允", Title = "司徒/尚书令", BirthYear = 137, BaseLongevity = 55, Traits = new() { TraitNames.GangZhiBuE, TraitNames.JingTianWeiDi }, Personality = "刚直", Style = "雷厉风行", Faction = "清流派", Martial = 20, Leadership = 45, Politics = 80, Charisma = 70, Ambition = 60 },
-        new NpcState { Id = "li_ru", Name = "李儒", Title = "郎中令/董卓谋主", BirthYear = 150, BaseLongevity = 45, Traits = new() { TraitNames.LaoMouShenSuan, TraitNames.YouXieXinJi }, Personality = "阴险", Style = "结党营私", Faction = "割据军阀", Martial = 10, Leadership = 35, Politics = 78, Charisma = 40, Ambition = 70 },
-        new NpcState { Id = "he_jin", Name = "何进", Title = "大将军", BirthYear = 135, BaseLongevity = 44, Traits = new() { TraitNames.YongBingZiZhong, TraitNames.ShouXiaYouBing }, Personality = "平庸", Style = "优柔寡断", Faction = "外戚派", Martial = 40, Leadership = 35, Politics = 30, Charisma = 40, Ambition = 60 },
-        new NpcState { Id = "zhang_rang", Name = "张让", Title = "十常侍之首", BirthYear = 130, BaseLongevity = 60, Traits = new() { TraitNames.TanDeWuYan, TraitNames.ChanMeiZhuanQuan }, Personality = "阴险", Style = TraitNames.ChanMeiZhuanQuan, Faction = "阉党派", Martial = 10, Leadership = 15, Politics = 55, Charisma = 60, Ambition = 85 },
-        new NpcState { Id = "huangfu_song", Name = "皇甫嵩", Title = "左车骑将军/槐里侯", BirthYear = 130, BaseLongevity = 60, Traits = new() { TraitNames.ZhiJunYanZheng, TraitNames.AiBingRuZi, TraitNames.GangZhiBuE }, Personality = "忠勇", Style = "雷厉风行", Faction = "清流派", Martial = 75, Leadership = 92, Politics = 55, Charisma = 70, Ambition = 25 },
-        new NpcState { Id = "xun_yu", Name = "荀彧", Title = "尚书令/侍中", BirthYear = 163, BaseLongevity = 50, Traits = new() { TraitNames.JingTianWeiDi, TraitNames.ShanChangMinZheng, TraitNames.QingZhengLianJie }, Personality = "睿智", Style = "明哲保身", Faction = "清流派", Martial = 15, Leadership = 30, Politics = 95, Charisma = 85, Ambition = 40 },
-        new NpcState { Id = "lu_zhi", Name = "卢植", Title = "北中郎将/尚书", BirthYear = 139, BaseLongevity = 53, Traits = new() { TraitNames.ZhiJunYanZheng, TraitNames.ShanChangMinZheng, TraitNames.GangZhiBuE }, Personality = "刚正", Style = TraitNames.GangZhiBuE, Faction = "清流派", Martial = 55, Leadership = 80, Politics = 80, Charisma = 75, Ambition = 20 },
-        new NpcState { Id = "guo_si", Name = "郭汜", Title = "校尉/董卓部将", BirthYear = 147, BaseLongevity = 42, Traits = new() { TraitNames.YouXieLiQi, TraitNames.YouXieShouZang }, Personality = "粗暴", Style = TraitNames.YongBingZiZhong, Faction = "割据军阀", Martial = 70, Leadership = 40, Politics = 15, Charisma = 20, Ambition = 75 },
-        new NpcState { Id = "hua_tuo", Name = "华佗", Title = "太医令/方士", BirthYear = 145, BaseLongevity = 63, Traits = new() { TraitNames.YiShuGaoMing, TraitNames.QingZhengLianJie }, Personality = "仁厚", Style = "明哲保身", Faction = "清流派", Martial = 10, Leadership = 5, Politics = 15, Charisma = 60, Ambition = 5 },
-    };
+    private static readonly List<NpcState> _hardcodedFallbackList = HistoricalNpcPresets.All;
 
     private List<NpcState> GetHardcodedFallbackList()
     {

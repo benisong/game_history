@@ -74,7 +74,7 @@ public partial class MainScene : Control
         }
 
         var candidates = _gameState.Npcs.Values
-            .Where(n => n.IsActive && n.GovernedProvinceId == null)
+            .Where(n => n.IsActive && !n.IsHostile && n.GovernedProvinceId == null)
             .OrderByDescending(n => n.Politics)
             .ThenBy(n => n.Ambition)
             .Take(4)
@@ -135,7 +135,7 @@ public partial class MainScene : Control
         AddIntelSectionTitle("【军事平叛】");
 
         var militaryNpcs = _gameState.Npcs.Values
-            .Where(n => n.IsActive && n.GovernedProvinceId == null)
+            .Where(n => n.IsActive && !n.IsHostile && n.GovernedProvinceId == null)
             .OrderByDescending(NpcTraitEvaluator.GetCombatPower)
             .Take(4)
             .ToList();
@@ -303,7 +303,7 @@ public partial class MainScene : Control
         RefreshStrategyPreview();
 
         var envoys = _gameState.Npcs.Values
-            .Where(n => n.IsActive && n.GovernedProvinceId == null)
+            .Where(n => n.IsActive && !n.IsHostile && n.GovernedProvinceId == null)
             .OrderByDescending(NpcTraitEvaluator.GetPoliticalSkill)
             .Take(4)
             .ToList();

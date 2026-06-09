@@ -201,11 +201,12 @@ public partial class GameEngine
                 }
             }
 
-            _state.Health = Math.Clamp(_state.Health + 10 + extraHealth, 0, 100);
+            int cappedExtraHealth = Math.Min(extraHealth, 15);
+            _state.Health = Math.Clamp(_state.Health + 10 + cappedExtraHealth, 0, 100);
             _state.ImperialPower = Math.Clamp(_state.ImperialPower + imperialPowerDelta, 0, 100);
             
             _state.AddToChronicle("【后宫】天子龙体困乏，宿于温德殿中调养休息。");
-            result.StoryText = $"【后宫春深】\n\n红粉深处，金炉香暖。陛下于温德殿中卸下凡尘政务，临幸嫔妃，调养龙体，顿觉精神爽朗，疲意尽消。\n\n[color=green]● 皇帝健康：+{10 + extraHealth} (龙体充沛)[/color]\n[color=red]● 朝廷皇权：{(imperialPowerDelta != 0 ? imperialPowerDelta.ToString() : "无变动")}[/color]";
+            result.StoryText = $"【后宫春深】\n\n红粉深处，金炉香暖。陛下于温德殿中卸下凡尘政务，临幸嫔妃，调养龙体，顿觉精神爽朗，疲意尽消。\n\n[color=green]● 皇帝健康：+{10 + cappedExtraHealth} (龙体充沛)[/color]\n[color=red]● 朝廷皇权：{(imperialPowerDelta != 0 ? imperialPowerDelta.ToString() : "无变动")}[/color]";
         }
         else
         {

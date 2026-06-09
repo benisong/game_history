@@ -36,6 +36,12 @@ public class NpcState
 
     // === 地方治理 ===
     public string? GovernedProvinceId { get; set; } = null; // 正在治理的郡 ID
+
+    // === 历史预设与登场控制 ===
+    public string InitialLocation { get; set; } = "洛阳朝堂";  // 洛阳朝堂/地方州郡/在野/边军/敌对势力
+    public string EntryCondition { get; set; } = "开局";       // 开局/事件触发/年月触发/冷备
+    public string HistoricalRole { get; set; } = string.Empty;  // 简短史料定位
+    public bool IsHostile { get; set; } = false;                // 敌对首领不进入任官/平叛/招安候选
 }
 
 public class ArmyState
@@ -85,34 +91,51 @@ public class GameState
         // 大将军何进：外戚权臣，初始私蓄 1500。何进权势 80，好感 35。性格：平庸。Traits：[“拥兵自重”]
         Npcs["he_jin"] = new NpcState { 
             Id = "he_jin", Name = "何进", Title = "大将军", TitleTier = 4,
-            Favorability = 35, Power = 80, Corruption = 45, StashedWealth = 1500, BirthYear = 135,
-            Traits = new() { TraitNames.YongBingZiZhong }, Personality = "平庸", Style = "优柔寡断", Faction = "外戚派",
-            Martial = 40, Leadership = 35, Politics = 30, Charisma = 40, Ambition = 60
+            Favorability = 35, Power = 80, Corruption = 45, StashedWealth = 1500, BirthYear = 135, BaseLongevity = 44,
+            Traits = new() { TraitNames.YongBingZiZhong, TraitNames.ShouXiaYouBing }, Personality = "平庸", Style = "优柔寡断", Faction = "外戚派",
+            Martial = 40, Leadership = 35, Politics = 30, Charisma = 40, Ambition = 60,
+            InitialLocation = "洛阳朝堂", EntryCondition = "开局", HistoricalRole = "外戚权臣，何皇后之兄，掌中央军权"
         };
         
         // 十常侍张让：历史极度贪婪，擅权夺利。初始私蓄 6000！张让权势 75，好感 65。Traits：[“贪得无厌”]
         Npcs["zhang_rang"] = new NpcState { 
             Id = "zhang_rang", Name = "张让", Title = "十常侍之首", TitleTier = 3,
-            Favorability = 65, Power = 75, Corruption = 90, StashedWealth = 6000, BirthYear = 130,
-            Traits = new() { TraitNames.TanDeWuYan }, Personality = "阴险", Style = TraitNames.ChanMeiZhuanQuan, Faction = "阉党派",
-            Martial = 10, Leadership = 15, Politics = 55, Charisma = 60, Ambition = 85
+            Favorability = 65, Power = 75, Corruption = 90, StashedWealth = 6000, BirthYear = 130, BaseLongevity = 60,
+            Traits = new() { TraitNames.TanDeWuYan, TraitNames.ChanMeiZhuanQuan }, Personality = "阴险", Style = TraitNames.ChanMeiZhuanQuan, Faction = "阉党派",
+            Martial = 10, Leadership = 15, Politics = 55, Charisma = 60, Ambition = 85,
+            InitialLocation = "洛阳宫中", EntryCondition = "开局", HistoricalRole = "十常侍核心，灵帝宠宦，内廷卖官与诏令枢纽"
         };
         
         // 青年曹操：廉洁。初始私蓄 50。曹操权势为 15，好感 45。Traits：[“经天纬地”, “老谋深算”]
         Npcs["cao_cao"] = new NpcState { 
             Id = "cao_cao", Name = "曹操", Title = "议郎/典军校尉", TitleTier = 1,
-            Favorability = 45, Power = 15, Corruption = 5, StashedWealth = 50, BirthYear = 155,
+            Favorability = 45, Power = 15, Corruption = 5, StashedWealth = 50, BirthYear = 155, BaseLongevity = 65,
             Traits = new() { TraitNames.JingTianWeiDi, TraitNames.LaoMouShenSuan }, Personality = "深沉", Style = "雷厉风行", Faction = "清流派",
-            Martial = 72, Leadership = 90, Politics = 85, Charisma = 80, Ambition = 75
+            Martial = 72, Leadership = 90, Politics = 85, Charisma = 80, Ambition = 75,
+            InitialLocation = "洛阳朝堂", EntryCondition = "开局", HistoricalRole = "青年能臣，西园八校尉之一，未来乱世枭雄"
         };
         
         // 蹇硕：天子亲信。初始私蓄 300。蹇硕权势 30，好感 80。Traits：[“孔武有力”]
         Npcs["jian_shuo"] = new NpcState { 
             Id = "jian_shuo", Name = "蹇硕", Title = "西园上军校尉", TitleTier = 2,
-            Favorability = 80, Power = 30, Corruption = 25, StashedWealth = 300, BirthYear = 145,
-            Traits = new() { TraitNames.KongWuYouLi }, Personality = "刚直", Style = "保皇尽忠", Faction = "阉党派",
-            Martial = 65, Leadership = 45, Politics = 20, Charisma = 30, Ambition = 40
+            Favorability = 80, Power = 30, Corruption = 25, StashedWealth = 300, BirthYear = 145, BaseLongevity = 50,
+            Traits = new() { TraitNames.KongWuYouLi }, Personality = "刚直", Style = "保皇尽忠", Faction = "西园亲军",
+            Martial = 65, Leadership = 45, Politics = 20, Charisma = 30, Ambition = 40,
+            InitialLocation = "洛阳西园", EntryCondition = "开局", HistoricalRole = "灵帝亲信宦官，西园军上军校尉"
         };
+
+        // 扩展开局洛阳群臣：只部署高频朝会/党争人物；地方、在野、敌对人物仍留在冷备池。
+        foreach (var id in new[]
+        {
+            "yuan_shao", "yuan_shu", "wang_yun", "lu_zhi", "huangfu_song", "zhu_jun",
+            "zhao_zhong", "duan_gui", "bi_lan", "he_miao", "yang_biao", "ma_ridi", "cai_yong"
+        })
+        {
+            if (HistoricalNpcPresets.All.Find(n => n.Id == id) is { } preset)
+            {
+                Npcs[id] = HistoricalNpcPresets.Clone(preset);
+            }
+        }
 
         // === 大汉十三州（当前开放 6 郡）===
         Provinces["sili"] = new Province { Id = "sili", Name = "司隶", Distance = 0, LocalSupport = 50, Garrison = 5000, Wealth = 5000, DefenseLevel = 80, Neighbors = new() { "jizhou", "yanzhou", "yuzhou" } };

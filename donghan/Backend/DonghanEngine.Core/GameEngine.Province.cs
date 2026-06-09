@@ -144,6 +144,8 @@ public partial class GameEngine
             throw new InvalidOperationException($"{province.Name}并未叛乱！");
         if (!_state.Npcs.TryGetValue(generalId, out var general))
             throw new ArgumentException("朝中无此将领！", nameof(generalId));
+        if (!general.IsActive || general.IsHostile)
+            throw new InvalidOperationException($"{general.Name}并非可受诏出征的在朝将领！");
         if (general.GovernedProvinceId != null)
             throw new InvalidOperationException($"{general.Name}已在外任职！");
         if (troops < 1000)
@@ -279,6 +281,8 @@ public partial class GameEngine
             throw new InvalidOperationException($"{province.Name}并未叛乱！");
         if (!_state.Npcs.TryGetValue(envoyId, out var envoy))
             throw new ArgumentException("朝中无此大臣！", nameof(envoyId));
+        if (!envoy.IsActive || envoy.IsHostile)
+            throw new InvalidOperationException($"{envoy.Name}并非可持节招安的在朝大臣！");
         if (envoy.GovernedProvinceId != null)
             throw new InvalidOperationException($"{envoy.Name}已在外任职！");
         if (strategies == PacifyStrategy.None)
@@ -416,6 +420,8 @@ public partial class GameEngine
             throw new ArgumentException("无此郡县！", nameof(provinceId));
         if (!_state.Npcs.TryGetValue(npcId, out var npc))
             throw new ArgumentException("朝中无此大臣！", nameof(npcId));
+        if (!npc.IsActive || npc.IsHostile)
+            throw new InvalidOperationException($"{npc.Name}并非可外任地方的在朝大臣！");
         if (npc.GovernedProvinceId != null)
             throw new InvalidOperationException($"{npc.Name}已在{npc.GovernedProvinceId}任职！");
 

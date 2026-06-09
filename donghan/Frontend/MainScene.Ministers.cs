@@ -326,7 +326,7 @@ public partial class MainScene : Control
         // 动态载入当前在朝的所有活跃大臣
         foreach (var npc in _gameState.Npcs.Values)
         {
-            if (!npc.IsActive) continue;
+            if (!npc.IsActive || npc.IsHostile) continue;
 
             string locationTag = npc.GovernedProvinceId != null ? $"【任{_gameState.Provinces[npc.GovernedProvinceId].Name}】" : "【在京】";
             var btn = new Button();
