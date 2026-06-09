@@ -1,0 +1,24 @@
+[
+  {
+    "file": "dismiss_whip.png",
+    "result": {
+      "success": true,
+      "image": "/root/.hermes/cache/images/custom_chat_image_20260609_090511_e584c2ab.png",
+      "model": "gemini-3.1-flash-image-preview",
+      "aspect_ratio": "landscape",
+      "provider": "custom-chat-image",
+      "size": "1536x1024"
+    }
+  },
+  {
+    "file": "officials_leave.png",
+    "result": {
+      "success": true,
+      "image": "/root/.hermes/cache/images/custom_chat_image_20260609_090523_1fb5889b.png",
+      "model": "gemini-3.1-flash-image-preview",
+      "aspect_ratio": "landscape",
+      "provider": "custom-chat-image",
+      "size": "1536x1024"
+    }
+  }
+]

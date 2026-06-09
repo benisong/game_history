@@ -492,6 +492,7 @@ public partial class MainScene : Control
             {
                 Title = "退朝仪 · 静鞭再响",
                 SceneName = "收议",
+                ImagePath = "res://Assets/UI/court_ritual/dismiss_whip.png",
                 ImageText = "殿前静鞭再响，金阶上的争辩戛然而止。内侍收起奏牍，御案灯影微摇。",
                 Caption = "今日朝议暂歇，未决之事仍随百官袖中暗流带出宣政殿。",
                 PreloadHint = "AI模式：归档朝会记录，更新派系记忆。",
@@ -501,6 +502,7 @@ public partial class MainScene : Control
             {
                 Title = "退朝仪 · 百官退出",
                 SceneName = "散班",
+                ImagePath = "res://Assets/UI/court_ritual/officials_leave.png",
                 ImageText = "百官鱼贯退下，外戚与中官各自低语。朱门半掩，殿外天色晦暗。",
                 Caption = "宣政殿重归寂静；天下十三州，仍有烽烟与饥民等待下一道诏令。",
                 PreloadHint = "AI模式：预热下一旬情报、奏折与地方风险摘要。",
@@ -621,16 +623,6 @@ public partial class MainScene : Control
         imageText.AddThemeColorOverride("default_color", new Color(0.91f, 0.76f, 0.46f, 1.0f));
         imageText.AddThemeFontSizeOverride("normal_font_size", 21);
         pictureBox.AddChild(imageText);
-
-        var silhouette = new Label
-        {
-            Name = "RitualSilhouette",
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Text = "▉▉▉   ▃▃▃   ▉▉▉\n  ╱╲  ╱╲  ╱╲  ╱╲\n臣  臣  御座  臣  臣"
-        };
-        silhouette.AddThemeColorOverride("font_color", new Color(0.36f, 0.20f, 0.08f, 0.95f));
-        silhouette.AddThemeFontSizeOverride("font_size", 24);
-        pictureBox.AddChild(silhouette);
 
         var caption = new Label { Name = "RitualCaption" };
         StylePopupBodyText(caption, PopupSkin.Court);
