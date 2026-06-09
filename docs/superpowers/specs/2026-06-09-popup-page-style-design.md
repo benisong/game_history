@@ -340,6 +340,7 @@
 实现约束：
 
 - `ApplyOpaquePanelTheme` 只能在 `!panel.HasThemeStyleboxOverride("panel")` 时添加 `CreateOpaquePanelStyle(...)`。
+- `PopupSkin.Document` 的根面板是深纸/木框，正文内芯必须是浅纸面；`CreatePopupInnerPanelStyle(PopupSkin.Document)` 要显式返回浅纸底，避免深色默认内栏配深墨文字导致奏牍不可读。
 - 新增核心弹窗必须先设置专属 `PopupSkin`，再入栈。
 - 不要在 `WindowManager.PushWindow(...)` 或全局主题函数中无条件覆盖 `panel` stylebox。
 - 验收时除 build/test 外，要实际 Godot headless 检查日志无错误；视觉验收则优先截图确认不同弹窗颜色/材质没有退化成同一种灰黑面板。

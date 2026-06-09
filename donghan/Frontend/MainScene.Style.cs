@@ -214,6 +214,7 @@ public partial class MainScene : Control
             PopupSkin.Intel => new Color(0.690f, 0.590f, 0.390f, 1.0f),
             PopupSkin.WestGarden => new Color(0.125f, 0.105f, 0.075f, 1.0f),
             PopupSkin.Warning => new Color(0.160f, 0.070f, 0.050f, 1.0f),
+            PopupSkin.Document => new Color(0.760f, 0.650f, 0.430f, 1.0f),
             _ => new Color(0.110f, 0.085f, 0.060f, 1.0f)
         };
         style.BorderColor = skin switch
@@ -222,6 +223,7 @@ public partial class MainScene : Control
             PopupSkin.Intel => new Color(0.46f, 0.27f, 0.13f, 1.0f),
             PopupSkin.WestGarden => new Color(0.48f, 0.38f, 0.22f, 1.0f),
             PopupSkin.Warning => new Color(0.72f, 0.18f, 0.10f, 1.0f),
+            PopupSkin.Document => new Color(0.34f, 0.18f, 0.08f, 1.0f),
             _ => new Color(0.58f, 0.43f, 0.14f, 1.0f)
         };
         style.SetBorderWidthAll(1);
