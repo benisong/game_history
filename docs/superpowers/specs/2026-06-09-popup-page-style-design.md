@@ -1,10 +1,10 @@
 # 不同弹出页面样式设计规格
 
-> **状态：📋 设计阶段 — 未实现**
+> **状态：✅ 已实现 — 持续迭代**
 
 ╔══════════════════════════════════════════════════════╗
-║  本文档只定义不同弹出页面的视觉方向、信息边界与第一轮落地范围。║
-║  尚未改动 Godot 弹窗样式实现。                            ║
+║  第一轮弹窗皮肤、起驾/行动参数/行动奏报等样式已落地。      ║
+║  本文档继续作为后续弹出页面样式迭代的规格与验收基准。      ║
 ╚══════════════════════════════════════════════════════╝
 
 ## 1. 设计目标
@@ -333,7 +333,20 @@
 
 ---
 
-## 9. 验收标准
+## 9. 防回退实现注意事项
+
+`ApplyOpaquePanelTheme(this)` 会递归扫描场景树，给未显式设置样式的 `Panel` 补不透明兜底背景。已经调用 `CreatePopupPanelStyle(...)` / `CreatePopupInnerPanelStyle(...)` / 其他自定义 `AddThemeStyleboxOverride("panel", ...)` 的弹窗和卡片，不能再被兜底灰黑金边覆盖。
+
+实现约束：
+
+- `ApplyOpaquePanelTheme` 只能在 `!panel.HasThemeStyleboxOverride("panel")` 时添加 `CreateOpaquePanelStyle(...)`。
+- 新增核心弹窗必须先设置专属 `PopupSkin`，再入栈。
+- 不要在 `WindowManager.PushWindow(...)` 或全局主题函数中无条件覆盖 `panel` stylebox。
+- 验收时除 build/test 外，要实际 Godot headless 检查日志无错误；视觉验收则优先截图确认不同弹窗颜色/材质没有退化成同一种灰黑面板。
+
+---
+
+## 10. 验收标准
 
 第一轮完成后截图检查：
 

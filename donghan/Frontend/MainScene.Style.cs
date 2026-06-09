@@ -133,7 +133,10 @@ public partial class MainScene : Control
     {
         if (root is Panel panel)
         {
-            panel.AddThemeStyleboxOverride("panel", CreateOpaquePanelStyle(panel.Name.ToString()));
+            if (!panel.HasThemeStyleboxOverride("panel"))
+            {
+                panel.AddThemeStyleboxOverride("panel", CreateOpaquePanelStyle(panel.Name.ToString()));
+            }
             panel.MouseFilter = Control.MouseFilterEnum.Stop;
         }
 
