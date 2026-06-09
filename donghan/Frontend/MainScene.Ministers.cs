@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using DonghanEngine.Core;
 
@@ -94,17 +95,37 @@ public partial class MainScene : Control
             ? "可由廷尉奏牍发起籍没，执行前仍需圣裁确认。"
             : "暂无可籍赃银，强行籍没收益极低。";
 
+        string riskLine = BuildNpcRiskLine(minister);
+        string sourceLine = $"登场来源：{minister.InitialLocation}｜{minister.EntryCondition}";
+        string roleLine = string.IsNullOrWhiteSpace(minister.HistoricalRole) ? "史料定位：暂无" : $"史料定位：{minister.HistoricalRole}";
+
         return $"[b]【身分】[/b]\n" +
-            $"姓名：{minister.Name}\n官职：{minister.Title}\n派系：{minister.Faction}\n{location}\n\n" +
+            $"姓名：{minister.Name}\n官职：{minister.Title}\n派系：{minister.Faction}\n{location}\n{sourceLine}\n{roleLine}\n\n" +
             $"[b]【君臣与朝局】[/b]\n" +
             $"君臣情分：{DescribeAttitudeLevel(minister.Favorability)}（{minister.Favorability}/100）\n" +
             $"朝局分量：{DescribePowerLevel(minister.Power)}（{minister.Power}/100）\n" +
             $"廉污风评：{DescribeCorruptionLevel(minister.Corruption)}（{minister.Corruption}/100）\n" +
-            $"可籍赃银：{minister.StashedWealth} 万钱\n\n" +
+            $"可籍赃银：{minister.StashedWealth} 万钱\n" +
+            $"风险札记：{riskLine}\n\n" +
             $"[b]【五维摘录】[/b]\n" +
             $"武略 {minister.Martial}｜统御 {minister.Leadership}｜政术 {minister.Politics}\n" +
             $"声望 {minister.Charisma}｜野心 {minister.Ambition}\n\n" +
             $"[b]【廷尉提示】[/b]\n{confiscationHint}";
+    }
+
+    private static string BuildNpcRiskLine(NpcState minister)
+    {
+        var risks = new List<string>();
+        if (minister.IsHostile) risks.Add("敌对势力");
+        if (minister.Ambition >= 80) risks.Add("野心极高");
+        else if (minister.Ambition >= 65) risks.Add("有坐大风险");
+        if (minister.Power >= 70) risks.Add("党羽炽盛");
+        if (minister.Corruption >= 70) risks.Add("巨蠹可查");
+        if (minister.Traits.Contains(TraitNames.ShouXiaYouBing) || minister.Traits.Contains(TraitNames.YongBingZiZhong)) risks.Add("握兵风险");
+        if (minister.Traits.Contains(TraitNames.MenFaShiJia) || minister.Traits.Contains(TraitNames.ChuShenMingMen)) risks.Add("门阀牵连");
+        if (minister.Traits.Contains(TraitNames.QingZhengLianJie)) risks.Add("清流名望，不宜轻动");
+        if (risks.Count == 0) risks.Add("暂可驾驭");
+        return string.Join("；", risks);
     }
 
     private void ApplyMinisterDocumentSkin()
@@ -324,10 +345,12 @@ public partial class MainScene : Control
         }
 
         // 动态载入当前在朝的所有活跃大臣
-        foreach (var npc in _gameState.Npcs.Values)
+        foreach (var npc in _gameState.Npcs.Values
+            .Where(n => n.IsActive && !n.IsHostile)
+            .OrderBy(GetNpcListFactionOrder)
+            .ThenByDescending(n => n.Power)
+            .ThenBy(n => n.Name))
         {
-            if (!npc.IsActive || npc.IsHostile) continue;
-
             string locationTag = npc.GovernedProvinceId != null ? $"【任{_gameState.Provinces[npc.GovernedProvinceId].Name}】" : "【在京】";
             var btn = new Button();
             btn.Text = $"[{npc.Faction}] {npc.Name} {locationTag}";
@@ -339,5 +362,19 @@ public partial class MainScene : Control
             btn.Pressed += () => ShowMinisterDetails(npcId);
             _npcListVBox.AddChild(btn);
         }
+    }
+
+    private static int GetNpcListFactionOrder(NpcState npc)
+    {
+        return npc.Faction switch
+        {
+            "外戚派" => 0,
+            "阉党派" => 1,
+            "西园亲军" => 2,
+            "清流派" => 3,
+            "地方州牧" => 4,
+            "割据军阀" => 5,
+            _ => 6
+        };
     }
 }

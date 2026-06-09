@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using DonghanEngine.Core;
 
@@ -167,15 +168,67 @@ public partial class MainScene : Control
         if (_courtOfficialsVBox == null || _gameState == null) return;
         ClearChildrenExceptHeader(_courtOfficialsVBox);
 
-        AddCourtFactionLabel("【外戚武臣】");
-        AddCourtOfficialButton("he_jin", topicId == "eunuchs" ? "裁抑中官" : "请战");
+        var activeCourtNpcs = _gameState.Npcs.Values
+            .Where(n => n.IsActive && !n.IsHostile)
+            .OrderBy(GetCourtFactionOrder)
+            .ThenByDescending(n => n.Power)
+            .ThenByDescending(n => n.TitleTier)
+            .ThenBy(n => n.Name)
+            .GroupBy(n => GetCourtFactionLabel(n.Faction));
 
-        AddCourtFactionLabel("【中官近侍】");
-        AddCourtOfficialButton("zhang_rang", topicId == "treasury" ? "掌财" : "观望");
+        foreach (var group in activeCourtNpcs)
+        {
+            AddCourtFactionLabel(group.Key);
+            foreach (var npc in group)
+            {
+                AddCourtOfficialButton(npc.Id, GetCourtAttitude(npc, topicId));
+            }
+        }
+    }
 
-        AddCourtFactionLabel("【西园武臣】");
-        AddCourtOfficialButton("cao_cao", topicId == "talent" ? "自请任事" : "请任");
-        AddCourtOfficialButton("jian_shuo", topicId == "military_readiness" ? "主军" : "侍卫宫禁");
+    private static int GetCourtFactionOrder(NpcState npc)
+    {
+        return npc.Faction switch
+        {
+            "外戚派" => 0,
+            "阉党派" => 1,
+            "西园亲军" => 2,
+            "清流派" => 3,
+            "地方州牧" => 4,
+            "割据军阀" => 5,
+            _ => 6
+        };
+    }
+
+    private static string GetCourtFactionLabel(string faction)
+    {
+        return faction switch
+        {
+            "外戚派" => "【外戚武臣】",
+            "阉党派" => "【中官近侍】",
+            "西园亲军" => "【西园亲军】",
+            "清流派" => "【清流名臣】",
+            "地方州牧" => "【外镇州牧】",
+            "割据军阀" => "【边军豪强】",
+            _ => $"【{faction}】"
+        };
+    }
+
+    private static string GetCourtAttitude(NpcState npc, string topicId)
+    {
+        return topicId switch
+        {
+            "eunuchs" when npc.Faction == "阉党派" => "辩护",
+            "eunuchs" when npc.Faction == "外戚派" || npc.Faction == "清流派" => "裁抑中官",
+            "treasury" when npc.Corruption >= 70 => "掌财",
+            "treasury" when npc.Traits.Contains(TraitNames.QingZhengLianJie) => "请清帑藏",
+            "military_readiness" when npc.Leadership >= 70 || npc.Martial >= 70 => "主军",
+            "talent" when npc.Politics >= 75 || npc.Leadership >= 75 => "自请任事",
+            _ when npc.GovernedProvinceId != null => "外任待召",
+            _ when npc.Ambition >= 75 => "观望结势",
+            _ when npc.Power >= 60 => "持重观望",
+            _ => "候旨"
+        };
     }
 
     private void AddCourtFactionLabel(string text)
@@ -190,30 +243,18 @@ public partial class MainScene : Control
     private void AddCourtOfficialButton(string ministerId, string attitude)
     {
         if (_courtOfficialsVBox == null || _gameState == null) return;
-        if (!_gameState.Npcs.TryGetValue(ministerId, out var npc) || !npc.IsActive) return;
+        if (!_gameState.Npcs.TryGetValue(ministerId, out var npc) || !npc.IsActive || npc.IsHostile) return;
 
         var button = new Button();
         string external = npc.GovernedProvinceId != null && _gameState.Provinces.TryGetValue(npc.GovernedProvinceId, out var province)
             ? $"【外任{province.Name}】"
             : string.Empty;
-        button.Text = $"{npc.Name}  {GetCourtOfficeName(ministerId)}  {attitude}{external}";
+        button.Text = $"{npc.Name}  {npc.Title}  {attitude}{external}";
         button.Alignment = HorizontalAlignment.Left;
         button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         StyleSceneActionButton(button, ActionButtonSkin.Court);
         button.Pressed += () => ShowMinisterDetails(ministerId);
         _courtOfficialsVBox.AddChild(button);
-    }
-
-    private static string GetCourtOfficeName(string ministerId)
-    {
-        return ministerId switch
-        {
-            "he_jin" => "大将军",
-            "zhang_rang" => "中常侍",
-            "cao_cao" => "典军校尉",
-            "jian_shuo" => "上军校尉",
-            _ => "朝臣"
-        };
     }
 
     private void RenderCourtTopics()
