@@ -227,6 +227,79 @@ public partial class MainScene : Control
         }
     }
 
+    private void ShowArmyDrillDialog(Panel legacyPanel, LineEdit? legacyPayInput)
+    {
+        if (_gameState == null) return;
+
+        if (legacyPayInput != null) legacyPayInput.Text = "";
+
+        var panel = new Panel();
+        ConfigureCenteredPopupPanel(panel, PopupSkin.WestGarden, new Vector2(540, 350));
+
+        var vBox = CreateActionPopupRoot(panel, 22, 18);
+        var title = new Label { Text = "西园军令 · 犒赏三军" };
+        StylePopupTitle(title, PopupSkin.WestGarden);
+        vBox.AddChild(title);
+
+        var desc = new Label
+        {
+            Text = $"基础军饷：{_gameState.WestGardenArmy.BasePayPerTurn} 万钱\n私库现额：{_gameState.PrivateTreasury} 万钱\n军中情势：士气 {_gameState.WestGardenArmy.Morale}/100，天子忠诚 {_gameState.WestGardenArmy.Loyalty}/100"
+        };
+        StylePopupBodyText(desc, PopupSkin.WestGarden);
+        vBox.AddChild(desc);
+
+        var amountSpin = new SpinBox
+        {
+            MinValue = 0,
+            MaxValue = Math.Max(0, _gameState.PrivateTreasury),
+            Step = 50,
+            Value = Math.Min(Math.Max(_gameState.WestGardenArmy.BasePayPerTurn + 100, 150), Math.Max(0, _gameState.PrivateTreasury)),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        vBox.AddChild(amountSpin);
+
+        var previewFrame = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        previewFrame.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.WestGarden));
+        var previewMargin = new MarginContainer();
+        SetFullRect(previewMargin);
+        previewMargin.AddThemeConstantOverride("margin_left", 10);
+        previewMargin.AddThemeConstantOverride("margin_right", 10);
+        previewMargin.AddThemeConstantOverride("margin_top", 8);
+        previewMargin.AddThemeConstantOverride("margin_bottom", 8);
+        previewFrame.AddChild(previewMargin);
+        var preview = CreateActionPreviewLabel(PopupSkin.WestGarden);
+        previewMargin.AddChild(preview);
+        vBox.AddChild(previewFrame);
+
+        void RefreshPreview(double value)
+        {
+            int amount = (int)value;
+            int basePay = _gameState.WestGardenArmy.BasePayPerTurn;
+            string verdict = amount < basePay ? "欠饷生怨，军心恐挫" : amount < basePay * 1.2 ? "仅足支应，军心微振" : "厚赏军士，可振西园锐气";
+            preview.Text = $"朱批额度：{amount} 万钱\n私库结余：{Math.Max(0, _gameState.PrivateTreasury - amount)} 万钱\n预判：{verdict}";
+        }
+
+        amountSpin.ValueChanged += RefreshPreview;
+        RefreshPreview(amountSpin.Value);
+
+        var row = CreateActionPopupButtonRow();
+        var confirm = new Button { Text = "朱批发饷", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, Disabled = _gameState.PrivateTreasury <= 0 };
+        var cancel = new Button { Text = "收回军令", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        row.AddChild(confirm);
+        row.AddChild(cancel);
+        vBox.AddChild(row);
+
+        confirm.Pressed += () =>
+        {
+            int amount = (int)amountSpin.Value;
+            _windowManager.PopWindow();
+            DoArmyDrillAction(amount);
+        };
+        cancel.Pressed += _windowManager.PopWindow;
+
+        PushTemporaryPopup(panel);
+    }
+
     private void ShowRecruitArmyDialog()
     {
         if (_gameState == null) return;
@@ -236,38 +309,19 @@ public partial class MainScene : Control
         int defaultTroops = Math.Min(2000, capacity);
         if (defaultTroops <= 0) defaultTroops = 1000;
 
-        var panel = new Panel { CustomMinimumSize = new Vector2(520, 340) };
-        panel.AnchorLeft = 0.5f;
-        panel.AnchorTop = 0.5f;
-        panel.AnchorRight = 0.5f;
-        panel.AnchorBottom = 0.5f;
-        panel.OffsetLeft = -260;
-        panel.OffsetTop = -170;
-        panel.OffsetRight = 260;
-        panel.OffsetBottom = 170;
-        panel.MouseFilter = Control.MouseFilterEnum.Stop;
-        panel.AddThemeStyleboxOverride("panel", CreateOpaquePanelStyle("RecruitArmyPopupPanel"));
+        var panel = new Panel();
+        ConfigureCenteredPopupPanel(panel, PopupSkin.WestGarden, new Vector2(540, 360));
 
-        var vBox = new VBoxContainer();
-        SetFullRect(vBox);
-        vBox.OffsetLeft = 22;
-        vBox.OffsetTop = 18;
-        vBox.OffsetRight = -22;
-        vBox.OffsetBottom = -18;
-        vBox.AddThemeConstantOverride("separation", 10);
-        panel.AddChild(vBox);
-
-        vBox.AddChild(new Label
-        {
-            Text = "西园募兵 · 补充新军",
-            HorizontalAlignment = HorizontalAlignment.Center
-        });
+        var vBox = CreateActionPopupRoot(panel, 22, 18);
+        var title = new Label { Text = "西园军令 · 募兵补军" };
+        StylePopupTitle(title, PopupSkin.WestGarden);
+        vBox.AddChild(title);
 
         var desc = new Label
         {
-            Text = $"当前兵力：{_gameState.WestGardenArmy.Size}/{maxArmySize}\n每募 1000 人：国库 -300 万钱，天下民心 -1，士气 -1。",
-            AutowrapMode = TextServer.AutowrapMode.WordSmart
+            Text = $"当前兵力：{_gameState.WestGardenArmy.Size}/{maxArmySize}\n每募 1000 人：国库 -300 万钱，天下民心 -1，士气 -1。"
         };
+        StylePopupBodyText(desc, PopupSkin.WestGarden);
         vBox.AddChild(desc);
 
         var troopSpin = new SpinBox
@@ -280,8 +334,18 @@ public partial class MainScene : Control
         };
         vBox.AddChild(troopSpin);
 
-        var preview = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
-        vBox.AddChild(preview);
+        var previewFrame = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        previewFrame.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.WestGarden));
+        var previewMargin = new MarginContainer();
+        SetFullRect(previewMargin);
+        previewMargin.AddThemeConstantOverride("margin_left", 10);
+        previewMargin.AddThemeConstantOverride("margin_right", 10);
+        previewMargin.AddThemeConstantOverride("margin_top", 8);
+        previewMargin.AddThemeConstantOverride("margin_bottom", 8);
+        previewFrame.AddChild(previewMargin);
+        var preview = CreateActionPreviewLabel(PopupSkin.WestGarden);
+        previewMargin.AddChild(preview);
+        vBox.AddChild(previewFrame);
 
         void RefreshPreview(double value)
         {
@@ -294,33 +358,18 @@ public partial class MainScene : Control
             }
 
             int batches = troops / 1000;
-            preview.Text = $"预计征发：{troops} 人\n预计花费：{batches * 300} 万钱\n民心影响：-{batches}\n募兵后兵力：{_gameState.WestGardenArmy.Size + troops}/{maxArmySize}";
+            preview.Text = $"预计征发：{troops} 人\n国库消耗：{batches * 300} 万钱\n民心影响：-{batches}\n募兵后兵力：{_gameState.WestGardenArmy.Size + troops}/{maxArmySize}";
         }
 
         troopSpin.ValueChanged += RefreshPreview;
         RefreshPreview(troopSpin.Value);
 
-        var row = new HBoxContainer
-        {
-            Alignment = BoxContainer.AlignmentMode.Center,
-            SizeFlagsVertical = Control.SizeFlags.ExpandFill
-        };
-        row.AddThemeConstantOverride("separation", 12);
-        vBox.AddChild(row);
-
-        var confirm = new Button
-        {
-            Text = "下诏募兵",
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            Disabled = capacity <= 0
-        };
-        var cancel = new Button
-        {
-            Text = "暂缓",
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
-        };
+        var row = CreateActionPopupButtonRow();
+        var confirm = new Button { Text = "下诏募兵", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, Disabled = capacity <= 0 };
+        var cancel = new Button { Text = "暂缓", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         row.AddChild(confirm);
         row.AddChild(cancel);
+        vBox.AddChild(row);
 
         confirm.Pressed += () =>
         {
@@ -330,6 +379,122 @@ public partial class MainScene : Control
         };
         cancel.Pressed += _windowManager.PopWindow;
 
+        PushTemporaryPopup(panel);
+    }
+
+    private void ShowDisasterReliefDialog(Panel legacyPanel, LineEdit? legacyReliefInput)
+    {
+        if (_gameState == null) return;
+
+        if (legacyReliefInput != null) legacyReliefInput.Text = "";
+
+        var panel = new Panel();
+        ConfigureCenteredPopupPanel(panel, PopupSkin.Court, new Vector2(620, 390));
+
+        var vBox = CreateActionPopupRoot(panel, 24, 20);
+        var title = new Label { Text = "宣政殿圣裁 · 开仓赈灾" };
+        StylePopupTitle(title, PopupSkin.Court);
+        vBox.AddChild(title);
+
+        var desc = new Label
+        {
+            Text = $"国库现额：{_gameState.Treasury} 万钱\n饥馑蔓延，赈银低于 1000 万钱恐不足以安民；经办官清浊将影响实到灾民之数。"
+        };
+        StylePopupBodyText(desc, PopupSkin.Court);
+        vBox.AddChild(desc);
+
+        var amountSpin = new SpinBox
+        {
+            MinValue = 100,
+            MaxValue = Math.Max(100, _gameState.Treasury),
+            Step = 100,
+            Value = Math.Min(1000, Math.Max(100, _gameState.Treasury)),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        vBox.AddChild(amountSpin);
+
+        var previewFrame = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        previewFrame.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Court));
+        var previewMargin = new MarginContainer();
+        SetFullRect(previewMargin);
+        previewMargin.AddThemeConstantOverride("margin_left", 10);
+        previewMargin.AddThemeConstantOverride("margin_right", 10);
+        previewMargin.AddThemeConstantOverride("margin_top", 8);
+        previewMargin.AddThemeConstantOverride("margin_bottom", 8);
+        previewFrame.AddChild(previewMargin);
+        var preview = CreateActionPreviewLabel(PopupSkin.Court);
+        previewMargin.AddChild(preview);
+        vBox.AddChild(previewFrame);
+
+        void RefreshPreview(double value)
+        {
+            int amount = (int)value;
+            preview.Text = $"拟拨赈银：{amount} 万钱\n国库结余：{Math.Max(0, _gameState.Treasury - amount)} 万钱\n预判：{(amount >= 1000 ? "足额赈济，民心可回" : "杯水车薪，恐失朝廷威信")}";
+        }
+        amountSpin.ValueChanged += RefreshPreview;
+        RefreshPreview(amountSpin.Value);
+
+        var envoyTitle = new Label { Text = "钦差经办" };
+        StyleColumnTitle(envoyTitle, PopupSkin.Court);
+        vBox.AddChild(envoyTitle);
+
+        var officerRow = CreateActionPopupButtonRow();
+        AddReliefOfficerButton(officerRow, "cao_cao", "曹操", amountSpin);
+        AddReliefOfficerButton(officerRow, "he_jin", "何进", amountSpin);
+        AddReliefOfficerButton(officerRow, "zhang_rang", "张让", amountSpin);
+        vBox.AddChild(officerRow);
+
+        var cancel = new Button { Text = "暂缓决策", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        cancel.Pressed += _windowManager.PopWindow;
+        vBox.AddChild(cancel);
+
+        PushTemporaryPopup(panel);
+    }
+
+    private void AddReliefOfficerButton(HBoxContainer row, string officerId, string fallbackName, SpinBox amountSpin)
+    {
+        string label = fallbackName;
+        if (_gameState != null && _gameState.Npcs.TryGetValue(officerId, out var npc))
+        {
+            label = $"{npc.Name}\n贪墨风险 {npc.Corruption}%";
+        }
+
+        var button = new Button { Text = label, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        button.Pressed += () =>
+        {
+            int amount = (int)amountSpin.Value;
+            _windowManager.PopWindow();
+            DoDisasterReliefAction(amount, officerId);
+        };
+        row.AddChild(button);
+    }
+
+    private VBoxContainer CreateActionPopupRoot(Panel panel, int marginX, int marginY)
+    {
+        var vBox = new VBoxContainer();
+        SetFullRect(vBox);
+        vBox.OffsetLeft = marginX;
+        vBox.OffsetTop = marginY;
+        vBox.OffsetRight = -marginX;
+        vBox.OffsetBottom = -marginY;
+        vBox.AddThemeConstantOverride("separation", 10);
+        panel.AddChild(vBox);
+        return vBox;
+    }
+
+    private static HBoxContainer CreateActionPopupButtonRow()
+    {
+        var row = new HBoxContainer
+        {
+            Alignment = BoxContainer.AlignmentMode.Center,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        row.AddThemeConstantOverride("separation", 12);
+        return row;
+    }
+
+    private void PushTemporaryPopup(Panel panel)
+    {
         panel.VisibilityChanged += () =>
         {
             if (!panel.Visible && IsInstanceValid(panel)) panel.QueueFree();

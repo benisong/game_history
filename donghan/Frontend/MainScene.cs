@@ -179,11 +179,7 @@ public partial class MainScene : Control
 
         if (_drillArmyButton != null && armyDrillPopup != null)
         {
-            _drillArmyButton.Pressed += () =>
-            {
-                if (payInput != null) payInput.Text = "";
-                _windowManager.PushWindow(armyDrillPopup);
-            };
+            _drillArmyButton.Pressed += () => ShowArmyDrillDialog(armyDrillPopup, payInput);
         }
 
         if (btnCancelPay != null)
@@ -224,11 +220,7 @@ public partial class MainScene : Control
 
         if (disasterBtn != null && reliefPopup != null)
         {
-            disasterBtn.Pressed += () =>
-            {
-                if (reliefInput != null) reliefInput.Text = "";
-                _windowManager.PushWindow(reliefPopup);
-            };
+            disasterBtn.Pressed += () => ShowDisasterReliefDialog(reliefPopup, reliefInput);
         }
 
         if (btnCancelRelief != null) btnCancelRelief.Pressed += _windowManager.PopWindow;

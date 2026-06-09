@@ -251,6 +251,46 @@ public partial class MainScene : Control
         label.AddThemeColorOverride("font_color", GetPopupTitleColor(skin));
     }
 
+    private static void ConfigureCenteredPopupPanel(Panel panel, PopupSkin skin, Vector2 size)
+    {
+        panel.CustomMinimumSize = size;
+        panel.AnchorLeft = 0.5f;
+        panel.AnchorTop = 0.5f;
+        panel.AnchorRight = 0.5f;
+        panel.AnchorBottom = 0.5f;
+        panel.OffsetLeft = -size.X / 2.0f;
+        panel.OffsetTop = -size.Y / 2.0f;
+        panel.OffsetRight = size.X / 2.0f;
+        panel.OffsetBottom = size.Y / 2.0f;
+        panel.MouseFilter = Control.MouseFilterEnum.Stop;
+        panel.AddThemeStyleboxOverride("panel", CreatePopupPanelStyle(skin));
+    }
+
+    private static Label CreateActionPreviewLabel(PopupSkin skin)
+    {
+        var preview = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        preview.AddThemeColorOverride("font_color", skin == PopupSkin.WestGarden
+            ? new Color(0.88f, 0.78f, 0.58f, 1.0f)
+            : GetPopupTitleColor(skin));
+        return preview;
+    }
+
+    private static void StylePopupBodyText(Label label, PopupSkin skin)
+    {
+        label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        label.AddThemeColorOverride("font_color", skin switch
+        {
+            PopupSkin.Document => new Color(0.20f, 0.11f, 0.05f, 1.0f),
+            PopupSkin.Intel => new Color(0.88f, 0.73f, 0.46f, 1.0f),
+            PopupSkin.WestGarden => new Color(0.82f, 0.74f, 0.58f, 1.0f),
+            _ => new Color(0.86f, 0.74f, 0.50f, 1.0f)
+        });
+    }
+
     private static void SetFullRect(Control control)
     {
         control.SetAnchorsPreset(Control.LayoutPreset.FullRect);
