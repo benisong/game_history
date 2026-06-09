@@ -179,45 +179,6 @@ public partial class MainScene : Control
         return string.Join("；", risks);
     }
 
-    private void ApplyMinisterDocumentSkin()
-    {
-        if (_ministerPanel == null) return;
-        _ministerPanel.AddThemeStyleboxOverride("panel", CreatePopupPanelStyle(PopupSkin.Document));
-
-        var vBox = _ministerPanel.GetNodeOrNull<VBoxContainer>("VBox");
-        if (vBox != null) vBox.AddThemeConstantOverride("separation", 10);
-
-        foreach (var label in new[]
-        {
-            _ministerFavorabilityLabel,
-            _ministerPowerLabel,
-            GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterCorruption"),
-            GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterWealth")
-        })
-        {
-            if (label == null) continue;
-            ConfigureWrappingLabel(label);
-            label.AddThemeColorOverride("font_color", new Color(0.20f, 0.12f, 0.06f, 1.0f));
-        }
-
-        var actionRow = GetNodeOrNull<HBoxContainer>("MinisterOverlayPanel/VBox/HBox");
-        if (actionRow != null)
-        {
-            foreach (var child in actionRow.GetChildren())
-            {
-                if (child is Button button)
-                {
-                    button.Text = button.Name.ToString() switch
-                    {
-                        "ConfiscateTreasuryBtn" => "籍没入国库",
-                        "ConfiscatePrivateBtn" => "籍没入西园私库",
-                        _ => button.Text
-                    };
-                }
-            }
-        }
-    }
-
     private static string DescribeAttitudeLevel(int value)
     {
         if (value >= 75) return "亲近";

@@ -56,10 +56,6 @@ public partial class MainScene : Control
 
     // 弹窗与管理器
     private Button? _travelButton;
-    private Panel? _ministerPanel;
-    private Label? _ministerTitleLabel;
-    private Label? _ministerFavorabilityLabel;
-    private Label? _ministerPowerLabel;
     
     private WindowManager _windowManager = new();
 
@@ -121,13 +117,8 @@ public partial class MainScene : Control
         _haremActionLabel = GetNodeOrNull<Label>("RightPanel/Ministers/HaremActionLabel");
         _haremRestButton = GetNodeOrNull<Button>("RightPanel/Ministers/HaremRestButton");
 
-        // 起驾与弹窗
+        // 起驾入口；大臣详情弹窗已改为动态创建，不再绑定旧 MinisterOverlayPanel。
         _travelButton = GetNodeOrNull<Button>("RightPanel/Ministers/TravelButton");
-        _ministerPanel = GetNodeOrNull<Panel>("MinisterOverlayPanel");
-        _ministerTitleLabel = GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterTitle");
-        _ministerFavorabilityLabel = GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterFavor");
-        _ministerPowerLabel = GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterPower");
-        ConfigureMinisterPanelLayout();
         ApplySceneActionButtonStyles();
 
         InitializeEmperorsDesk();
@@ -142,17 +133,7 @@ public partial class MainScene : Control
         if (_caoCaoButton != null) _caoCaoButton.Pressed += () => ShowMinisterDetails("cao_cao");
         if (_jianShuoButton != null) _jianShuoButton.Pressed += () => ShowMinisterDetails("jian_shuo");
 
-        // 弹窗关闭
-        var closeOverlayBtn = GetNodeOrNull<Button>("MinisterOverlayPanel/VBox/CloseButton");
-        if (closeOverlayBtn != null) closeOverlayBtn.Pressed += _windowManager.PopWindow;
-
-        // 绑定抄家动作
-        var btnConfTreasury = GetNodeOrNull<Button>("MinisterOverlayPanel/VBox/HBox/ConfiscateTreasuryBtn");
-        if (btnConfTreasury != null) btnConfTreasury.Pressed += () => ShowConfiscateConfirmAction("国库");
-
-        var btnConfPrivate = GetNodeOrNull<Button>("MinisterOverlayPanel/VBox/HBox/ConfiscatePrivateBtn");
-        if (btnConfPrivate != null) btnConfPrivate.Pressed += () => ShowConfiscateConfirmAction("私库");
-
+        // 旧 MinisterOverlayPanel 不再作为主流程；大臣详情、籍没确认均由动态 PopupSkin 弹窗接管。
         // 场景切换与行动弹窗均由代码动态创建；旧 tscn 弹窗节点已移除。
         if (_travelButton != null) _travelButton.Pressed += ShowTravelOverlay;
         if (_drillArmyButton != null) _drillArmyButton.Pressed += ShowArmyDrillDialog;

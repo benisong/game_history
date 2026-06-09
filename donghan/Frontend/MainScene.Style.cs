@@ -459,50 +459,6 @@ public partial class MainScene : Control
         control.OffsetBottom = 0;
     }
 
-    private void ConfigureMinisterPanelLayout()
-    {
-        if (_ministerPanel == null) return;
-
-        _ministerPanel.CustomMinimumSize = new Vector2(520, 360);
-        _ministerPanel.AnchorLeft = 0.5f;
-        _ministerPanel.AnchorTop = 0.5f;
-        _ministerPanel.AnchorRight = 0.5f;
-        _ministerPanel.AnchorBottom = 0.5f;
-        _ministerPanel.OffsetLeft = -260;
-        _ministerPanel.OffsetTop = -180;
-        _ministerPanel.OffsetRight = 260;
-        _ministerPanel.OffsetBottom = 180;
-
-        var vBox = _ministerPanel.GetNodeOrNull<VBoxContainer>("VBox");
-        if (vBox != null)
-        {
-            vBox.AddThemeConstantOverride("separation", 8);
-        }
-
-        ConfigureWrappingLabel(_ministerTitleLabel, HorizontalAlignment.Center);
-        ConfigureWrappingLabel(_ministerFavorabilityLabel);
-        ConfigureWrappingLabel(_ministerPowerLabel);
-        ConfigureWrappingLabel(GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterCorruption"));
-        ConfigureWrappingLabel(GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterWealth"));
-
-        var actionRow = GetNodeOrNull<HBoxContainer>("MinisterOverlayPanel/VBox/HBox");
-        if (actionRow != null)
-        {
-            actionRow.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-            actionRow.Alignment = BoxContainer.AlignmentMode.Center;
-            actionRow.AddThemeConstantOverride("separation", 12);
-            foreach (var child in actionRow.GetChildren())
-            {
-                if (child is Button button)
-                {
-                    button.CustomMinimumSize = new Vector2(0, 42);
-                    button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-                }
-            }
-        }
-    }
-
-
     private static void StyleSceneActionButton(Button? button, ActionButtonSkin skin)
     {
         if (button == null) return;
@@ -616,9 +572,6 @@ public partial class MainScene : Control
         StyleSceneActionButton(_recruitArmyButton, ActionButtonSkin.WestGarden);
         StyleSceneActionButton(_haremRestButton, ActionButtonSkin.Harem);
         StyleSceneActionButton(_travelButton, ActionButtonSkin.Travel);
-
-        StyleSceneActionButton(GetNodeOrNull<Button>("MinisterOverlayPanel/VBox/HBox/ConfiscateTreasuryBtn"), ActionButtonSkin.Warning);
-        StyleSceneActionButton(GetNodeOrNull<Button>("MinisterOverlayPanel/VBox/HBox/ConfiscatePrivateBtn"), ActionButtonSkin.Warning);
     }
 
     private static void ConfigureWrappingLabel(Label? label, HorizontalAlignment alignment = HorizontalAlignment.Left)
