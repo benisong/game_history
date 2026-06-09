@@ -139,7 +139,7 @@ public partial class MainScene : Control
 
         if (root is ColorRect colorRect && root.Name.ToString().Contains("TransitionMask"))
         {
-            ConfigureFullScreenBlocker(colorRect, zIndex: 20_000);
+            ConfigureFullScreenBlocker(colorRect, zIndex: 3_000);
         }
 
         foreach (var child in root.GetChildren())

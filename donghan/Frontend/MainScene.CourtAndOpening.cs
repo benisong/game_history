@@ -129,7 +129,7 @@ public partial class MainScene : Control
         _openingOverlay.Name = "OpeningOverlay";
         _openingOverlay.MouseFilter = Control.MouseFilterEnum.Stop;
         _openingOverlay.FocusMode = Control.FocusModeEnum.All;
-        _openingOverlay.ZIndex = 30_000;
+        _openingOverlay.ZIndex = 4_000;
         SetFullRect(_openingOverlay);
 
         var backdropStyle = new StyleBoxFlat();

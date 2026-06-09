@@ -5,7 +5,7 @@ namespace DonghanFrontend;
 
 public partial class WindowManager : Node
 {
-    private const int ModalBaseZIndex = 10_000;
+    private const int ModalBaseZIndex = 1_000;
 
     private Stack<Control> _windowStack = new();
     private Stack<ColorRect> _blockerStack = new();
@@ -31,15 +31,10 @@ public partial class WindowManager : Node
         window.GetParent().AddChild(blocker);
         window.GetParent().MoveChild(blocker, window.GetIndex());
 
-        // 3. 将弹窗自身 Style 重写为 100% 物理不透明，以防半透明漏影
+        // 3. 弹窗自身只接管输入与层级；视觉皮肤由各弹窗的 PopupSkin 保留
         window.MouseFilter = Control.MouseFilterEnum.Stop;
         window.FocusMode = Control.FocusModeEnum.All;
         window.ZIndex = blocker.ZIndex + 1;
-
-        if (window is Panel panel)
-        {
-            panel.AddThemeStyleboxOverride("panel", CreateOpaquePanelStyle());
-        }
 
         _windowStack.Push(window);
         _blockerStack.Push(blocker);
@@ -91,12 +86,4 @@ public partial class WindowManager : Node
         control.OffsetBottom = 0;
     }
 
-    private static StyleBoxFlat CreateOpaquePanelStyle()
-    {
-        var opaqueStyle = new StyleBoxFlat();
-        opaqueStyle.BgColor = new Color(0.10f, 0.095f, 0.085f, 1.0f);
-        opaqueStyle.SetBorderWidthAll(2);
-        opaqueStyle.BorderColor = new Color(0.84f, 0.67f, 0.12f, 1.0f);
-        return opaqueStyle;
-    }
 }

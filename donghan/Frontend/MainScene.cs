@@ -87,7 +87,7 @@ public partial class MainScene : Control
         if (_transitionMask != null)
         {
             _ritualTextLabel = _transitionMask.GetNodeOrNull<RichTextLabel>("RitualTextLabel");
-            ConfigureFullScreenBlocker(_transitionMask, zIndex: 20_000);
+            ConfigureFullScreenBlocker(_transitionMask, zIndex: 3_000);
             _transitionMask.Hide();
         }
 
