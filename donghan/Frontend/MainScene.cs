@@ -299,7 +299,10 @@ public partial class MainScene : Control
         {
             _storyOutput.Text = "陛下已经驾临宣政殿，请在上方抚摩御案物理器物，或在下方朱批下旨，乾纲独断...";
         }
-        ShowOpeningOverlay();
+        if (OS.GetEnvironment("DONGHAN_SKIP_OPENING") != "1")
+        {
+            ShowOpeningOverlay();
+        }
     }
 
     public override void _Process(double delta)

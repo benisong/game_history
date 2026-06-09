@@ -40,7 +40,7 @@ public partial class MainScene : Control
 
         var texture = new TextureRect();
         texture.Name = "MainLacquerBackground";
-        texture.Texture = GD.Load<Texture2D>("res://Assets/UI/backgrounds/main_lacquer_bg.png");
+        texture.Texture = LoadTextureFromProjectFile("res://Assets/UI/backgrounds/main_lacquer_bg.png");
         texture.MouseFilter = Control.MouseFilterEnum.Ignore;
         texture.ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize;
         texture.StretchMode = TextureRect.StretchModeEnum.Scale;
@@ -57,6 +57,22 @@ public partial class MainScene : Control
         SetFullRect(darkWash);
         centerPanel.AddChild(darkWash);
         centerPanel.MoveChild(darkWash, 1);
+    }
+
+    private static Texture2D? LoadTextureFromProjectFile(string resourcePath)
+    {
+        var importedTexture = GD.Load<Texture2D>(resourcePath);
+        if (importedTexture != null) return importedTexture;
+
+        string filePath = ProjectSettings.GlobalizePath(resourcePath);
+        var image = Image.LoadFromFile(filePath);
+        if (image == null || image.IsEmpty())
+        {
+            GD.PrintErr($"无法载入图片资源：{resourcePath}");
+            return null;
+        }
+
+        return ImageTexture.CreateFromImage(image);
     }
 
     private static void ApplyOpaquePanelTheme(Node root)

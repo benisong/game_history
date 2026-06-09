@@ -110,7 +110,7 @@ public partial class MainScene : Control
 
         var art = new TextureRect();
         art.Name = "CardArt";
-        art.Texture = GD.Load<Texture2D>(texturePath);
+        art.Texture = LoadTextureFromProjectFile(texturePath);
         art.MouseFilter = Control.MouseFilterEnum.Ignore;
         art.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         art.OffsetLeft = 8;
