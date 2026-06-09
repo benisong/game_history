@@ -85,7 +85,7 @@ public partial class MainScene : Control
         body.AddThemeConstantOverride("separation", 12);
         root.AddChild(body);
 
-        _courtOfficialsVBox = CreateCourtColumn(body, "百官班列", 230);
+        _courtOfficialsVBox = CreateScrollableCourtColumn(body, "百官班列", 230);
 
         var middle = CreateCourtColumn(body, "今日廷议", 560, expand: true);
         _courtTopicsVBox = new VBoxContainer();
@@ -109,13 +109,49 @@ public partial class MainScene : Control
 
     private VBoxContainer CreateCourtColumn(HBoxContainer parent, string title, int width, bool expand = false)
     {
+        var panel = CreateCourtColumnPanel(parent, width, expand);
+
+        var box = CreateCourtColumnBox(panel);
+        AddCourtColumnTitle(box, title);
+
+        return box;
+    }
+
+    private VBoxContainer CreateScrollableCourtColumn(HBoxContainer parent, string title, int width, bool expand = false)
+    {
+        var panel = CreateCourtColumnPanel(parent, width, expand);
+
+        var box = CreateCourtColumnBox(panel);
+        AddCourtColumnTitle(box, title);
+
+        var scroll = new ScrollContainer();
+        scroll.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        scroll.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        scroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
+        scroll.VerticalScrollMode = ScrollContainer.ScrollMode.Auto;
+        box.AddChild(scroll);
+
+        var content = new VBoxContainer();
+        content.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        content.AddThemeConstantOverride("separation", 7);
+        scroll.AddChild(content);
+
+        return content;
+    }
+
+    private Panel CreateCourtColumnPanel(HBoxContainer parent, int width, bool expand)
+    {
         var panel = new Panel();
         panel.CustomMinimumSize = new Vector2(width, 0);
         panel.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         panel.SizeFlagsHorizontal = expand ? Control.SizeFlags.ExpandFill : Control.SizeFlags.ShrinkBegin;
         panel.AddThemeStyleboxOverride("panel", CreateCourtInnerPanelStyle());
         parent.AddChild(panel);
+        return panel;
+    }
 
+    private static VBoxContainer CreateCourtColumnBox(Panel panel)
+    {
         var box = new VBoxContainer();
         SetFullRect(box);
         box.OffsetLeft = 12;
@@ -124,13 +160,15 @@ public partial class MainScene : Control
         box.OffsetBottom = -10;
         box.AddThemeConstantOverride("separation", 9);
         panel.AddChild(box);
+        return box;
+    }
 
+    private void AddCourtColumnTitle(VBoxContainer box, string title)
+    {
         var label = new Label();
         label.Text = title;
         StyleColumnTitle(label, PopupSkin.Court);
         box.AddChild(label);
-
-        return box;
     }
 
     private static StyleBoxFlat CreateCourtInnerPanelStyle()
@@ -166,7 +204,7 @@ public partial class MainScene : Control
     private void RenderCourtOfficials(string topicId = "")
     {
         if (_courtOfficialsVBox == null || _gameState == null) return;
-        ClearChildrenExceptHeader(_courtOfficialsVBox);
+        ClearChildren(_courtOfficialsVBox);
 
         var activeCourtNpcs = _gameState.Npcs.Values
             .Where(n => n.IsActive && !n.IsHostile)
@@ -249,8 +287,10 @@ public partial class MainScene : Control
         string external = npc.GovernedProvinceId != null && _gameState.Provinces.TryGetValue(npc.GovernedProvinceId, out var province)
             ? $"【外任{province.Name}】"
             : string.Empty;
-        button.Text = $"{npc.Name}  {npc.Title}  {attitude}{external}";
+        button.Text = $"{npc.Name}  {npc.Title}\n{attitude}{external}";
         button.Alignment = HorizontalAlignment.Left;
+        button.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        button.CustomMinimumSize = new Vector2(0, 54);
         button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         StyleSceneActionButton(button, ActionButtonSkin.Court);
         button.Pressed += () => ShowMinisterDetails(ministerId);
