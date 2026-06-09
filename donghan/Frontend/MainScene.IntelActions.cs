@@ -44,7 +44,7 @@ public partial class MainScene : Control
 
             if (_gameState.Npcs.TryGetValue(p.GovernorId, out var currentGovernor))
             {
-                var detailFrame = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+                var detailFrame = new PanelContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
                 detailFrame.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Intel));
                 cardRoot.AddChild(detailFrame);
 
@@ -53,11 +53,6 @@ public partial class MainScene : Control
                     Text = $"政务能力：{DescribeGovernorPolitics(currentGovernor)}\n野心风险：{DescribeGovernorAmbition(currentGovernor)}\n派系牵连：{currentGovernor.Faction}\n回京影响：{currentGovernor.Name}权势 +3，{p.Name}暂失主官"
                 };
                 StylePopupBodyText(detail, PopupSkin.Intel);
-                SetFullRect(detail);
-                detail.OffsetLeft = 10;
-                detail.OffsetTop = 8;
-                detail.OffsetRight = -10;
-                detail.OffsetBottom = -8;
                 detailFrame.AddChild(detail);
             }
 
@@ -95,16 +90,11 @@ public partial class MainScene : Control
 
         foreach (var npc in candidates)
         {
-            var candidateCard = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+            var candidateCard = new PanelContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
             candidateCard.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Intel));
             root.AddChild(candidateCard);
 
             var candidateBox = new VBoxContainer();
-            SetFullRect(candidateBox);
-            candidateBox.OffsetLeft = 10;
-            candidateBox.OffsetTop = 8;
-            candidateBox.OffsetRight = -10;
-            candidateBox.OffsetBottom = -8;
             candidateBox.AddThemeConstantOverride("separation", 6);
             candidateCard.AddChild(candidateBox);
 
@@ -186,16 +176,11 @@ public partial class MainScene : Control
             double combatPower = NpcTraitEvaluator.GetCombatPower(general);
             double distancePenalty = p.Distance * 5;
 
-            var generalCard = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+            var generalCard = new PanelContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
             generalCard.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Intel));
             cardRoot.AddChild(generalCard);
 
             var generalBox = new VBoxContainer();
-            SetFullRect(generalBox);
-            generalBox.OffsetLeft = 10;
-            generalBox.OffsetTop = 8;
-            generalBox.OffsetRight = -10;
-            generalBox.OffsetBottom = -8;
             generalBox.AddThemeConstantOverride("separation", 6);
             generalCard.AddChild(generalBox);
 
@@ -287,18 +272,11 @@ public partial class MainScene : Control
         StylePopupBodyText(reliefUnit, PopupSkin.Intel);
         reliefBox.AddChild(reliefUnit);
 
-        var previewFrame = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        var previewFrame = new PanelContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         previewFrame.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Intel));
         cardRoot.AddChild(previewFrame);
-        var previewMargin = new MarginContainer();
-        SetFullRect(previewMargin);
-        previewMargin.AddThemeConstantOverride("margin_left", 10);
-        previewMargin.AddThemeConstantOverride("margin_right", 10);
-        previewMargin.AddThemeConstantOverride("margin_top", 8);
-        previewMargin.AddThemeConstantOverride("margin_bottom", 8);
-        previewFrame.AddChild(previewMargin);
         var preview = CreateActionPreviewLabel(PopupSkin.Intel);
-        previewMargin.AddChild(preview);
+        previewFrame.AddChild(preview);
 
         void RefreshStrategyPreview()
         {
@@ -396,16 +374,11 @@ public partial class MainScene : Control
     {
         if (_intelActionsVBox == null) throw new InvalidOperationException("Intel actions container is not initialized.");
 
-        var card = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        var card = new PanelContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         card.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Intel));
         _intelActionsVBox.AddChild(card);
 
         var root = new VBoxContainer();
-        SetFullRect(root);
-        root.OffsetLeft = 12;
-        root.OffsetTop = 10;
-        root.OffsetRight = -12;
-        root.OffsetBottom = -10;
         root.AddThemeConstantOverride("separation", 8);
         card.AddChild(root);
 

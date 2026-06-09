@@ -233,6 +233,16 @@ public partial class MainScene : Control
         return style;
     }
 
+    private static StyleBoxFlat CreateCompactPopupInnerPanelStyle(PopupSkin skin)
+    {
+        var style = CreatePopupInnerPanelStyle(skin);
+        style.ContentMarginLeft = 4;
+        style.ContentMarginRight = 4;
+        style.ContentMarginTop = 4;
+        style.ContentMarginBottom = 4;
+        return style;
+    }
+
     private static Color GetPopupTitleColor(PopupSkin skin)
     {
         return skin switch
