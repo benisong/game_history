@@ -130,6 +130,94 @@ public partial class MainScene : Control
         return "尚廉";
     }
 
+    private void ShowConfiscateConfirmAction(string destination)
+    {
+        if (_gameState == null || string.IsNullOrEmpty(_currentDetailsMinisterId)) return;
+        if (!_gameState.Npcs.TryGetValue(_currentDetailsMinisterId, out var target)) return;
+
+        var panel = new Panel();
+        panel.Name = "ConfiscationConfirmPopup";
+        panel.Visible = false;
+        ConfigureCenteredPopupPanel(panel, PopupSkin.Warning, new Vector2(620, 420));
+
+        var root = new VBoxContainer();
+        SetFullRect(root);
+        root.OffsetLeft = 24;
+        root.OffsetTop = 20;
+        root.OffsetRight = -24;
+        root.OffsetBottom = -20;
+        root.AddThemeConstantOverride("separation", 12);
+        panel.AddChild(root);
+
+        var title = new Label { Text = "廷尉奏牍 · 籍没家产" };
+        StylePopupTitle(title, PopupSkin.Warning);
+        root.AddChild(title);
+
+        var desc = new Label
+        {
+            Text = $"目标朝臣：{target.Name} · {target.Title}\n朱批去向：{destination}\n此令一出，即为当朝籍没。若目标党羽炽盛或其人尚廉，可能激起朝臣反噬与民怨。"
+        };
+        StylePopupBodyText(desc, PopupSkin.Warning);
+        root.AddChild(desc);
+
+        var previewFrame = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        previewFrame.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Warning));
+        root.AddChild(previewFrame);
+
+        var preview = new Label
+        {
+            Text = BuildConfiscationPreviewText(target, destination),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        StylePopupBodyText(preview, PopupSkin.Warning);
+        SetFullRect(preview);
+        preview.OffsetLeft = 14;
+        preview.OffsetTop = 12;
+        preview.OffsetRight = -14;
+        preview.OffsetBottom = -12;
+        previewFrame.AddChild(preview);
+
+        var row = CreateActionPopupButtonRow();
+        var confirm = new Button
+        {
+            Text = destination == "国库" ? "朱批籍没 · 入国库" : "朱批籍没 · 入西园私库",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            Disabled = target.StashedWealth <= 0
+        };
+        var cancel = new Button { Text = "暂缓不发", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        row.AddChild(confirm);
+        row.AddChild(cancel);
+        root.AddChild(row);
+
+        confirm.Pressed += () =>
+        {
+            _windowManager.PopWindow();
+            DoConfiscateAction(destination);
+        };
+        cancel.Pressed += _windowManager.PopWindow;
+
+        PushTemporaryPopup(panel);
+    }
+
+    private string BuildConfiscationPreviewText(NpcState target, string destination)
+    {
+        int rawWealth = target.StashedWealth;
+        int expectedTreasury = (int)(rawWealth * 0.70);
+        int expectedPrivate = rawWealth - expectedTreasury;
+        string destinationLine = destination == "国库"
+            ? $"入账预估：国库约 +{expectedTreasury} 万钱，西园私库约 +{expectedPrivate} 万钱（按现行籍没拆分）"
+            : $"入账预估：国库约 +{expectedTreasury} 万钱，西园私库约 +{expectedPrivate} 万钱（即便朱批偏私，办案仍会有国税拆分）";
+        string factionRisk = target.Power >= 60 ? "高：目标朝局分量炽盛，党羽可能反噬皇权" : "可控：目标朝局分量未至炽盛";
+        string justiceRisk = target.Corruption < 35 ? "高：廉污风评尚廉，强行籍没恐伤民心" : target.Corruption >= 70 ? "低：巨蠹有赃，民间或称快" : "中：需罗织罪名坐实赃款";
+        string wealthLine = rawWealth > 0 ? $"可籍赃银：{rawWealth} 万钱" : "可籍赃银：无；此时强行动手收益极低";
+        string locationLine = _gameState?.CurrentLocation == "宣政殿"
+            ? "礼法条件：已在宣政殿，可当朝宣旨"
+            : "礼法条件：不在宣政殿，强行籍没将被御史驳回";
+
+        return $"{wealthLine}\n{destinationLine}\n党羽反噬：{factionRisk}\n清议风险：{justiceRisk}\n{locationLine}\n后果预判：目标权势与好感将大幅下挫；若朝中无近臣出列弹劾，圣旨可能流产并损失皇权。";
+    }
+
     // 执行抄家动作
     private void DoConfiscateAction(string destination)
     {

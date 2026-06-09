@@ -148,10 +148,10 @@ public partial class MainScene : Control
 
         // 绑定抄家动作
         var btnConfTreasury = GetNodeOrNull<Button>("MinisterOverlayPanel/VBox/HBox/ConfiscateTreasuryBtn");
-        if (btnConfTreasury != null) btnConfTreasury.Pressed += () => DoConfiscateAction("国库");
+        if (btnConfTreasury != null) btnConfTreasury.Pressed += () => ShowConfiscateConfirmAction("国库");
 
         var btnConfPrivate = GetNodeOrNull<Button>("MinisterOverlayPanel/VBox/HBox/ConfiscatePrivateBtn");
-        if (btnConfPrivate != null) btnConfPrivate.Pressed += () => DoConfiscateAction("私库");
+        if (btnConfPrivate != null) btnConfPrivate.Pressed += () => ShowConfiscateConfirmAction("私库");
 
         // 场景切换按钮绑定
         if (_travelButton != null && _travelOverlayPanel != null)
