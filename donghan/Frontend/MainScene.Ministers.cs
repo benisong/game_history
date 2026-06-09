@@ -15,47 +15,119 @@ public partial class MainScene : Control
         if (_gameState.Npcs.TryGetValue(ministerId, out var minister))
         {
             _currentDetailsMinisterId = ministerId; // 记录当前正在查看的大臣ID，用于抄家指令
+            ApplyMinisterDocumentSkin();
 
-            if (_ministerTitleLabel != null) _ministerTitleLabel.Text = $"{minister.Name} ({minister.Title})";
-            if (_ministerFavorabilityLabel != null) _ministerFavorabilityLabel.Text = $"好感度: {minister.Favorability} / 100";
-            if (_ministerPowerLabel != null) _ministerPowerLabel.Text = $"朝堂权力: {minister.Power} / 100";
+            if (_ministerTitleLabel != null)
+            {
+                _ministerTitleLabel.Text = $"{minister.Name} · {minister.Title}";
+                _ministerTitleLabel.AddThemeColorOverride("font_color", GetPopupTitleColor(PopupSkin.Document));
+            }
+            if (_ministerFavorabilityLabel != null)
+            {
+                _ministerFavorabilityLabel.Text = $"君臣情分：{DescribeAttitudeLevel(minister.Favorability)}（{minister.Favorability}/100）";
+            }
+            if (_ministerPowerLabel != null)
+            {
+                _ministerPowerLabel.Text = $"朝局分量：{DescribePowerLevel(minister.Power)}（{minister.Power}/100）";
+            }
 
-            // 显示贪腐度
             var corruptionLabel = GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterCorruption");
             if (corruptionLabel != null)
             {
-                corruptionLabel.Text = $"官员贪腐度: {minister.Corruption} / 100";
+                corruptionLabel.Text = $"廉污风评：{DescribeCorruptionLevel(minister.Corruption)}（{minister.Corruption}/100）";
             }
 
-            // 显示贪腐存银
             var wealthLabel = GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterWealth");
             if (wealthLabel != null)
             {
-                wealthLabel.Text = $"私蓄赃款: {minister.StashedWealth} 万钱";
+                wealthLabel.Text = $"可籍赃银：{minister.StashedWealth} 万钱";
             }
 
-            // 新增或更新五维属性标签
             var fiveAttributesLabel = _ministerPanel.GetNodeOrNull<Label>("VBox/FiveAttributes");
             if (fiveAttributesLabel == null)
             {
                 fiveAttributesLabel = new Label();
                 fiveAttributesLabel.Name = "FiveAttributes";
-                ConfigureWrappingLabel(fiveAttributesLabel, HorizontalAlignment.Center);
                 _ministerPanel.GetNode<VBoxContainer>("VBox").AddChild(fiveAttributesLabel);
-                // 移动到 CloseButton 之前
                 _ministerPanel.GetNode<VBoxContainer>("VBox").MoveChild(fiveAttributesLabel, 5);
             }
-            else
-            {
-                ConfigureWrappingLabel(fiveAttributesLabel, HorizontalAlignment.Center);
-            }
-            string govText = minister.GovernedProvinceId != null ? $"【外任 {_gameState.Provinces[minister.GovernedProvinceId].Name} 太守】\n" : "【在京闲置】\n";
-            fiveAttributesLabel.Text = govText +
-                $"武力: {minister.Martial,-3} | 统帅: {minister.Leadership,-3} | 政治: {minister.Politics,-3}\n" +
-                $"魅力: {minister.Charisma,-3} | 野心: {minister.Ambition,-3}";
+            ConfigureWrappingLabel(fiveAttributesLabel, HorizontalAlignment.Left);
+            fiveAttributesLabel.AddThemeColorOverride("font_color", new Color(0.20f, 0.12f, 0.06f, 1.0f));
+
+            string govText = minister.GovernedProvinceId != null && _gameState.Provinces.TryGetValue(minister.GovernedProvinceId, out var province)
+                ? $"外任记录：{province.Name} 太守"
+                : "任所记录：在京候旨";
+            fiveAttributesLabel.Text =
+                $"【奏牍摘录】\n{govText}\n" +
+                $"武略 {minister.Martial}｜统御 {minister.Leadership}｜政术 {minister.Politics}\n" +
+                $"声望 {minister.Charisma}｜野心 {minister.Ambition}\n" +
+                $"派系：{minister.Faction}";
 
             _windowManager.PushWindow(_ministerPanel);
         }
+    }
+
+    private void ApplyMinisterDocumentSkin()
+    {
+        if (_ministerPanel == null) return;
+        _ministerPanel.AddThemeStyleboxOverride("panel", CreatePopupPanelStyle(PopupSkin.Document));
+
+        var vBox = _ministerPanel.GetNodeOrNull<VBoxContainer>("VBox");
+        if (vBox != null) vBox.AddThemeConstantOverride("separation", 10);
+
+        foreach (var label in new[]
+        {
+            _ministerFavorabilityLabel,
+            _ministerPowerLabel,
+            GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterCorruption"),
+            GetNodeOrNull<Label>("MinisterOverlayPanel/VBox/MinisterWealth")
+        })
+        {
+            if (label == null) continue;
+            ConfigureWrappingLabel(label);
+            label.AddThemeColorOverride("font_color", new Color(0.20f, 0.12f, 0.06f, 1.0f));
+        }
+
+        var actionRow = GetNodeOrNull<HBoxContainer>("MinisterOverlayPanel/VBox/HBox");
+        if (actionRow != null)
+        {
+            foreach (var child in actionRow.GetChildren())
+            {
+                if (child is Button button)
+                {
+                    button.Text = button.Name.ToString() switch
+                    {
+                        "ConfiscateTreasuryBtn" => "籍没入国库",
+                        "ConfiscatePrivateBtn" => "籍没入西园私库",
+                        _ => button.Text
+                    };
+                }
+            }
+        }
+    }
+
+    private static string DescribeAttitudeLevel(int value)
+    {
+        if (value >= 75) return "亲近";
+        if (value >= 55) return "可用";
+        if (value >= 35) return "观望";
+        return "疏离";
+    }
+
+    private static string DescribePowerLevel(int value)
+    {
+        if (value >= 75) return "炽盛";
+        if (value >= 55) return "有势";
+        if (value >= 35) return "中平";
+        return "微弱";
+    }
+
+    private static string DescribeCorruptionLevel(int value)
+    {
+        if (value >= 75) return "巨蠹";
+        if (value >= 55) return "可疑";
+        if (value >= 35) return "有瑕";
+        return "尚廉";
     }
 
     // 执行抄家动作
