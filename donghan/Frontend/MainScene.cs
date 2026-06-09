@@ -43,6 +43,8 @@ public partial class MainScene : Control
     // 大朝仪转场遮罩
     private ColorRect? _transitionMask;
     private RichTextLabel? _ritualTextLabel;
+    private Control? _courtRitualOverlay;
+    private bool _isUnskippableTransitionActive;
 
     // 场景专属 Action 节点引用
     private Label? _actionLabel;
@@ -187,6 +189,16 @@ public partial class MainScene : Control
         if (mode != DisplayServer.WindowMode.ExclusiveFullscreen)
         {
             ForceExclusiveFullscreen();
+        }
+    }
+
+    public override void _Input(InputEvent @event)
+    {
+        if (!_isUnskippableTransitionActive) return;
+
+        if (@event is InputEventKey or InputEventMouseButton or InputEventScreenTouch or InputEventJoypadButton)
+        {
+            GetViewport().SetInputAsHandled();
         }
     }
 }
