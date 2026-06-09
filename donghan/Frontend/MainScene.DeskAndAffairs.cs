@@ -413,7 +413,7 @@ public partial class MainScene : Control
         if (_edictsItemList == null || _gameState == null) return;
         _edictsItemList.Clear();
         _edictContentLabel!.Text = "请在左侧选择一封奏折进行批阅批示...";
-        foreach (Node opt in _edictOptionsVBox!.GetChildren()) opt.QueueFree();
+        ClearEdictOptions();
 
         foreach (var edict in _gameState.ActiveEdicts)
         {
@@ -431,13 +431,13 @@ public partial class MainScene : Control
 
     private void OnEdictSelected(long index)
     {
-        if (_gameState == null || index < 0 || index >= _gameState.ActiveEdicts.Count) return;
+        if (_gameState == null || _edictOptionsVBox == null || index < 0 || index >= _gameState.ActiveEdicts.Count) return;
         var edict = _gameState.ActiveEdicts[(int)index];
 
         _edictContentLabel!.Text = $"[b]【{edict.Title}】[/b]\n\n{edict.NarrativeContent}";
 
         // 清空选项
-        foreach (Node opt in _edictOptionsVBox!.GetChildren()) opt.QueueFree();
+        ClearEdictOptions();
 
         // 动态生成选项
         for (int i = 0; i < edict.Options.Count; i++)
@@ -450,17 +450,26 @@ public partial class MainScene : Control
             StyleSceneActionButton(btn, ActionButtonSkin.Document);
             
             int optIndex = i;
-            btn.Pressed += async () =>
+            btn.Pressed += () =>
             {
                 _windowManager.PopWindow(); // 关闭尚书台弹窗
-                
-                string pInput = $"批阅奏折 {edict.Title} 选项 {optIndex + 1}";
-                
-                var result = await _gameEngine!.ProcessPlayerTurnAsync(pInput);
+
+                var result = _gameEngine!.ResolveEdictAction(edict.Id, optIndex);
                 ShowStoryReportPopup("尚书台回奏", result.StoryText, PopupSkin.Document);
                 UpdateUI();
             };
             _edictOptionsVBox.AddChild(btn);
+        }
+    }
+
+    private void ClearEdictOptions()
+    {
+        if (_edictOptionsVBox == null) return;
+
+        foreach (Node opt in _edictOptionsVBox.GetChildren())
+        {
+            _edictOptionsVBox.RemoveChild(opt);
+            opt.QueueFree();
         }
     }
 }
