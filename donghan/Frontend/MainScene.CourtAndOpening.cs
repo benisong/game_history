@@ -130,44 +130,76 @@ public partial class MainScene : Control
         _openingOverlay.ZIndex = 30_000;
         SetFullRect(_openingOverlay);
 
-        var opaqueStyle = new StyleBoxFlat();
-        opaqueStyle.BgColor = new Color(0.08f, 0.08f, 0.08f, 1.0f);
-        opaqueStyle.SetBorderWidthAll(4);
-        opaqueStyle.BorderColor = new Color(0.72f, 0.58f, 0.12f, 1.0f);
-        _openingOverlay.AddThemeStyleboxOverride("panel", opaqueStyle);
+        var backdropStyle = new StyleBoxFlat();
+        backdropStyle.BgColor = new Color(0.025f, 0.014f, 0.012f, 1.0f);
+        backdropStyle.BorderColor = new Color(0.34f, 0.05f, 0.03f, 1.0f);
+        backdropStyle.SetBorderWidthAll(5);
+        _openingOverlay.AddThemeStyleboxOverride("panel", backdropStyle);
 
-        var vBox = new VBoxContainer();
-        vBox.SetAnchorsPreset(Control.LayoutPreset.Center);
-        vBox.CustomMinimumSize = new Vector2(650, 400);
-        vBox.AddThemeConstantOverride("separation", 35);
-        _openingOverlay.AddChild(vBox);
+        var edictPanel = new Panel();
+        edictPanel.Name = "OpeningEdictPanel";
+        ConfigureCenteredPopupPanel(edictPanel, PopupSkin.Court, new Vector2(760, 470));
+        _openingOverlay.AddChild(edictPanel);
 
-        var title = new Label();
-        title.Text = "👑  东 汉 末 年 · 汉 灵 帝  👑";
-        title.HorizontalAlignment = HorizontalAlignment.Center;
-        title.AddThemeFontSizeOverride("font_size", 24);
-        vBox.AddChild(title);
+        var box = new VBoxContainer();
+        SetFullRect(box);
+        box.OffsetLeft = 34;
+        box.OffsetTop = 28;
+        box.OffsetRight = -34;
+        box.OffsetBottom = -28;
+        box.AddThemeConstantOverride("separation", 16);
+        edictPanel.AddChild(box);
 
-        var desc = new RichTextLabel();
-        desc.BbcodeEnabled = true;
-        desc.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
-        desc.Text = "[center][font_size=18]「光和七年，春。」[/font_size]\n\n" +
-                    "“苍天已死，黄天当立。岁在甲子，天下大吉！”\n" +
-                    "张角妖术惑众，巨鹿黄巾并起。外戚何进拥兵坐镇，十常侍张让把持禁中。\n" +
-                    "汉室倾颓，累卵之危。天下百姓，倒悬之急。\n\n" +
-                    "[color=yellow]陛下，大汉的八百载基业与十三州舆图，您将如何执掌重构？[/color][/center]";
-        vBox.AddChild(desc);
+        var seal = new Label { Text = "黄巾乱起 · 天子临朝" };
+        StylePopupTitle(seal, PopupSkin.Court);
+        seal.AddThemeFontSizeOverride("font_size", 27);
+        box.AddChild(seal);
 
-        var btnConfirm = new Button();
-        btnConfirm.Text = "—— 临 朝 理 政 ——";
-        btnConfirm.CustomMinimumSize = new Vector2(250, 45);
-        btnConfirm.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
+        var dateLabel = new Label { Text = "光和七年 · 春" };
+        StyleColumnTitle(dateLabel, PopupSkin.Court);
+        dateLabel.AddThemeColorOverride("font_color", new Color(0.88f, 0.62f, 0.20f, 1.0f));
+        box.AddChild(dateLabel);
+
+        var edictFrame = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        edictFrame.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Court));
+        box.AddChild(edictFrame);
+
+        var edictText = new RichTextLabel
+        {
+            BbcodeEnabled = true,
+            ScrollActive = false,
+            FitContent = true,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        SetFullRect(edictText);
+        edictText.OffsetLeft = 18;
+        edictText.OffsetTop = 14;
+        edictText.OffsetRight = -18;
+        edictText.OffsetBottom = -14;
+        edictText.Text = "[center][font_size=18][color=#f0c85a]苍天已死，黄天当立。岁在甲子，天下大吉。[/color][/font_size][/center]\n\n" +
+                         "[color=#e0c48c]张角妖术惑众，巨鹿黄巾并起；外戚何进拥兵坐镇，十常侍张让把持禁中。[/color]\n" +
+                         "[color=#e0c48c]汉室倾颓，累卵之危。天下百姓，倒悬之急。[/color]\n\n" +
+                         "[center][color=#f0c85a]陛下，大汉八百载基业与十三州舆图，将自今日重入御笔。[/color][/center]";
+        edictFrame.AddChild(edictText);
+
+        var warning = CreateActionPreviewLabel(PopupSkin.Court);
+        warning.HorizontalAlignment = HorizontalAlignment.Center;
+        warning.Text = "开局态势：皇权衰微｜国库窘迫｜民心跌破活命红线｜黄巾将起";
+        box.AddChild(warning);
+
+        var btnConfirm = new Button
+        {
+            Text = "临朝理政",
+            CustomMinimumSize = new Vector2(260, 46),
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter
+        };
         btnConfirm.Pressed += () =>
         {
             _openingOverlay.ReleaseFocus();
             _openingOverlay.QueueFree();
         };
-        vBox.AddChild(btnConfirm);
+        box.AddChild(btnConfirm);
 
         AddChild(_openingOverlay);
         _openingOverlay.GrabFocus();
