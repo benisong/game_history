@@ -345,10 +345,7 @@ public partial class MainScene : Control
         if (_gameState == null) return;
         if (_gameState.CurrentLocation != "宣政殿")
         {
-            if (_storyOutput != null)
-            {
-                _storyOutput.Text = "【太监急奏】\n\n“陛下，漆木折匣重器存放在宣政殿案上，请移驾宣政殿再行批阅批示！”";
-            }
+            ShowStoryReportPopup("太监急奏", "【太监急奏】\n\n“陛下，漆木折匣重器存放在宣政殿案上，请移驾宣政殿再行批阅批示！”", PopupSkin.Warning);
             return;
         }
 
@@ -403,9 +400,8 @@ public partial class MainScene : Control
                 
                 string pInput = $"批阅奏折 {edict.Title} 选项 {optIndex + 1}";
                 
-                if (_storyOutput != null) _storyOutput.Text = "正在起草朱批，下达圣旨...";
                 var result = await _gameEngine!.ProcessPlayerTurnAsync(pInput);
-                if (_storyOutput != null) _storyOutput.Text = result.StoryText;
+                ShowStoryReportPopup("尚书台回奏", result.StoryText, PopupSkin.Document);
                 UpdateUI();
             };
             _edictOptionsVBox.AddChild(btn);

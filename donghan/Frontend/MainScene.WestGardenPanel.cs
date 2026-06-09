@@ -412,14 +412,14 @@ public partial class MainScene : Control
         try
         {
             var result = _gameEngine.ExecuteQuickAction("sell_office");
-            if (_storyOutput != null) _storyOutput.Text = result.StoryText;
+            ShowStoryReportPopup("西园回奏", result.StoryText, PopupSkin.WestGarden);
             UpdateUI();
             RefreshWestGardenPanel();
         }
         catch (Exception ex)
         {
             GD.PrintErr(ex.Message);
-            if (_storyOutput != null) _storyOutput.Text = $"【西园军务未成】\n\n{ex.Message}";
+            ShowStoryReportPopup("西园军务未成", $"【西园军务未成】\n\n{ex.Message}", PopupSkin.Warning);
         }
     }
 
@@ -429,14 +429,14 @@ public partial class MainScene : Control
         try
         {
             var result = _gameEngine.ExecuteDrillArmyActionWithOfficer(amount, officerId);
-            if (_storyOutput != null) _storyOutput.Text = result.StoryText;
+            ShowStoryReportPopup("西园军报", result.StoryText, PopupSkin.WestGarden);
             UpdateUI();
             RefreshWestGardenPanel();
         }
         catch (Exception ex)
         {
             GD.PrintErr(ex.Message);
-            if (_storyOutput != null) _storyOutput.Text = $"【阅兵未成】\n\n{ex.Message}";
+            ShowStoryReportPopup("阅兵未成", $"【阅兵未成】\n\n{ex.Message}", PopupSkin.Warning);
         }
     }
 
@@ -446,14 +446,14 @@ public partial class MainScene : Control
         try
         {
             var result = _gameEngine.ExecuteRaiseWestGardenTroopsAction(troops);
-            if (_storyOutput != null) _storyOutput.Text = result.StoryText;
+            ShowStoryReportPopup("西园军报", result.StoryText, PopupSkin.WestGarden);
             UpdateUI();
             RefreshWestGardenPanel();
         }
         catch (Exception ex)
         {
             GD.PrintErr(ex.Message);
-            if (_storyOutput != null) _storyOutput.Text = $"【募兵未成】\n\n{ex.Message}";
+            ShowStoryReportPopup("募兵未成", $"【募兵未成】\n\n{ex.Message}", PopupSkin.Warning);
         }
     }
 

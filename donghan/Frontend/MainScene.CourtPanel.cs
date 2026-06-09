@@ -370,10 +370,7 @@ public partial class MainScene : Control
     private void CloseCourtSession()
     {
         _windowManager.PopWindow();
-        if (_storyOutput != null)
-        {
-            _storyOutput.Text = "【退朝】\n\n静鞭三响，百官次第退出宣政殿。陛下暂收朝议，天下仍在暗流中流转。";
-        }
+        ShowStoryReportPopup("退朝", "【退朝】\n\n静鞭三响，百官次第退出宣政殿。陛下暂收朝议，天下仍在暗流中流转。", PopupSkin.Court);
     }
 
     private async void OnConfirmCourtAssembly()
@@ -402,9 +399,8 @@ public partial class MainScene : Control
             _transitionMask.Hide();
         }
 
-        if (_storyOutput != null) _storyOutput.Text = "百官正在唇枪舌战，商议对策...";
         var result = await _gameEngine!.ProcessPlayerTurnAsync(txt);
-        if (_storyOutput != null) _storyOutput.Text = result.StoryText;
+        ShowStoryReportPopup("朝议回奏", result.StoryText, PopupSkin.Court);
         UpdateUI();
     }
 
