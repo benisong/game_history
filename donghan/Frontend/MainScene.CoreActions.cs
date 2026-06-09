@@ -134,11 +134,6 @@ public partial class MainScene : Control
             ShowStoryReportPopup("起驾奏报", travelStory, location == "西园" ? PopupSkin.WestGarden : PopupSkin.Court);
 
             UpdateUI();
-            if (location == "西园" && _westGardenPopup != null)
-            {
-                RefreshWestGardenPanel();
-                _windowManager.PushWindow(_westGardenPopup);
-            }
         }
         catch (Exception ex)
         {

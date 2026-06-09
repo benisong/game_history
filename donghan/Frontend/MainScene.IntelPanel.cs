@@ -288,6 +288,10 @@ public partial class MainScene : Control
 
     private static void ClearIntelChildren(VBoxContainer box)
     {
-        foreach (Node child in box.GetChildren()) child.QueueFree();
+        foreach (Node child in box.GetChildren())
+        {
+            box.RemoveChild(child);
+            child.QueueFree();
+        }
     }
 }
