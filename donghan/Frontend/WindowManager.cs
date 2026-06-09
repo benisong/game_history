@@ -9,9 +9,10 @@ public partial class WindowManager : Node
 
     private Stack<Control> _windowStack = new();
     private Stack<ColorRect> _blockerStack = new();
+    private Stack<bool> _freeOnCloseStack = new();
 
     // 打开一个多层全不透明模态防穿透浮窗
-    public void PushWindow(Control window)
+    public void PushWindow(Control window, bool freeOnClose = false)
     {
         if (window == null) return;
         if (window.GetParent() == null) return;
@@ -38,6 +39,7 @@ public partial class WindowManager : Node
 
         _windowStack.Push(window);
         _blockerStack.Push(blocker);
+        _freeOnCloseStack.Push(freeOnClose);
 
         blocker.Show();
         window.Show();
@@ -52,6 +54,7 @@ public partial class WindowManager : Node
         if (_windowStack.Count > 0)
         {
             var topWindow = _windowStack.Pop();
+            bool freeOnClose = _freeOnCloseStack.Count > 0 && _freeOnCloseStack.Pop();
             topWindow.Hide();
             topWindow.ReleaseFocus();
 
@@ -60,6 +63,12 @@ public partial class WindowManager : Node
                 var topBlocker = _blockerStack.Pop();
                 topBlocker.QueueFree(); // 销毁该层遮挡，底层重新可点
             }
+
+            if (freeOnClose)
+            {
+                topWindow.QueueFree();
+            }
+
             GD.Print($"[WindowManager]: 已关闭弹窗 {topWindow.Name} 并解冻一层遮挡。");
         }
     }

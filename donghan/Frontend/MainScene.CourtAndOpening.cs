@@ -259,7 +259,6 @@ public partial class MainScene : Control
         confirm.Pressed += () =>
         {
             DoTravel(destination);
-            prompt.QueueFree();
         };
         row.AddChild(confirm);
 
@@ -270,7 +269,6 @@ public partial class MainScene : Control
         cancel.Pressed += _windowManager.PopWindow;
         row.AddChild(cancel);
 
-        AddChild(prompt);
-        _windowManager.PushWindow(prompt);
+        PushTemporaryPopup(prompt);
     }
 }

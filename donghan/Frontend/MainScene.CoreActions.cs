@@ -552,12 +552,8 @@ public partial class MainScene : Control
 
     private void PushTemporaryPopup(Panel panel)
     {
-        panel.VisibilityChanged += () =>
-        {
-            if (!panel.Visible && IsInstanceValid(panel)) panel.QueueFree();
-        };
         AddChild(panel);
-        _windowManager.PushWindow(panel);
+        _windowManager.PushWindow(panel, freeOnClose: true);
     }
 
     // 执行开仓赈灾动作
