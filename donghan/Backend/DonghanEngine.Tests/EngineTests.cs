@@ -725,6 +725,52 @@ public class EngineTests
     }
 
     [Fact]
+    public void Test_HaremRest_UsesTraitConstantsForAllCompanionEffects()
+    {
+        var state = new GameState();
+        state.CurrentLocation = "后宫";
+        foreach (var npc in state.Npcs.Values)
+        {
+            npc.IsActive = false;
+        }
+
+        state.Npcs["flatterer"] = new NpcState
+        {
+            Id = "flatterer", Name = "佞臣", Traits = new() { TraitNames.ChanMeiZhuanQuan }, Favorability = 40, Power = 20
+        };
+        state.Npcs["bootlicker"] = new NpcState
+        {
+            Id = "bootlicker", Name = "近侍", Traits = new() { TraitNames.HuiPaiMaPi }, Favorability = 40, Power = 20
+        };
+        state.Npcs["physician"] = new NpcState
+        {
+            Id = "physician", Name = "医官", Traits = new() { TraitNames.YiShuGaoMing }
+        };
+        state.Npcs["assistant_physician"] = new NpcState
+        {
+            Id = "assistant_physician", Name = "医佐", Traits = new() { TraitNames.DongDianYiLi }
+        };
+        state.Npcs["talker"] = new NpcState
+        {
+            Id = "talker", Name = "清谈客", Traits = new() { TraitNames.XiHaoQingTan }
+        };
+
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+        int initialHealth = state.Health;
+        int initialPower = state.ImperialPower;
+
+        engine.ExecuteQuickAction("harem_rest");
+
+        // 五类后宫随驾特质合计额外恢复 20，但规则应封顶为 +15；基础恢复 +10。
+        Assert.Equal(initialHealth + 25, state.Health);
+        Assert.Equal(initialPower - 1, state.ImperialPower);
+        Assert.Equal(55, state.Npcs["flatterer"].Favorability);
+        Assert.Equal(25, state.Npcs["flatterer"].Power);
+        Assert.Equal(46, state.Npcs["bootlicker"].Favorability);
+        Assert.Equal(22, state.Npcs["bootlicker"].Power);
+    }
+
+    [Fact]
     public void Test_SceneTravel_ShouldChangeLocation()
     {
         // Arrange

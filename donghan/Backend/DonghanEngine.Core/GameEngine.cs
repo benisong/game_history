@@ -173,27 +173,27 @@ public partial class GameEngine
             {
                 if (npc.IsActive)
                 {
-                    if (npc.Traits.Contains("谄媚专权"))
+                    if (npc.Traits.Contains(TraitNames.ChanMeiZhuanQuan))
                     {
                         npc.Favorability = Math.Clamp(npc.Favorability + 15, 0, 100);
                         npc.Power = Math.Clamp(npc.Power + 5, 0, 100);
                         extraHealth += 5;
                     }
-                    if (npc.Traits.Contains("会拍马屁"))
+                    if (npc.Traits.Contains(TraitNames.HuiPaiMaPi))
                     {
                         npc.Favorability = Math.Clamp(npc.Favorability + 6, 0, 100);
                         npc.Power = Math.Clamp(npc.Power + 2, 0, 100);
                         extraHealth += 2;
                     }
-                    if (npc.Traits.Contains("医术高明"))
+                    if (npc.Traits.Contains(TraitNames.YiShuGaoMing))
                     {
                         extraHealth += 8;
                     }
-                    if (npc.Traits.Contains("懂点医理"))
+                    if (npc.Traits.Contains(TraitNames.DongDianYiLi))
                     {
                         extraHealth += 3;
                     }
-                    if (npc.Traits.Contains("喜好清谈"))
+                    if (npc.Traits.Contains(TraitNames.XiHaoQingTan))
                     {
                         extraHealth += 2;
                         imperialPowerDelta -= 1; // 清谈误国，扣减 1 点皇权
