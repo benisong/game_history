@@ -59,6 +59,41 @@ public partial class MainScene : Control
         centerPanel.MoveChild(darkWash, 1);
     }
 
+    private static void EnsureMainAnnualEventFrame(Panel centerPanel, RichTextLabel storyOutput)
+    {
+        if (centerPanel.GetNodeOrNull<Panel>("MainAnnualEventFrame") != null) return;
+
+        var frame = new Panel();
+        frame.Name = "MainAnnualEventFrame";
+        frame.MouseFilter = Control.MouseFilterEnum.Ignore;
+        frame.ZIndex = 3;
+        frame.AnchorLeft = storyOutput.AnchorLeft;
+        frame.AnchorTop = storyOutput.AnchorTop;
+        frame.AnchorRight = storyOutput.AnchorRight;
+        frame.AnchorBottom = storyOutput.AnchorBottom;
+        frame.OffsetLeft = storyOutput.OffsetLeft - 18;
+        frame.OffsetTop = storyOutput.OffsetTop - 8;
+        frame.OffsetRight = storyOutput.OffsetRight + 18;
+        frame.OffsetBottom = storyOutput.OffsetBottom + 8;
+
+        var style = new StyleBoxFlat();
+        style.BgColor = new Color(0.035f, 0.018f, 0.014f, 0.78f);
+        style.BorderColor = new Color(0.78f, 0.46f, 0.12f, 0.95f);
+        style.SetBorderWidthAll(2);
+        style.CornerRadiusTopLeft = 12;
+        style.CornerRadiusTopRight = 12;
+        style.CornerRadiusBottomLeft = 12;
+        style.CornerRadiusBottomRight = 12;
+        style.ContentMarginLeft = 16;
+        style.ContentMarginRight = 16;
+        style.ContentMarginTop = 8;
+        style.ContentMarginBottom = 8;
+        frame.AddThemeStyleboxOverride("panel", style);
+
+        centerPanel.AddChild(frame);
+        centerPanel.MoveChild(frame, Math.Max(0, storyOutput.GetIndex()));
+    }
+
     private static Texture2D? LoadTextureFromProjectFile(string resourcePath)
     {
         var importedTexture = GD.Load<Texture2D>(resourcePath);

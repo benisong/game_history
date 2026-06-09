@@ -295,10 +295,7 @@ public partial class MainScene : Control
 
         // 渲染初始界面状态
         UpdateUI();
-        if (_storyOutput != null)
-        {
-            _storyOutput.Text = "陛下已经驾临宣政殿，请在上方抚摩御案物理器物，或在下方朱批下旨，乾纲独断...";
-        }
+        SetAnnualMajorEventBanner();
         if (OS.GetEnvironment("DONGHAN_SKIP_OPENING") != "1")
         {
             ShowOpeningOverlay();

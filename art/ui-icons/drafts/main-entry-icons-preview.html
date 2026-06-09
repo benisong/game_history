@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>东汉 UI 主入口图标草案</title>
+<style>
+  *{box-sizing:border-box} body{margin:0;background:#120d0a;color:#ead8ae;font-family:"Noto Serif SC","Songti SC","SimSun",serif;min-height:100vh;display:grid;place-items:center}
+  .board{width:1180px;height:760px;padding:34px;background:radial-gradient(circle at 50% 0%,#2b1a12 0,#120d0a 48%,#080605 100%);border:1px solid #6f4c19;box-shadow:0 30px 80px #000 inset,0 0 0 8px #0d0907}
+  h1{text-align:center;margin:0 0 8px;font-weight:600;letter-spacing:.16em;color:#f2cf7a;text-shadow:0 2px 12px #000;font-size:30px}
+  .subtitle{text-align:center;color:#9d8460;margin-bottom:28px;font-size:15px;letter-spacing:.08em}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+  .card{height:570px;padding:20px 18px;background:linear-gradient(180deg,#26160f,#130d0a);border:2px solid #6f4c19;border-radius:18px;box-shadow:0 0 0 1px #c59a3a33 inset,0 22px 45px #0009;display:flex;flex-direction:column;align-items:center;justify-content:space-between;position:relative;overflow:hidden}
+  .card:before{content:"";position:absolute;inset:8px;border:1px solid #a47b2a55;border-radius:13px;pointer-events:none}.card:after{content:"";position:absolute;left:-40px;right:-40px;top:-80px;height:150px;background:radial-gradient(ellipse,#e0a93a33,transparent 62%);pointer-events:none}
+  .icon{width:210px;height:210px;margin-top:22px;filter:drop-shadow(0 20px 24px #000b)}
+  .label{text-align:center}.label h2{margin:12px 0 8px;color:#f0c76c;font-size:28px;letter-spacing:.2em}.label p{margin:0;color:#b9a27b;line-height:1.7;font-size:15px;min-height:78px}.prompt{font-family:ui-monospace,Menlo,monospace;font-size:11px;line-height:1.45;color:#8d7658;background:#070504;border:1px solid #3b2a15;border-radius:10px;padding:10px;width:100%;min-height:88px}
+  .seal{fill:#8e1e17}.gold{fill:#c99733}.darkgold{fill:#8a6420}.paper{fill:#d9b978}.paper2{fill:#9e7840}.bronze{fill:#5e5339}.bronze2{fill:#a17b35}.ink{fill:#20130e}.redline{stroke:#8e1e17;stroke-width:5;stroke-linecap:round}.goldline{stroke:#d0a544;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}.thin{stroke-width:3}.shadow{fill:#000;opacity:.18}
+</style>
+</head>
+<body>
+<div class="board">
+  <h1>东汉末年 · 主入口器物图标草案</h1>
+  <div class="subtitle">第一批：替换 emoji 的 4 个御案入口图标｜低饱和、漆木、旧金、可读 64×64</div>
+  <div class="grid">
+    <div class="card">
+      <svg class="icon" viewBox="0 0 256 256" aria-label="朝会诏书">
+        <ellipse class="shadow" cx="128" cy="218" rx="78" ry="16"/>
+        <rect x="36" y="66" width="188" height="118" rx="18" class="paper"/>
+        <rect x="31" y="56" width="24" height="138" rx="12" class="darkgold"/><rect x="201" y="56" width="24" height="138" rx="12" class="darkgold"/>
+        <path d="M58 76h140M58 103h140M58 130h108M58 157h82" class="redline thin" opacity=".65"/>
+        <circle cx="128" cy="128" r="31" class="seal" opacity=".92"/><path d="M112 128h32M128 112v32" class="goldline thin"/>
+        <path d="M42 58c28-20 88-24 172 0" fill="none" class="goldline" opacity=".55"/>
+      </svg>
+      <div class="label"><h2>朝会</h2><p>半展开诏书，朱批与金轴，表示天子临朝、群臣奏对。</p></div>
+      <div class="prompt">court_scroll.png · imperial edict scroll, dark red lacquer rods, aged parchment, gold trim, no text</div>
+    </div>
+    <div class="card">
+      <svg class="icon" viewBox="0 0 256 256" aria-label="黄门密札">
+        <ellipse class="shadow" cx="128" cy="218" rx="78" ry="16"/>
+        <path d="M45 74h166v116H45z" class="paper2"/><path d="M45 74l83 67 83-67v116H45z" fill="#c9a05e"/><path d="M45 190l65-62M211 190l-65-62" fill="none" stroke="#6e4a1d" stroke-width="6"/>
+        <circle cx="128" cy="139" r="28" class="seal"/><path d="M111 139h34M128 122v34" class="goldline thin"/>
+        <path d="M65 55c31-11 73-11 126 0" fill="none" class="goldline"/><path d="M72 43c36-9 73-8 112 0" fill="none" stroke="#7e5b1d" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="205" cy="67" r="12" class="ink" opacity=".55"/>
+      </svg>
+      <div class="label"><h2>黄门密札</h2><p>黑漆封函、朱砂封印、密信折线，表示内廷情报与州郡密报。</p></div>
+      <div class="prompt">intel_secret_letter.png · sealed secret letter, dark lacquer, cinnabar seal, intelligence dossier, no letters</div>
+    </div>
+    <div class="card">
+      <svg class="icon" viewBox="0 0 256 256" aria-label="西园虎符">
+        <ellipse class="shadow" cx="128" cy="218" rx="78" ry="16"/>
+        <path d="M45 151c10-52 46-86 91-86 30 0 58 14 77 39-16 0-31 5-43 16 22 1 40 15 47 36-28-4-51 6-70 28-26-3-50-10-72-22l-27 18c-7 5-16-2-13-10l10-19z" class="bronze"/>
+        <path d="M82 139c35 17 76 15 117-7M99 98c-6 12-8 25-6 39M129 86c-5 22-3 44 7 66" fill="none" stroke="#b48a3d" stroke-width="6" stroke-linecap="round" opacity=".7"/>
+        <circle cx="169" cy="103" r="7" class="gold"/><path d="M56 151l-24-6 20-13" fill="#a17b35"/><path d="M66 166l-21 24" fill="none" class="goldline"/>
+        <path d="M205 114l24-4-15 18" fill="#a17b35"/>
+      </svg>
+      <div class="label"><h2>西园</h2><p>青铜虎符与军牌质感，表示天子亲军、校场、军权。</p></div>
+      <div class="prompt">west_garden_tiger_tally.png · bronze tiger tally, ancient Chinese military token, aged gold, readable 64x64</div>
+    </div>
+    <div class="card">
+      <svg class="icon" viewBox="0 0 256 256" aria-label="起驾车马令">
+        <ellipse class="shadow" cx="128" cy="218" rx="78" ry="16"/>
+        <path d="M48 125h133c17 0 32 13 36 31H42c1-12 3-22 6-31z" class="ink"/><path d="M76 78h76c23 0 42 19 42 42v35H58v-39c0-10 8-18 18-18h8z" class="darkgold"/>
+        <path d="M82 93h67c14 0 27 11 29 25H73c0-8 4-15 9-25z" fill="#c49a45"/><path d="M57 155h170" class="goldline"/>
+        <circle cx="77" cy="177" r="26" class="ink"/><circle cx="77" cy="177" r="14" fill="#b9913d"/><circle cx="184" cy="177" r="26" class="ink"/><circle cx="184" cy="177" r="14" fill="#b9913d"/>
+        <path d="M27 127c25-23 45-32 67-29M183 88c17 2 34 14 45 33" fill="none" class="goldline thin" opacity=".7"/>
+      </svg>
+      <div class="label"><h2>起驾</h2><p>黑漆辇车与金色车轮，表示移驾、巡幸和场景切换。</p></div>
+      <div class="prompt">travel_carriage_token.png · imperial carriage token, black lacquer, aged gold wheel, ancient Chinese UI icon</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

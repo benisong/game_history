@@ -22,6 +22,7 @@ public partial class MainScene : Control
         }
 
         HideMainSceneStatusAndNpcChrome();
+        SetAnnualMajorEventBanner();
 
         // 更新起居注/编年史
         if (_chronicleLog != null)

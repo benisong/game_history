@@ -52,10 +52,15 @@ public partial class MainScene : Control
 
         if (_storyOutput != null)
         {
-            _storyOutput.OffsetLeft = 70;
-            _storyOutput.OffsetTop = 585;
-            _storyOutput.OffsetRight = -70;
-            _storyOutput.OffsetBottom = -28;
+            _storyOutput.OffsetLeft = 96;
+            _storyOutput.OffsetTop = 622;
+            _storyOutput.OffsetRight = -96;
+            _storyOutput.OffsetBottom = -30;
+            _storyOutput.ZIndex = 4;
+            _storyOutput.ScrollActive = false;
+            _storyOutput.AddThemeColorOverride("default_color", new Color(0.90f, 0.76f, 0.48f, 1.0f));
+            EnsureMainAnnualEventFrame(centerPanel, _storyOutput);
+            SetAnnualMajorEventBanner();
         }
 
         var deskRow = new HBoxContainer();
@@ -165,6 +170,40 @@ public partial class MainScene : Control
         labelBox.AddChild(subtitleLabel);
 
         return btn;
+    }
+
+    private void SetAnnualMajorEventBanner()
+    {
+        if (_storyOutput == null) return;
+
+        _storyOutput.Clear();
+        _storyOutput.AppendText(BuildAnnualMajorEventText());
+    }
+
+    private string BuildAnnualMajorEventText()
+    {
+        if (_gameState == null) return "本年度特大事件：暂无奏报";
+
+        if (_gameState.Year == 184)
+        {
+            return "【本年度特大事件】黄巾大起义：巨鹿张角以太平道惑众，十三州民变蜂起，朝廷根基震动。";
+        }
+
+        foreach (var province in _gameState.Provinces.Values)
+        {
+            if (province.IsRebelling)
+            {
+                string faction = string.IsNullOrWhiteSpace(province.RebelFaction) ? "地方叛军" : province.RebelFaction;
+                return $"【本年度特大事件】{province.Name}{faction}作乱：州郡烽火未息，需入黄门密札详察。";
+            }
+        }
+
+        if (_gameState.PopularSupport <= 15)
+        {
+            return "【本年度特大事件】天下饥困：民心跌入危局，流民盗贼遍起，需防大旱与民变相激。";
+        }
+
+        return "【本年度特大事件】暂无特大灾异奏报。";
     }
 
     private static StyleBoxFlat CreateMainEntryCardStyle(Color bgColor, int borderWidth)
