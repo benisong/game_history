@@ -150,7 +150,7 @@ text = "十常侍 张让"
 
 [node name="DisasterReliefButton" type="Button" parent="RightPanel/Ministers"]
 layout_mode = 2
-text = "🌊 旨准开仓赈灾"
+text = "旨准开仓赈灾"
 
 [node name="CaoCaoButton" type="Button" parent="RightPanel/Ministers"]
 visible = false
@@ -170,17 +170,17 @@ text = "【西园专属执掌】"
 [node name="SellOfficeButton" type="Button" parent="RightPanel/Ministers"]
 visible = false
 layout_mode = 2
-text = "💰 卖官鬻爵 (+私库 -皇权)"
+text = "卖官鬻爵（私库增益 / 皇权折损）"
 
 [node name="DrillArmyButton" type="Button" parent="RightPanel/Ministers"]
 visible = false
 layout_mode = 2
-text = "⚔️ 阅兵练兵 (+皇权 -私库)"
+text = "阅兵练兵（皇权增益 / 私库支出）"
 
 [node name="RecruitArmyButton" type="Button" parent="RightPanel/Ministers"]
 visible = false
 layout_mode = 2
-text = "🛡️ 募兵补军 (+兵力 -国库 -民心)"
+text = "募兵补军（兵力增补 / 国库民心折损）"
 
 [node name="HaremActionLabel" type="Label" parent="RightPanel/Ministers"]
 visible = false
@@ -190,13 +190,13 @@ text = "【后宫专属休养】"
 [node name="HaremRestButton" type="Button" parent="RightPanel/Ministers"]
 visible = false
 layout_mode = 2
-text = "🌸 临幸调理 (+健康)"
+text = "温德殿调理（龙体康复）"
 
 [node name="TravelButton" type="Button" parent="RightPanel/Ministers"]
 layout_mode = 2
 size_flags_vertical = 10
 theme_override_colors/font_color = Color(1, 0.843137, 0, 1)
-text = "🗺️ 起驾 / 移驾"
+text = "起驾 / 移驾"
 
 [node name="BottomPanel" type="Panel" parent="."]
 layout_mode = 1
@@ -290,11 +290,11 @@ alignment = 1
 
 [node name="ConfiscateTreasuryBtn" type="Button" parent="MinisterOverlayPanel/VBox/HBox"]
 layout_mode = 2
-text = "⚖️ 籍没赃款入国库"
+text = "籍没赃款入国库"
 
 [node name="ConfiscatePrivateBtn" type="Button" parent="MinisterOverlayPanel/VBox/HBox"]
 layout_mode = 2
-text = "💎 籍没入西园私库"
+text = "籍没入西园私库"
 
 [node name="CloseButton" type="Button" parent="MinisterOverlayPanel/VBox"]
 layout_mode = 2
