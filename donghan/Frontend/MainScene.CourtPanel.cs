@@ -53,12 +53,11 @@ public partial class MainScene : Control
 
     private void ShowTravelToCourtPrompt()
     {
-        if (_travelOverlayPanel == null) return;
-        _windowManager.PushWindow(_travelOverlayPanel);
-        if (_storyOutput != null)
-        {
-            _storyOutput.Text = "【黄门急奏】\n\n陛下尚未驾临宣政殿，百官不可无端入朝。是否起驾宣政殿？";
-        }
+        ShowTravelPrompt(
+            "【黄门急奏】",
+            "陛下尚未驾临宣政殿，百官不可无端入朝。是否即刻起驾宣政殿，开朝听政？",
+            "宣政殿",
+            "起驾宣政殿");
     }
 
     private void BuildCourtHeader(VBoxContainer root)

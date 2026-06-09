@@ -140,11 +140,11 @@ public partial class MainScene : Control
 
     private void ShowTravelToWestGardenPrompt()
     {
-        if (_travelOverlayPanel != null) _windowManager.PushWindow(_travelOverlayPanel);
-        if (_storyOutput != null)
-        {
-            _storyOutput.Text = "【黄门急奏】\n\n西园乃天子亲军密署，陛下尚未起驾。是否移驾西园，亲阅校场与私库军簿？";
-        }
+        ShowTravelPrompt(
+            "【黄门密奏】",
+            "西园乃天子亲军密署，陛下尚未起驾。是否移驾西园，亲阅校场与私库军簿？",
+            "西园",
+            "移驾西园");
     }
 
     private void RefreshWestGardenPanel()
