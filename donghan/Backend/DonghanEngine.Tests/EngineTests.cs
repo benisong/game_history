@@ -642,6 +642,8 @@ public class EngineTests
         // Act & Assert 1: 选择 B，触发跨级提拔皇权反噬
         int initialImperialPower = state.ImperialPower;
         int initialCaoCaoTier = state.Npcs["cao_cao"].TitleTier; // 1
+        int initialQiaoXuanFavor = state.Npcs["qiao_xuan"].Favorability;
+        int initialQiaoXuanPower = state.Npcs["qiao_xuan"].Power;
 
         var result = engine.ResolveEdictAction("merit_cao_cao", 1);
 
@@ -649,7 +651,11 @@ public class EngineTests
         Assert.Equal(initialCaoCaoTier + 2, state.Npcs["cao_cao"].TitleTier);
         // 断言：因连跃 2 级，触发朝野反噬，皇权暴跌 5 * (2 - 1) = 5 点
         Assert.Equal(initialImperialPower - 5, state.ImperialPower);
+        Assert.True(state.Npcs["qiao_xuan"].Favorability > initialQiaoXuanFavor);
+        Assert.Equal(initialQiaoXuanPower, state.Npcs["qiao_xuan"].Power);
         Assert.Contains("跨级拔擢反噬", result.StoryText);
+        Assert.Contains("关系牵连", result.StoryText);
+        Assert.Contains("桥玄", result.StoryText);
         Assert.Empty(state.ActiveEdicts); // 批阅完后自动出栈移除
     }
 

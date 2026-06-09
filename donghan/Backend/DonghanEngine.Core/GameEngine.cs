@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace DonghanEngine.Core;
@@ -231,9 +232,14 @@ public partial class GameEngine
         _state.PopularSupport = Math.Clamp(_state.PopularSupport + option.PopularSupportDelta, 0, 100);
 
         string promoBacklashText = "";
+        string promotionRelationText = "";
 
         if (!string.IsNullOrEmpty(edict.TargetNpcId) && _state.Npcs.TryGetValue(edict.TargetNpcId, out var targetNpc))
         {
+            var promotionEffects = option.GrantedTitleTierDelta > 0
+                ? CalculatePromotionRelationEffects(targetNpc, option.GrantedTitleTierDelta)
+                : Array.Empty<PromotionRelationEffect>();
+
             targetNpc.Power = Math.Clamp(targetNpc.Power + option.TargetNpcPowerDelta, 0, 100);
             targetNpc.Favorability = Math.Clamp(targetNpc.Favorability + option.TargetNpcFavorabilityDelta, 0, 100);
 
@@ -241,6 +247,8 @@ public partial class GameEngine
             if (option.GrantedTitleTierDelta > 0)
             {
                 targetNpc.TitleTier = Math.Clamp(targetNpc.TitleTier + option.GrantedTitleTierDelta, 0, 4);
+                ApplyPromotionRelationEffects(promotionEffects);
+                promotionRelationText = BuildPromotionRelationEffectText(promotionEffects);
                 
                 if (option.GrantedTitleTierDelta >= 2)
                 {
@@ -252,10 +260,99 @@ public partial class GameEngine
         }
 
         _state.ActiveEdicts.Remove(edict);
-        _state.AddToChronicle($"【御批】天子批阅《{edict.Title}》，决断：{option.Description}");
+        _state.AddToChronicle($"【御批】天子批阅《{edict.Title}》，决断：{option.Description}{(promotionRelationText.Length > 0 ? "，牵动朝中关系网" : "")}");
         
-        result.StoryText = $"【政务决断】\n\n陛下朱批已下。\n{promoBacklashText}";
+        result.StoryText = $"【政务决断】\n\n陛下朱批已下。\n{promoBacklashText}{promotionRelationText}";
         return result;
+    }
+
+    private sealed record PromotionRelationEffect(
+        string NpcId,
+        string NpcName,
+        NpcRelationType Type,
+        int Strength,
+        int FavorabilityDelta,
+        int PowerDelta,
+        string Label);
+
+    private IReadOnlyList<PromotionRelationEffect> CalculatePromotionRelationEffects(NpcState promoted, int titleTierDelta)
+    {
+        return _state.NpcRelations
+            .Where(r => r.FromNpcId == promoted.Id || (r.IsMutual && r.ToNpcId == promoted.Id))
+            .Select(r => BuildPromotionRelationEffect(r, promoted.Id, titleTierDelta))
+            .Where(e => e != null)
+            .Select(e => e!)
+            .OrderBy(e => e.FavorabilityDelta)
+            .ThenByDescending(e => e.Strength)
+            .ToList();
+    }
+
+    private PromotionRelationEffect? BuildPromotionRelationEffect(NpcRelation relation, string promotedId, int titleTierDelta)
+    {
+        string affectedId = relation.FromNpcId == promotedId ? relation.ToNpcId : relation.FromNpcId;
+        if (!_state.Npcs.TryGetValue(affectedId, out var affected) || !affected.IsActive || affected.IsHostile)
+        {
+            return null;
+        }
+
+        int scaled(int value) => (int)Math.Round(value * Math.Clamp(relation.Strength, 20, 100) / 100.0);
+        int favorabilityDelta;
+        int powerDelta;
+
+        (favorabilityDelta, powerDelta) = relation.Type switch
+        {
+            NpcRelationType.Kinship => (scaled(5 + titleTierDelta), titleTierDelta >= 2 ? 1 : 0),
+            NpcRelationType.FactionAlly => (scaled(4 + titleTierDelta), titleTierDelta >= 2 ? 1 : 0),
+            NpcRelationType.Patronage => (scaled(3 + titleTierDelta), 0),
+            NpcRelationType.TeacherStudent => (scaled(3 + titleTierDelta), 0),
+            NpcRelationType.SwornBond => (scaled(5 + titleTierDelta), titleTierDelta >= 2 ? 1 : 0),
+            NpcRelationType.Command => (scaled(4 + titleTierDelta), titleTierDelta >= 2 ? 1 : 0),
+            NpcRelationType.RegionalTie => (scaled(2 + titleTierDelta), 0),
+            NpcRelationType.Rivalry => (scaled(-(3 + titleTierDelta)), titleTierDelta >= 2 ? 1 : 0),
+            NpcRelationType.Hostility => (scaled(-(4 + titleTierDelta)), titleTierDelta >= 2 ? 1 : 0),
+            _ => (scaled(2 + titleTierDelta), 0)
+        };
+
+        return new PromotionRelationEffect(
+            affected.Id,
+            affected.Name,
+            relation.Type,
+            relation.Strength,
+            favorabilityDelta,
+            powerDelta,
+            relation.Label);
+    }
+
+    private void ApplyPromotionRelationEffects(IReadOnlyList<PromotionRelationEffect> effects)
+    {
+        foreach (var effect in effects)
+        {
+            if (!_state.Npcs.TryGetValue(effect.NpcId, out var affected) || !affected.IsActive || affected.IsHostile)
+            {
+                continue;
+            }
+
+            affected.Favorability = Math.Clamp(affected.Favorability + effect.FavorabilityDelta, 0, 100);
+            affected.Power = Math.Clamp(affected.Power + effect.PowerDelta, 0, 100);
+        }
+    }
+
+    private static string BuildPromotionRelationEffectText(IReadOnlyList<PromotionRelationEffect> effects)
+    {
+        if (effects.Count == 0)
+        {
+            return "";
+        }
+
+        var lines = effects.Take(5).Select(e =>
+        {
+            string favorability = e.FavorabilityDelta == 0 ? "好感无变" : $"好感 {e.FavorabilityDelta:+#;-#;0}";
+            string power = e.PowerDelta == 0 ? "" : $"，权势 {e.PowerDelta:+#;-#;0}";
+            string color = e.FavorabilityDelta >= 0 ? "green" : "red";
+            return $"[color={color}]● {e.Label}牵连：【{e.NpcName}】{favorability}{power}[/color]";
+        });
+
+        return "\n\n[color=yellow][b]【关系牵连】[/b][/color]\n" + string.Join("\n", lines);
     }
 
     public async Task NextXunAsync()

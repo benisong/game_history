@@ -411,6 +411,15 @@ public partial class GameEngine
         }
     }
 
+    private sealed record GovernorRelationEffect(
+        string NpcId,
+        string NpcName,
+        NpcRelationType Type,
+        int Strength,
+        int FavorabilityDelta,
+        int PowerDelta,
+        string Label);
+
     // ============================
     //  任命地方官
     // ============================
@@ -429,17 +438,22 @@ public partial class GameEngine
         if (province.GovernorId != null && _state.Npcs.TryGetValue(province.GovernorId, out var oldGov))
             oldGov.GovernedProvinceId = null;
 
+        var appointmentEffects = CalculateGovernorAppointmentRelationEffects(npc);
+
         province.GovernorId = npcId;
         npc.GovernedProvinceId = provinceId;
         npc.Power = Math.Clamp(npc.Power - 5, 0, 100);
         province.LocalSupport = Math.Clamp(province.LocalSupport + 10, 0, 100);
+        ApplyGovernorRelationEffects(appointmentEffects);
 
-        _state.AddToChronicle($"【任命】天子任命【{npc.Name}】为{province.Name}地方官。");
+        string relationText = BuildGovernorRelationEffectText(appointmentEffects);
+        _state.AddToChronicle($"【任命】天子任命【{npc.Name}】为{province.Name}地方官{BuildGovernorRelationChronicleSuffix(appointmentEffects)}。");
         return new TurnResult
         {
             StoryText = $"【任命地方官】\n\n陛下朱批已下，任命【{npc.Name}】为{province.Name}地方官，即日赴任。\n\n" +
                         $"[color=green]● {province.Name}民心：+10[/color]\n" +
-                        $"[color=yellow]● 【{npc.Name}】权势 -5（远离中央）[/color]"
+                        $"[color=yellow]● 【{npc.Name}】权势 -5（远离中央）[/color]" +
+                        relationText
         };
     }
 
@@ -460,14 +474,135 @@ public partial class GameEngine
         }
 
         string oldName = _state.Npcs.TryGetValue(province.GovernorId!, out var g) ? g.Name : "?";
+        string? recalledNpcId = province.GovernorId;
+        var recallEffects = recalledNpcId != null && _state.Npcs.TryGetValue(recalledNpcId, out var recalledNpc)
+            ? CalculateGovernorRecallRelationEffects(recalledNpc)
+            : Array.Empty<GovernorRelationEffect>();
         province.GovernorId = null;
+        ApplyGovernorRelationEffects(recallEffects);
 
-        _state.AddToChronicle($"【召还】天子召【{oldName}】回京，{province.Name}暂无主官。");
+        string relationText = BuildGovernorRelationEffectText(recallEffects);
+        _state.AddToChronicle($"【召还】天子召【{oldName}】回京，{province.Name}暂无主官{BuildGovernorRelationChronicleSuffix(recallEffects)}。");
         return new TurnResult
         {
             StoryText = $"【召还地方官】\n\n陛下下旨召【{oldName}】回京述职，{province.Name}暂无地方官。\n\n" +
-                        $"[color=yellow]● 该郡无人治理，民心将加速下降[/color]"
+                        $"[color=yellow]● 该郡无人治理，民心将加速下降[/color]" +
+                        relationText
         };
+    }
+
+    private IReadOnlyList<GovernorRelationEffect> CalculateGovernorAppointmentRelationEffects(NpcState appointed)
+    {
+        return CalculateGovernorRelationEffects(appointed, isRecall: false);
+    }
+
+    private IReadOnlyList<GovernorRelationEffect> CalculateGovernorRecallRelationEffects(NpcState recalled)
+    {
+        return CalculateGovernorRelationEffects(recalled, isRecall: true);
+    }
+
+    private IReadOnlyList<GovernorRelationEffect> CalculateGovernorRelationEffects(NpcState subject, bool isRecall)
+    {
+        return _state.NpcRelations
+            .Where(r => r.FromNpcId == subject.Id || (r.IsMutual && r.ToNpcId == subject.Id))
+            .Select(r => BuildGovernorRelationEffect(r, subject.Id, isRecall))
+            .Where(e => e != null)
+            .Select(e => e!)
+            .OrderBy(e => e.FavorabilityDelta)
+            .ThenByDescending(e => e.Strength)
+            .ToList();
+    }
+
+    private GovernorRelationEffect? BuildGovernorRelationEffect(NpcRelation relation, string subjectId, bool isRecall)
+    {
+        string affectedId = relation.FromNpcId == subjectId ? relation.ToNpcId : relation.FromNpcId;
+        if (!_state.Npcs.TryGetValue(affectedId, out var affected) || !affected.IsActive || affected.IsHostile)
+        {
+            return null;
+        }
+
+        int scaled(int value) => (int)Math.Round(value * Math.Clamp(relation.Strength, 20, 100) / 100.0);
+        int favorabilityDelta;
+        int powerDelta;
+
+        if (!isRecall)
+        {
+            (favorabilityDelta, powerDelta) = relation.Type switch
+            {
+                NpcRelationType.Kinship => (scaled(-6), 1),
+                NpcRelationType.FactionAlly => (scaled(-5), 1),
+                NpcRelationType.Patronage => (scaled(-4), 0),
+                NpcRelationType.TeacherStudent => (scaled(-4), 0),
+                NpcRelationType.SwornBond => (scaled(-7), 1),
+                NpcRelationType.Command => (scaled(-5), 1),
+                NpcRelationType.RegionalTie => (scaled(-3), 0),
+                NpcRelationType.Rivalry => (scaled(4), 1),
+                NpcRelationType.Hostility => (scaled(6), 1),
+                _ => (scaled(-3), 0)
+            };
+        }
+        else
+        {
+            (favorabilityDelta, powerDelta) = relation.Type switch
+            {
+                NpcRelationType.Kinship => (scaled(4), 0),
+                NpcRelationType.FactionAlly => (scaled(3), 0),
+                NpcRelationType.Patronage => (scaled(3), 0),
+                NpcRelationType.TeacherStudent => (scaled(3), 0),
+                NpcRelationType.SwornBond => (scaled(5), 0),
+                NpcRelationType.Command => (scaled(3), 0),
+                NpcRelationType.RegionalTie => (scaled(2), 0),
+                NpcRelationType.Rivalry => (scaled(-3), 0),
+                NpcRelationType.Hostility => (scaled(-4), 0),
+                _ => (scaled(2), 0)
+            };
+        }
+
+        return new GovernorRelationEffect(
+            affected.Id,
+            affected.Name,
+            relation.Type,
+            relation.Strength,
+            favorabilityDelta,
+            powerDelta,
+            relation.Label);
+    }
+
+    private void ApplyGovernorRelationEffects(IReadOnlyList<GovernorRelationEffect> effects)
+    {
+        foreach (var effect in effects)
+        {
+            if (!_state.Npcs.TryGetValue(effect.NpcId, out var affected) || !affected.IsActive || affected.IsHostile)
+            {
+                continue;
+            }
+
+            affected.Favorability = Math.Clamp(affected.Favorability + effect.FavorabilityDelta, 0, 100);
+            affected.Power = Math.Clamp(affected.Power + effect.PowerDelta, 0, 100);
+        }
+    }
+
+    private static string BuildGovernorRelationEffectText(IReadOnlyList<GovernorRelationEffect> effects)
+    {
+        if (effects.Count == 0)
+        {
+            return "";
+        }
+
+        var lines = effects.Take(5).Select(e =>
+        {
+            string favorability = e.FavorabilityDelta == 0 ? "好感无变" : $"好感 {e.FavorabilityDelta:+#;-#;0}";
+            string power = e.PowerDelta == 0 ? "" : $"，权势 {e.PowerDelta:+#;-#;0}";
+            string color = e.FavorabilityDelta >= 0 ? "green" : "red";
+            return $"[color={color}]● {e.Label}牵连：【{e.NpcName}】{favorability}{power}[/color]";
+        });
+
+        return "\n\n[color=yellow][b]【关系牵连】[/b][/color]\n" + string.Join("\n", lines);
+    }
+
+    private static string BuildGovernorRelationChronicleSuffix(IReadOnlyList<GovernorRelationEffect> effects)
+    {
+        return effects.Count == 0 ? "" : "，牵动朝中关系网";
     }
 
     // ============================

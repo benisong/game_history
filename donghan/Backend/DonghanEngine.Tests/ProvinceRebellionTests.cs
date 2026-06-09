@@ -23,6 +23,7 @@ public class ProvinceRebellionTests
     {
         var state = new GameState();
         var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+        int initialQiaoXuanFavor = state.Npcs["qiao_xuan"].Favorability;
 
         var result = engine.AssignGovernor("jizhou", "cao_cao");
 
@@ -30,6 +31,9 @@ public class ProvinceRebellionTests
         Assert.Equal("jizhou", state.Npcs["cao_cao"].GovernedProvinceId);
         Assert.True(state.Provinces["jizhou"].LocalSupport > 18); // +10
         Assert.Equal(10, state.Npcs["cao_cao"].Power); // 15 - 5 = 10
+        Assert.True(state.Npcs["qiao_xuan"].Favorability < initialQiaoXuanFavor);
+        Assert.Contains("关系牵连", result.StoryText);
+        Assert.Contains("桥玄", result.StoryText);
     }
 
     [Fact]
@@ -47,12 +51,16 @@ public class ProvinceRebellionTests
         var state = new GameState();
         var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
         engine.AssignGovernor("jizhou", "cao_cao");
+        int initialQiaoXuanFavor = state.Npcs["qiao_xuan"].Favorability;
 
         var result = engine.RecallGovernor("jizhou");
 
         Assert.Null(state.Provinces["jizhou"].GovernorId);
         Assert.Null(state.Npcs["cao_cao"].GovernedProvinceId);
         Assert.Equal(13, state.Npcs["cao_cao"].Power); // 10 + 3
+        Assert.True(state.Npcs["qiao_xuan"].Favorability > initialQiaoXuanFavor);
+        Assert.Contains("关系牵连", result.StoryText);
+        Assert.Contains("桥玄", result.StoryText);
     }
 
     [Fact]
