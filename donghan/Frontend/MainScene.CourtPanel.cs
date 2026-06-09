@@ -35,7 +35,7 @@ public partial class MainScene : Control
         _courtPopup.OffsetTop = -320;
         _courtPopup.OffsetRight = 550;
         _courtPopup.OffsetBottom = 320;
-        _courtPopup.AddThemeStyleboxOverride("panel", CreateOpaquePanelStyle("CourtPopup"));
+        _courtPopup.AddThemeStyleboxOverride("panel", CreatePopupPanelStyle(PopupSkin.Court));
 
         var root = new VBoxContainer();
         SetFullRect(root);
@@ -68,9 +68,8 @@ public partial class MainScene : Control
         root.AddChild(header);
 
         var title = new Label();
-        title.Text = "👑 宣政殿 · 大朝会";
-        title.HorizontalAlignment = HorizontalAlignment.Center;
-        title.AddThemeFontSizeOverride("font_size", 24);
+        title.Text = "宣政殿 · 大朝会";
+        StylePopupTitle(title, PopupSkin.Court);
         header.AddChild(title);
 
         _courtStageLabel = new Label();
@@ -128,8 +127,7 @@ public partial class MainScene : Control
 
         var label = new Label();
         label.Text = title;
-        label.HorizontalAlignment = HorizontalAlignment.Center;
-        label.AddThemeFontSizeOverride("font_size", 18);
+        StyleColumnTitle(label, PopupSkin.Court);
         box.AddChild(label);
 
         return box;
@@ -137,15 +135,7 @@ public partial class MainScene : Control
 
     private static StyleBoxFlat CreateCourtInnerPanelStyle()
     {
-        var style = new StyleBoxFlat();
-        style.BgColor = new Color(0.11f, 0.085f, 0.06f, 1.0f);
-        style.BorderColor = new Color(0.58f, 0.43f, 0.14f, 1.0f);
-        style.SetBorderWidthAll(1);
-        style.CornerRadiusTopLeft = 6;
-        style.CornerRadiusTopRight = 6;
-        style.CornerRadiusBottomLeft = 6;
-        style.CornerRadiusBottomRight = 6;
-        return style;
+        return CreatePopupInnerPanelStyle(PopupSkin.Court);
     }
 
     private void OnCourtSealPressed()

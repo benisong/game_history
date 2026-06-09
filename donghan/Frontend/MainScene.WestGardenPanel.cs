@@ -30,7 +30,7 @@ public partial class MainScene : Control
         _westGardenPopup.OffsetTop = -320;
         _westGardenPopup.OffsetRight = 550;
         _westGardenPopup.OffsetBottom = 320;
-        _westGardenPopup.AddThemeStyleboxOverride("panel", CreateOpaquePanelStyle("WestGardenPopup"));
+        _westGardenPopup.AddThemeStyleboxOverride("panel", CreatePopupPanelStyle(PopupSkin.WestGarden));
 
         var root = new VBoxContainer();
         SetFullRect(root);
@@ -49,9 +49,8 @@ public partial class MainScene : Control
     private void BuildWestGardenHeader(VBoxContainer root)
     {
         var title = new Label();
-        title.Text = "🏯 西园精舍 · 天子亲军密署";
-        title.HorizontalAlignment = HorizontalAlignment.Center;
-        title.AddThemeFontSizeOverride("font_size", 24);
+        title.Text = "西园精舍 · 天子亲军密署";
+        StylePopupTitle(title, PopupSkin.WestGarden);
         root.AddChild(title);
 
         _westGardenStatsLabel = new RichTextLabel();
@@ -115,8 +114,7 @@ public partial class MainScene : Control
 
         var label = new Label();
         label.Text = title;
-        label.HorizontalAlignment = HorizontalAlignment.Center;
-        label.AddThemeFontSizeOverride("font_size", 18);
+        StyleColumnTitle(label, PopupSkin.WestGarden);
         box.AddChild(label);
 
         return box;
@@ -124,15 +122,7 @@ public partial class MainScene : Control
 
     private static StyleBoxFlat CreateWestGardenInnerPanelStyle()
     {
-        var style = new StyleBoxFlat();
-        style.BgColor = new Color(0.095f, 0.075f, 0.055f, 1.0f);
-        style.BorderColor = new Color(0.64f, 0.48f, 0.18f, 1.0f);
-        style.SetBorderWidthAll(1);
-        style.CornerRadiusTopLeft = 6;
-        style.CornerRadiusTopRight = 6;
-        style.CornerRadiusBottomLeft = 6;
-        style.CornerRadiusBottomRight = 6;
-        return style;
+        return CreatePopupInnerPanelStyle(PopupSkin.WestGarden);
     }
 
     private void OnWestGardenPressed()
@@ -379,7 +369,7 @@ public partial class MainScene : Control
         var label = new Label();
         label.Text = $"【{text}】";
         label.HorizontalAlignment = HorizontalAlignment.Center;
-        label.AddThemeColorOverride("font_color", new Color(0.95f, 0.77f, 0.28f, 1.0f));
+        label.AddThemeColorOverride("font_color", GetPopupTitleColor(PopupSkin.WestGarden));
         _westGardenActionsVBox.AddChild(label);
     }
 

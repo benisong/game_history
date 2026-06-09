@@ -30,7 +30,7 @@ public partial class MainScene : Control
         _intelPopup.OffsetTop = -320;
         _intelPopup.OffsetRight = 550;
         _intelPopup.OffsetBottom = 320;
-        _intelPopup.AddThemeStyleboxOverride("panel", CreateOpaquePanelStyle("IntelPopup"));
+        _intelPopup.AddThemeStyleboxOverride("panel", CreatePopupPanelStyle(PopupSkin.Intel));
 
         var root = new VBoxContainer();
         SetFullRect(root);
@@ -49,9 +49,8 @@ public partial class MainScene : Control
     private void BuildIntelHeader(VBoxContainer root)
     {
         var title = new Label();
-        title.Text = "🕯️ 黄门密札 · 天下情报台";
-        title.HorizontalAlignment = HorizontalAlignment.Center;
-        title.AddThemeFontSizeOverride("font_size", 24);
+        title.Text = "黄门密札 · 天下情报台";
+        StylePopupTitle(title, PopupSkin.Intel);
         root.AddChild(title);
 
         _intelGlobalStatsLabel = new RichTextLabel();
@@ -88,7 +87,7 @@ public partial class MainScene : Control
         _intelActionsTitleLabel = new Label();
         _intelActionsTitleLabel.Text = "先选择州郡";
         _intelActionsTitleLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        _intelActionsTitleLabel.AddThemeColorOverride("font_color", new Color(0.95f, 0.77f, 0.28f, 1.0f));
+        _intelActionsTitleLabel.AddThemeColorOverride("font_color", GetPopupTitleColor(PopupSkin.Intel));
         actionColumn.AddChild(_intelActionsTitleLabel);
 
         var actionScroll = new ScrollContainer();
@@ -121,8 +120,7 @@ public partial class MainScene : Control
 
         var label = new Label();
         label.Text = title;
-        label.HorizontalAlignment = HorizontalAlignment.Center;
-        label.AddThemeFontSizeOverride("font_size", 18);
+        StyleColumnTitle(label, PopupSkin.Intel);
         box.AddChild(label);
 
         return box;
@@ -130,15 +128,7 @@ public partial class MainScene : Control
 
     private static StyleBoxFlat CreateIntelInnerPanelStyle()
     {
-        var style = new StyleBoxFlat();
-        style.BgColor = new Color(0.11f, 0.085f, 0.06f, 1.0f);
-        style.BorderColor = new Color(0.58f, 0.43f, 0.14f, 1.0f);
-        style.SetBorderWidthAll(1);
-        style.CornerRadiusTopLeft = 6;
-        style.CornerRadiusTopRight = 6;
-        style.CornerRadiusBottomLeft = 6;
-        style.CornerRadiusBottomRight = 6;
-        return style;
+        return CreatePopupInnerPanelStyle(PopupSkin.Intel);
     }
 
     private void OnIntelTokenPressed()

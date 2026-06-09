@@ -6,6 +6,15 @@ namespace DonghanFrontend;
 
 public partial class MainScene : Control
 {
+    private enum PopupSkin
+    {
+        Court,
+        Intel,
+        WestGarden,
+        Document,
+        Warning
+    }
+
     private static void ForceExclusiveFullscreen()
     {
         DisplayServer.WindowSetMode(DisplayServer.WindowMode.ExclusiveFullscreen);
@@ -145,6 +154,98 @@ public partial class MainScene : Control
         style.ContentMarginTop = 8;
         style.ContentMarginBottom = 8;
         return style;
+    }
+
+
+    private static StyleBoxFlat CreatePopupPanelStyle(PopupSkin skin)
+    {
+        var style = new StyleBoxFlat();
+        style.BgColor = skin switch
+        {
+            PopupSkin.Court => new Color(0.070f, 0.030f, 0.020f, 1.0f),
+            PopupSkin.Intel => new Color(0.055f, 0.043f, 0.030f, 1.0f),
+            PopupSkin.WestGarden => new Color(0.070f, 0.060f, 0.044f, 1.0f),
+            PopupSkin.Warning => new Color(0.100f, 0.045f, 0.035f, 1.0f),
+            _ => new Color(0.100f, 0.095f, 0.085f, 1.0f)
+        };
+        style.BorderColor = skin switch
+        {
+            PopupSkin.Court => new Color(0.70f, 0.46f, 0.11f, 1.0f),
+            PopupSkin.Intel => new Color(0.58f, 0.42f, 0.22f, 1.0f),
+            PopupSkin.WestGarden => new Color(0.54f, 0.42f, 0.20f, 1.0f),
+            PopupSkin.Warning => new Color(0.72f, 0.16f, 0.10f, 1.0f),
+            _ => new Color(0.84f, 0.67f, 0.12f, 1.0f)
+        };
+        style.SetBorderWidthAll(3);
+        style.CornerRadiusTopLeft = 10;
+        style.CornerRadiusTopRight = 10;
+        style.CornerRadiusBottomLeft = 10;
+        style.CornerRadiusBottomRight = 10;
+        style.ContentMarginLeft = 10;
+        style.ContentMarginRight = 10;
+        style.ContentMarginTop = 10;
+        style.ContentMarginBottom = 10;
+        style.ShadowColor = new Color(0, 0, 0, 0.70f);
+        style.ShadowSize = 18;
+        return style;
+    }
+
+    private static StyleBoxFlat CreatePopupInnerPanelStyle(PopupSkin skin)
+    {
+        var style = new StyleBoxFlat();
+        style.BgColor = skin switch
+        {
+            PopupSkin.Court => new Color(0.120f, 0.055f, 0.030f, 1.0f),
+            PopupSkin.Intel => new Color(0.690f, 0.590f, 0.390f, 1.0f),
+            PopupSkin.WestGarden => new Color(0.125f, 0.105f, 0.075f, 1.0f),
+            PopupSkin.Warning => new Color(0.160f, 0.070f, 0.050f, 1.0f),
+            _ => new Color(0.110f, 0.085f, 0.060f, 1.0f)
+        };
+        style.BorderColor = skin switch
+        {
+            PopupSkin.Court => new Color(0.62f, 0.38f, 0.10f, 1.0f),
+            PopupSkin.Intel => new Color(0.46f, 0.27f, 0.13f, 1.0f),
+            PopupSkin.WestGarden => new Color(0.48f, 0.38f, 0.22f, 1.0f),
+            PopupSkin.Warning => new Color(0.72f, 0.18f, 0.10f, 1.0f),
+            _ => new Color(0.58f, 0.43f, 0.14f, 1.0f)
+        };
+        style.SetBorderWidthAll(1);
+        style.CornerRadiusTopLeft = skin == PopupSkin.Court ? 2 : 7;
+        style.CornerRadiusTopRight = skin == PopupSkin.Court ? 2 : 7;
+        style.CornerRadiusBottomLeft = skin == PopupSkin.Court ? 2 : 7;
+        style.CornerRadiusBottomRight = skin == PopupSkin.Court ? 2 : 7;
+        style.ContentMarginLeft = 8;
+        style.ContentMarginRight = 8;
+        style.ContentMarginTop = 8;
+        style.ContentMarginBottom = 8;
+        return style;
+    }
+
+    private static Color GetPopupTitleColor(PopupSkin skin)
+    {
+        return skin switch
+        {
+            PopupSkin.Intel => new Color(0.16f, 0.09f, 0.04f, 1.0f),
+            PopupSkin.WestGarden => new Color(0.86f, 0.66f, 0.28f, 1.0f),
+            PopupSkin.Warning => new Color(0.95f, 0.35f, 0.20f, 1.0f),
+            _ => new Color(0.92f, 0.70f, 0.25f, 1.0f)
+        };
+    }
+
+    private static void StylePopupTitle(Label label, PopupSkin skin)
+    {
+        label.HorizontalAlignment = HorizontalAlignment.Center;
+        label.AddThemeFontSizeOverride("font_size", 24);
+        label.AddThemeColorOverride("font_color", skin == PopupSkin.Intel
+            ? new Color(0.88f, 0.73f, 0.46f, 1.0f)
+            : GetPopupTitleColor(skin));
+    }
+
+    private static void StyleColumnTitle(Label label, PopupSkin skin)
+    {
+        label.HorizontalAlignment = HorizontalAlignment.Center;
+        label.AddThemeFontSizeOverride("font_size", 18);
+        label.AddThemeColorOverride("font_color", GetPopupTitleColor(skin));
     }
 
     private static void SetFullRect(Control control)
