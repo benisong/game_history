@@ -13,7 +13,12 @@ public class ProvinceRebellionTests
         Assert.Equal(6, state.Provinces.Count);
         Assert.True(state.Provinces.ContainsKey("sili"));
         Assert.True(state.Provinces.ContainsKey("jizhou"));
-        Assert.Equal(18, state.Provinces["jizhou"].LocalSupport);
+        Assert.Equal(28, state.Provinces["jizhou"].LocalSupport); // P0-1: 18 + 桥玄任太守 +10
+        Assert.Equal(40, state.Provinces["bingzhou"].LocalSupport); // P0-1: 30 + 黄甫嵩任太守 +10
+        Assert.Equal(55, state.Provinces["yuzhou"].LocalSupport);   // P0-1: 45 + 卢植任太守 +10
+        Assert.Equal("qiao_xuan", state.Provinces["jizhou"].GovernorId);     // P0-1: 开局预派
+        Assert.Equal("huangfu_song", state.Provinces["bingzhou"].GovernorId); // P0-1: 开局预派
+        Assert.Equal("lu_zhi", state.Provinces["yuzhou"].GovernorId);        // P0-1: 开局预派
         Assert.Equal(3, state.Provinces["jizhou"].Distance);
         Assert.Contains("sili", state.Provinces["jizhou"].Neighbors);
     }

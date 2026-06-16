@@ -146,12 +146,31 @@ public class GameState
         }
 
         // === 大汉十三州（当前开放 6 郡）===
-        Provinces["sili"] = new Province { Id = "sili", Name = "司隶", Distance = 0, LocalSupport = 50, Garrison = 5000, Wealth = 5000, DefenseLevel = 80, Neighbors = new() { "jizhou", "yanzhou", "yuzhou" } };
-        Provinces["jizhou"] = new Province { Id = "jizhou", Name = "冀州", Distance = 3, LocalSupport = 18, Garrison = 2000, Wealth = 3000, DefenseLevel = 30, Neighbors = new() { "sili", "yanzhou", "bingzhou" } };
-        Provinces["bingzhou"] = new Province { Id = "bingzhou", Name = "并州", Distance = 4, LocalSupport = 30, Garrison = 3000, Wealth = 2500, DefenseLevel = 40, Neighbors = new() { "jizhou", "yanzhou" } };
+        // P0-1 修复：开局预派清流贤臣坐镇 3 郡，避免"开局 6 郡全空 → 7 旬亡国"硬伤
+        // 桥玄（太尉/清流）治冀州  ｜ 卢植（北中郎将/清流）治豫州  ｜ 黄甫嵩（左中郎将/清流）治并州
+        // 司隶/兖州/荆州 留空，留给玩家调度的决策空间
+        Provinces["sili"]   = new Province { Id = "sili",   Name = "司隶", Distance = 0, LocalSupport = 50, Garrison = 5000, Wealth = 5000, DefenseLevel = 80, Neighbors = new() { "jizhou", "yanzhou", "yuzhou" } };
+        Provinces["jizhou"]  = new Province { Id = "jizhou",  Name = "冀州", Distance = 3, LocalSupport = 28, Garrison = 2000, Wealth = 3000, DefenseLevel = 30, Neighbors = new() { "sili", "yanzhou", "bingzhou" } }; // +10 from 18 → 28 (桥玄任太守加成)
+        Provinces["bingzhou"]= new Province { Id = "bingzhou",Name = "并州", Distance = 4, LocalSupport = 40, Garrison = 3000, Wealth = 2500, DefenseLevel = 40, Neighbors = new() { "jizhou", "yanzhou" } }; // +10 from 30 → 40
         Provinces["yanzhou"] = new Province { Id = "yanzhou", Name = "兖州", Distance = 2, LocalSupport = 35, Garrison = 2500, Wealth = 3500, DefenseLevel = 35, Neighbors = new() { "sili", "jizhou", "yuzhou" } };
-        Provinces["yuzhou"] = new Province { Id = "yuzhou", Name = "豫州", Distance = 1, LocalSupport = 45, Garrison = 2000, Wealth = 4000, DefenseLevel = 40, Neighbors = new() { "sili", "yanzhou" } };
-        Provinces["jingzhou"] = new Province { Id = "jingzhou", Name = "荆州", Distance = 5, LocalSupport = 50, Garrison = 3000, Wealth = 6000, DefenseLevel = 50, Neighbors = new() { "yuzhou" } };
+        Provinces["yuzhou"]  = new Province { Id = "yuzhou",  Name = "豫州", Distance = 1, LocalSupport = 55, Garrison = 2000, Wealth = 4000, DefenseLevel = 40, Neighbors = new() { "sili", "yanzhou" } }; // +10 from 45 → 55
+        Provinces["jingzhou"]= new Province { Id = "jingzhou",Name = "荆州", Distance = 5, LocalSupport = 50, Garrison = 3000, Wealth = 6000, DefenseLevel = 50, Neighbors = new() { "yuzhou" } };
+
+        // 预派太守（与 AssignGovernor 等价的字段直设，不走 -5 权势 / 不写编年史，让"开局即有太守"成为历史事实而非朝会决定）
+        AssignInitialGovernor("jizhou", "qiao_xuan");
+        AssignInitialGovernor("yuzhou", "lu_zhi");
+        AssignInitialGovernor("bingzhou", "huangfu_song");
+    }
+
+    private void AssignInitialGovernor(string provinceId, string npcId)
+    {
+        if (!Provinces.TryGetValue(provinceId, out var province)) return;
+        if (!Npcs.TryGetValue(npcId, out var npc)) return;
+        if (!npc.IsActive || npc.IsHostile) return;
+        if (npc.GovernedProvinceId != null) return;
+        if (province.GovernorId != null) return;
+        province.GovernorId = npcId;
+        npc.GovernedProvinceId = provinceId;
     }
 
     public void ApplyNumericalDelta(int imperialPowerDelta, int treasuryDelta, int healthDelta)

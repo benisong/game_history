@@ -20,18 +20,26 @@ public partial class GameEngine
             bool hasGov = p.GovernorId != null;
 
             // ── 1. 黄巾之乱触发 ──
-            if (!p.IsRebelling && p.LocalSupport < 10)
+            // P0-1 修复：阈值由 <10 / 3月 → <20 / 1旬
+            // 原因：
+            //   - 原条件 3 月连 <10 太严苛
+            //   - 一次只降到 <15 不够：<20 区段会被"无官民变"25% 抢先
+            //   - 必须把黄巾阈值拉到与"无官民变"同区段 (<20)，且利用 check 顺序优势
+            //     （黄巾在 loop 第 1 步且有 continue；民变在第 3 步）保证黄巾先出
+            //   - 仍 > 20 区间由"有官治理微回复" +1 维持，桥玄/卢植/黄甫嵩治下不会触发
+            if (!p.IsRebelling && p.LocalSupport < 20)
             {
                 p.LowSupportStreakMonths++;
-                if (p.LowSupportStreakMonths >= 3)
+                if (p.LowSupportStreakMonths >= 1)
                 {
                     TriggerYellowTurban(p);
                     newlyRebelling.Add(p);
                     continue;
                 }
             }
-            else if (!p.IsRebelling && p.LocalSupport >= 10)
+            else if (!p.IsRebelling && p.LocalSupport >= 25)
             {
+                // 提高 reset 阈值为 25，给一些 hysteresis
                 p.LowSupportStreakMonths = 0;
             }
 
