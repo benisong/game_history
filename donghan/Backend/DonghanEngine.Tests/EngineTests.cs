@@ -1071,4 +1071,84 @@ public class EngineTests
         // Assert
         Assert.Equal(GameOutcome.Collapse, state.Outcome);
     }
+
+    // === P1-A2 189 年历史 trigger ===
+
+    [Fact]
+    public async Task Test_A2_HeJinDeath_At189_8_3_FiresOnce()
+    {
+        // Arrange: 跳到 189/8/2，跑 1 旬进入 189/8/3 触发何进之死
+        var state = new GameState { Year = 189, Month = 8, Xun = 2 };
+        Assert.True(state.Npcs["he_jin"].IsActive, "何进开局应活跃");
+
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // Act
+        await engine.NextXunAsync();
+
+        // Assert
+        Assert.False(state.Npcs["he_jin"].IsActive, "何进 189/8/3 必须 IsActive=false");
+        Assert.Contains("何进", state.Npcs["he_jin"].DeathReason);
+        Assert.Contains("外戚崩殂", state.Chronicle[^1]);
+    }
+
+    [Fact]
+    public async Task Test_A2_DongZhuoEntry_At189_9_1_DeploysNpc()
+    {
+        // Arrange: 玩家在 8/3，调用 NextXunAsync → 进入 9/1 触发董卓入京
+        // （Trigger 在 Xun++ 之后检查，所以"189/9/1 触发"= 玩家从 8/3 推进到 9/1）
+        var state = new GameState { Year = 189, Month = 8, Xun = 3 };
+        Assert.False(state.Npcs.ContainsKey("dong_zhuo"), "董卓开局应不在朝堂");
+
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // Act
+        await engine.NextXunAsync();
+
+        // Assert
+        Assert.True(state.Npcs.ContainsKey("dong_zhuo"), "189/9/1 董卓必须被部署");
+        var dong = state.Npcs["dong_zhuo"];
+        Assert.True(dong.IsActive, "董卓入京后必须 IsActive");
+        Assert.Equal(95, dong.Power);
+        Assert.Equal("洛阳宫中", dong.InitialLocation);
+        Assert.Contains("董卓入京", state.Chronicle[^1]);
+    }
+
+    [Fact]
+    public async Task Test_A2_HeJinDeath_SecondCall_Idempotent()
+    {
+        // 何进已亡后，再跑 1 旬进 9/1（董卓进京），不应再触发何进之死
+        var state = new GameState { Year = 189, Month = 8, Xun = 2 };
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+        await engine.NextXunAsync(); // → 189/8/3 触发何进之死
+        Assert.False(state.Npcs["he_jin"].IsActive);
+        Assert.True(state.Chronicle.Any(e => e.Contains("外戚崩殂")));
+
+        int heJinChronicleCount = state.Chronicle.Count(e => e.Contains("外戚崩殂"));
+
+        // 继续推进 1 旬 → 9/1（触发董卓进京，但不应再触发何进）
+        await engine.NextXunAsync();
+
+        Assert.False(state.Npcs["he_jin"].IsActive, "何进保持已亡");
+        Assert.Equal(heJinChronicleCount, state.Chronicle.Count(e => e.Contains("外戚崩殂")));
+    }
+
+    [Fact]
+    public async Task Test_A2_DongZhuoEntry_SecondCall_Idempotent()
+    {
+        // 玩家从 8/3 推进到 9/1，触发董卓入京
+        var state = new GameState { Year = 189, Month = 8, Xun = 3 };
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+        await engine.NextXunAsync(); // → 9/1 触发董卓入京
+        Assert.True(state.Npcs.ContainsKey("dong_zhuo"));
+        int powerAfterFirstEntry = state.ImperialPower;
+        var chronicleLenAfterFirst = state.Chronicle.Count;
+
+        // 再跑 1 旬 → 9/2（不触发董卓进京幂等检查）
+        await engine.NextXunAsync();
+
+        Assert.Equal(powerAfterFirstEntry, state.ImperialPower);
+        Assert.DoesNotContain(state.Chronicle.GetRange(chronicleLenAfterFirst, state.Chronicle.Count - chronicleLenAfterFirst),
+            e => e.Contains("董卓入京"));
+    }
 }

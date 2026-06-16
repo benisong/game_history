@@ -414,6 +414,19 @@ public partial class GameEngine
             TriggerHistoricalYellowTurban();
         }
 
+        // P1-A2 修复：189 年何进之死 + 董卓进京
+        if (!_state.DisableHistoricalTriggers)
+        {
+            if (_state.Year == 189 && _state.Month == 8 && _state.Xun == 3)
+            {
+                TriggerHeJinDeath();
+            }
+            if (_state.Year == 189 && _state.Month == 9 && _state.Xun == 1)
+            {
+                TriggerDongZhuoEntry();
+            }
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
     }
@@ -599,5 +612,74 @@ public partial class GameEngine
             GameOutcome.Vanquished => $"✗ 亡国 ✗\n黄巾入洛，烽烟遍地，汉鼎崩摧。\n天下离心，灵帝沦为阶下之囚。",
             _                      => ""
         };
+    }
+
+    // === P1-A2 历史 trigger：189 年何进之死 / 董卓进京 ===
+    // 幂等标志：A2 trigger 各自只在首次进入目标旬时跑一次
+    private bool _heJinDeathTriggered;
+    private bool _dongZhuoEntryTriggered;
+
+    // 189 年 8 月下旬：何进被十常侍矫诏伏诛于嘉德殿（189/8/25）
+    // 史实：中平六年八月，何进谋诛十常侍，反被张让等矫诏杀害于嘉德殿前。
+    private void TriggerHeJinDeath()
+    {
+        if (_heJinDeathTriggered) return;
+        const string npcId = "he_jin";
+        if (!_state.Npcs.TryGetValue(npcId, out var he)) return;
+        if (!he.IsActive) { _heJinDeathTriggered = true; return; }
+
+        he.IsActive = false;
+        he.DeathReason = "【何进之死】中平六年八月，何进谋诛阉宦，反被张让等矫诏伏诛于嘉德殿前。";
+        he.Power = 0;
+
+        _state.ImperialPower = Math.Clamp(_state.ImperialPower - 8, 0, 100);
+        _state.PopularSupport = Math.Clamp(_state.PopularSupport - 3, 0, 100);
+
+        if (_state.WestGardenArmy != null)
+        {
+            _state.WestGardenArmy.Morale = Math.Clamp(_state.WestGardenArmy.Morale - 15, 0, 100);
+        }
+
+        _state.AddToChronicle("【外戚崩殂】大将军何进被十常侍矫诏伏诛！外戚派群龙无首，朝局剧变。");
+        _heJinDeathTriggered = true;
+    }
+
+    // 189 年 9 月上旬：董卓率西凉兵进京（189/9/1 ≈ 中平六年九月）
+    // 史实：何进死后，京城大乱。袁绍等诛宦官。董卓闻讯，率三千西凉兵入京勤王，
+    //       旋即废少帝立献帝，独揽大权。
+    private void TriggerDongZhuoEntry()
+    {
+        if (_dongZhuoEntryTriggered) return;
+
+        // 部署董卓入京（敌对派系）
+        if (!_state.Npcs.ContainsKey("dong_zhuo"))
+        {
+            _scheduler?.NpcManager?.DeployNpcToCourt("dong_zhuo", _state);
+        }
+        if (!_state.Npcs.TryGetValue("dong_zhuo", out var dong))
+        {
+            // 部署失败（NPC manager 为 null 等）— 不标记完成，留给下次重试
+            return;
+        }
+
+        dong.IsActive = true;
+        dong.GovernedProvinceId = null;
+        dong.Power = 95;       // 独揽朝政
+        dong.Favorability = 30; // 视天子为傀儡
+        dong.InitialLocation = "洛阳宫中";
+
+        // 废立之事：皇权雪崩，西园军成空头
+        _state.ImperialPower = Math.Clamp(_state.ImperialPower - 15, 0, 100);
+        _state.PopularSupport = Math.Clamp(_state.PopularSupport - 8, 0, 100);
+        _state.Treasury = Math.Clamp(_state.Treasury - 2000, 0, int.MaxValue);
+
+        if (_state.WestGardenArmy != null)
+        {
+            _state.WestGardenArmy.Morale = Math.Clamp(_state.WestGardenArmy.Morale - 25, 0, 100);
+            _state.WestGardenArmy.Loyalty = Math.Clamp(_state.WestGardenArmy.Loyalty - 20, 0, 100);
+        }
+
+        _state.AddToChronicle("【董卓入京】凉州军阀董卓率三千西凉兵入京，旋即废少帝立献帝，独揽朝政！");
+        _dongZhuoEntryTriggered = true;
     }
 }
