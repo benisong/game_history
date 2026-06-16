@@ -209,7 +209,7 @@ public partial class MainScene : Control
                 costLabel.Text = $"军费预估：{campaignCost} 万钱｜西园现有：{_gameState.WestGardenArmy.Size} 人｜出征后留守：{Math.Max(0, _gameState.WestGardenArmy.Size - selectedTroops)} 人";
                 detail.Text = $"[color=#2a1608][b]{general.Name}[/b]  武 {general.Martial}｜统 {general.Leadership}｜战力 {combatPower:F0}[/color]\n" +
                     $"[color=#4a2a12]距京惩罚 {distancePenalty:F0}｜兵力修正 {troopBonus:+0;-0;0}%｜胜率 {successRate:F0}%（{risk}）[/color]";
-                dispatch.Text = $"授符出征 · {general.Name} 率 {selectedTroops} 人";
+                dispatch.Text = $"颁授虎符 · {general.Name} 率 {selectedTroops} 人";
             }
 
             RefreshPreview(troopSpin.Value);

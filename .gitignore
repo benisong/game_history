@@ -11,6 +11,7 @@ donghan/Backend/DonghanEngine.Core/obj/
 donghan/Backend/DonghanEngine.Tests/bin/
 donghan/Backend/DonghanEngine.Tests/obj/
 donghan/Frontend/.godot/
+donghan/Frontend/godot/
 donghan/Frontend/bin/
 donghan/Frontend/obj/
 donghan/Frontend/*.import

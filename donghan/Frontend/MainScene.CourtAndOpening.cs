@@ -45,7 +45,7 @@ public partial class MainScene : Control
 
         var routeStrip = new Label
         {
-            Text = "宫门黄门执节  ━  宣政殿  ━  温德殿  ━  西园精舍",
+            Text = "宫门黄门执节  ━  宣政殿  ━  温德殿  ━  西园别苑",
             HorizontalAlignment = HorizontalAlignment.Center
         };
         StyleColumnTitle(routeStrip, PopupSkin.Travel);

@@ -49,7 +49,7 @@ public partial class MainScene : Control
     private void BuildWestGardenHeader(VBoxContainer root)
     {
         var title = new Label();
-        title.Text = "西园精舍 · 天子亲军密署";
+        title.Text = "西园别苑 · 天子亲军密署";
         StylePopupTitle(title, PopupSkin.WestGarden);
         root.AddChild(title);
 

@@ -381,7 +381,7 @@ public partial class MainScene : Control
         {
             string locationTag = npc.GovernedProvinceId != null ? $"【任{_gameState.Provinces[npc.GovernedProvinceId].Name}】" : "【在京】";
             var btn = new Button();
-            btn.Text = $"[{npc.Faction}] {npc.Name} {locationTag}";
+            btn.Text = $"【{npc.Faction}】 {npc.Name} {locationTag}";
             btn.Alignment = HorizontalAlignment.Left;
             btn.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             StyleSceneActionButton(btn, ActionButtonSkin.Court);

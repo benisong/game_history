@@ -400,7 +400,7 @@ public partial class MainScene : Control
         if (_gameState == null) return;
         if (_gameState.CurrentLocation != "宣政殿")
         {
-            ShowWarningReportPopup("太监急奏", "【太监急奏】\n\n“陛下，漆木折匣重器存放在宣政殿案上，请移驾宣政殿再行批阅批示！”");
+            ShowWarningReportPopup("黄门急奏", "【黄门急奏】\n\n“陛下，漆木折匣重器存放在宣政殿案上，请移驾宣政殿再行批阅批示！”");
             return;
         }
 

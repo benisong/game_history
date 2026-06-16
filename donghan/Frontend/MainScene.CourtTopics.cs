@@ -90,7 +90,7 @@ public partial class MainScene : Control
                 },
                 Decisions = new List<CourtDecisionViewModel>
                 {
-                    new() { Id = "训诫张让", Label = "训诫张让", Hint = "现有 Mock 已支持该关键词。" },
+                    new() { Id = "训诫张让", Label = "训诫张让", Hint = "现有样例已支持该关键词。" },
                     new() { Id = "重赏张让", Label = "安抚张让", Hint = "以圣眷压下外廷攻讦。" },
                     new() { Id = "back_topics", Label = "暂不激化", Hint = "回到今日可议。" }
                 }
@@ -123,7 +123,7 @@ public partial class MainScene : Control
                 Speeches = new List<CourtSpeechViewModel>
                 {
                     new() { MinisterId = "zhang_rang", MinisterName = "张让", Faction = "中官近侍", Speech = "陛下亲裁，奴才即刻传旨；只是圣意若涉军国，还请明示轻重。", Attitude = "奉旨 / 观望" },
-                    new() { MinisterId = "he_jin", MinisterName = "何进", Faction = "外戚武臣", Speech = "臣等静候圣断。若需动兵，北军可听陛下调遣。", Attitude = "候旨 / 请任" }
+                    new() { MinisterId = "he_jin", MinisterName = "何进", Faction = "外戚武臣", Speech = "臣等静候圣断。若需动兵，北军可听调遣。", Attitude = "候旨 / 请任" }
                 },
                 Decisions = new List<CourtDecisionViewModel>
                 {

@@ -505,7 +505,7 @@ public partial class MainScene : Control
                 ImagePath = "res://Assets/UI/court_ritual/announce_court.png",
                 ImageText = "宣政殿外，黄门持诏立于丹陛之下。朱门缓启，金线御榜映出晨色。",
                 Caption = "内侍高唱：有事早奏，无事退朝。百官闻诏，自外朝趋入。",
-                PreloadHint = "AI模式：预载朝会议题、百官立场与本旬奏折摘要。",
+                PreloadHint = "天机演算：预载朝会议题、百官立场与本旬奏折摘要。",
                 Seconds = 2.8f
             },
             new CourtRitualSlide
@@ -515,7 +515,7 @@ public partial class MainScene : Control
                 ImagePath = "res://Assets/UI/court_ritual/whip_silence.png",
                 ImageText = "殿前静鞭破空，赤黑宫墙间回声如雷。羽林宿卫执戟分列，群臣顿止。",
                 Caption = "一鞭止语，二鞭整冠，三鞭肃班。宣政殿内只余甲叶与玉佩轻响。",
-                PreloadHint = "AI模式：整理可行动作、风险提示与派系反应缓存。",
+                PreloadHint = "天机演算：整理可行动作、风险提示与派系反应缓存。",
                 Seconds = 2.6f
             },
             new CourtRitualSlide
@@ -525,7 +525,7 @@ public partial class MainScene : Control
                 ImagePath = "res://Assets/UI/court_ritual/officials_enter.png",
                 ImageText = "高处御座隐于冕旒之后，黑金朱红的纵深殿宇中，百官剪影层层俯伏。",
                 Caption = "外戚、中官、西园校尉各归班列；天下奏牍，尽待天子一言。",
-                PreloadHint = "AI模式：完成预处理，等待陛下临朝裁断。",
+                PreloadHint = "天机演算：完成预处理，等待陛下临朝裁断。",
                 Seconds = 3.0f
             }
         };
@@ -540,8 +540,8 @@ public partial class MainScene : Control
                 Title = "大朝仪 · 钟磬齐鸣",
                 SceneName = "天子临殿",
                 ImageText = "钟磬齐鸣，丹陛下金声层叠。宿卫亲军移戟开道，御座前灯火如鳞。",
-                Caption = "太监高唱：天子登临——百官跪迎——！",
-                PreloadHint = "AI模式：提交圣旨，后台推演朝臣应对。",
+                Caption = "黄门高唱：天子登临——百官跪迎——！",
+                PreloadHint = "天机演算：提交圣旨，后台推演朝臣应对。",
                 Seconds = 2.4f
             },
             new CourtRitualSlide
@@ -550,7 +550,7 @@ public partial class MainScene : Control
                 SceneName = "龙威压殿",
                 ImageText = "陛下御带冕旒，龙袍玄赤相间。玉旒遮面，殿中百官不敢仰视。",
                 Caption = "皇权虽衰，礼制犹在；一殿沉默，皆等御笔落下。",
-                PreloadHint = "AI模式：生成群臣奏对、规则结算与叙事回奏。",
+                PreloadHint = "天机演算：生成群臣奏对、规则结算与叙事回奏。",
                 Seconds = 2.4f
             },
             new CourtRitualSlide
@@ -559,7 +559,7 @@ public partial class MainScene : Control
                 SceneName = "黄绢展开",
                 ImageText = $"内侍缓缓展开黄绢，朱砂御印压住殿中暗流。\n\n『{edictText}』",
                 Caption = "众卿平身。圣旨既出，群臣或附和，或观望，或暗自盘算。",
-                PreloadHint = "AI模式：等待大模型回传最终朝议结果。",
+                PreloadHint = "天机演算中。",
                 Seconds = 2.8f
             }
         };
@@ -576,7 +576,7 @@ public partial class MainScene : Control
                 ImagePath = "res://Assets/UI/court_ritual/dismiss_whip.png",
                 ImageText = "殿前静鞭再响，金阶上的争辩戛然而止。内侍收起奏牍，御案灯影微摇。",
                 Caption = "今日朝议暂歇，未决之事仍随百官袖中暗流带出宣政殿。",
-                PreloadHint = "AI模式：归档朝会记录，更新派系记忆。",
+                PreloadHint = "天机演算：归档朝会记录，更新派系记忆。",
                 Seconds = 2.4f
             },
             new CourtRitualSlide
@@ -586,7 +586,7 @@ public partial class MainScene : Control
                 ImagePath = "res://Assets/UI/court_ritual/officials_leave.png",
                 ImageText = "百官鱼贯退下，外戚与中官各自低语。朱门半掩，殿外天色晦暗。",
                 Caption = "宣政殿重归寂静；天下十三州，仍有烽烟与饥民等待下一道诏令。",
-                PreloadHint = "AI模式：预热下一旬情报、奏折与地方风险摘要。",
+                PreloadHint = "天机演算：预热下一旬情报、奏折与地方风险摘要。",
                 Seconds = 2.8f
             }
         };
@@ -718,7 +718,7 @@ public partial class MainScene : Control
 
         var lockLabel = new Label
         {
-            Text = "大朝仪进行中：不可快进 / 不可点击 / ESC 无效",
+            Text = "大朝仪进行中：不可快进／不可点击／退出键无效",
             HorizontalAlignment = HorizontalAlignment.Center
         };
         lockLabel.AddThemeColorOverride("font_color", new Color(0.70f, 0.54f, 0.24f, 1.0f));
@@ -784,7 +784,7 @@ public partial class MainScene : Control
         if (_courtRitualOverlay == null) return;
 
         RenderCourtRitualSlide(slide);
-        _courtRitualOverlay.GetNodeOrNull<Label>("RitualRoot/RitualPreloadHint")!.Text = "AI模式：大模型仍在推演朝局，仪式遮罩保持锁定……";
+        _courtRitualOverlay.GetNodeOrNull<Label>("RitualRoot/RitualPreloadHint")!.Text = "天机演算中。";
     }
 
     private static void ClearChildren(VBoxContainer box)
