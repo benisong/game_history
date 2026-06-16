@@ -774,4 +774,56 @@ public partial class MainScene : Control
     {
         OnSubmitButtonPressed();
     }
+
+    // === A1 结局面板 ===
+    // _Process 每帧调用：检查 GameState.Outcome 是否已非 Playing，是则弹"圣裁已定"奏报。
+    // 中兴/续命走 Document 浅纸面（吉），崩殂/亡国走 Warning 急奏（凶）。
+    // _outcomeHandled 防止重弹（_Process 每帧跑）。
+    private void CheckAndShowOutcomeIfGameOver()
+    {
+        if (_outcomeHandled) return;
+        if (_gameState == null || _gameEngine == null) return;
+        if (_gameState.Outcome == GameOutcome.Playing) return;
+
+        var outcome = _gameState.Outcome;
+        string body = _gameEngine.GetOutcomeMessage();
+        string summary = BuildOutcomeSummary();
+        string fullText = body + "\n\n" + summary;
+
+        if (outcome == GameOutcome.ZhongXing || outcome == GameOutcome.XuMing)
+        {
+            ShowDocumentReportPopup("圣裁已定", fullText);
+        }
+        else
+        {
+            ShowWarningReportPopup("圣裁已定", fullText);
+        }
+
+        _handledOutcome = outcome;
+        _outcomeHandled = true;
+    }
+
+    private string BuildOutcomeSummary()
+    {
+        if (_gameState == null) return string.Empty;
+        return $"— 史官终录 —\n" +
+               $"年号：{_gameState.ReignTitle}{_gameState.ReignYear}年\n" +
+               $"公元：{_gameState.Year}年{_gameState.Month}月{(_gameState.Xun == 1 ? "上" : _gameState.Xun == 2 ? "中" : "下")}旬\n" +
+               $"灵帝春秋：{_gameState.GetEmperorAge()} 岁\n" +
+               $"皇权终值：{_gameState.ImperialPower} / 100\n" +
+               $"天下民心：{_gameState.PopularSupport} / 100\n" +
+               $"皇帝健康：{_gameState.Health} / 100\n" +
+               $"国帑结余：{_gameState.Treasury} 万钱\n" +
+               $"西园私帑：{_gameState.PrivateTreasury} 万钱\n" +
+               $"叛郡计数：{CountRebellingProvinces()} / {_gameState.Provinces.Count}";
+    }
+
+    private int CountRebellingProvinces()
+    {
+        if (_gameState == null) return 0;
+        int n = 0;
+        foreach (var p in _gameState.Provinces.Values)
+            if (p.IsRebelling) n++;
+        return n;
+    }
 }

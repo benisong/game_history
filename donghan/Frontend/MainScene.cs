@@ -46,6 +46,10 @@ public partial class MainScene : Control
     private Control? _courtRitualOverlay;
     private bool _isUnskippableTransitionActive;
 
+    // A1 结局面板：游戏结局弹出后只显示一次，避免 _Process 每帧重弹
+    private bool _outcomeHandled;
+    private GameOutcome _handledOutcome = GameOutcome.Playing;
+
     // 场景专属 Action 节点引用
     private Label? _actionLabel;
     private Button? _sellOfficeButton;
@@ -164,6 +168,10 @@ public partial class MainScene : Control
 
     public override void _Process(double delta)
     {
+        // A1：结局判定 — 引擎 UpdateOutcome() 在 NextXunAsync 末尾设 Outcome，这里每帧检查
+        // _outcomeHandled 防止 _Process 重弹；解锁唯一方式是重开（用户可点弹出里的退出）
+        CheckAndShowOutcomeIfGameOver();
+
         if (!_forceFullscreen) return;
 
         var mode = DisplayServer.WindowGetMode();
