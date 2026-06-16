@@ -429,6 +429,9 @@ public partial class GameEngine
 
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
+
+        // P1-A3：NPC 按 HistoricalDeathYear 自动下野（不杀"事件触发"型）
+        CheckNpcHistoricalDeaths();
     }
 
     public string StartGrandCourtSync()
@@ -618,6 +621,38 @@ public partial class GameEngine
     // 幂等标志：A2 trigger 各自只在首次进入目标旬时跑一次
     private bool _heJinDeathTriggered;
     private bool _dongZhuoEntryTriggered;
+
+    // === P1-A3 NPC 寿终下野 ===
+    // P0 警告：HistoricalDeathYear=史实倾向参考，不强制死亡。
+    // 但 P1-A3 决定：到岁数且还活跃的 NPC 自动下野（IsActive=false + 释州郡），
+    // 玩家可设法续命（服药延寿等系统若实现），否则按史实节奏谢幕。
+    // 不杀"事件触发"型 NPC（董卓/吕布等，他们的退场由 trigger 决定）。
+    private void CheckNpcHistoricalDeaths()
+    {
+        if (_state.DisableHistoricalTriggers) return;
+        if (_state.Outcome != GameOutcome.Playing) return; // 结局已定，NPC 退场不写编年史
+
+        foreach (var npc in _state.Npcs.Values)
+        {
+            if (!npc.IsActive) continue;
+            if (!npc.HistoricalDeathYear.HasValue) continue;
+            // 事件触发型 NPC 退场由 trigger 决定，不参与自动下野
+            if (npc.EntryCondition == "事件触发") continue;
+
+            if (_state.Year >= npc.HistoricalDeathYear.Value)
+            {
+                var provinceId = npc.GovernedProvinceId;
+                npc.IsActive = false;
+                npc.DeathReason = $"【寿终】据史实/传统说法，{npc.Name}寿终正寝于公元 {npc.HistoricalDeathYear.Value} 年。";
+                npc.GovernedProvinceId = null;
+                if (!string.IsNullOrEmpty(provinceId) && _state.Provinces.TryGetValue(provinceId, out var p))
+                {
+                    p.GovernorId = null;
+                }
+                _state.AddToChronicle($"【致仕/寿终】{npc.Name}据史实寿终，告退朝堂。");
+            }
+        }
+    }
 
     // 189 年 8 月下旬：何进被十常侍矫诏伏诛于嘉德殿（189/8/25）
     // 史实：中平六年八月，何进谋诛十常侍，反被张让等矫诏杀害于嘉德殿前。

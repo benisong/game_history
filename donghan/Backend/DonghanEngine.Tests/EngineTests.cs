@@ -1089,7 +1089,7 @@ public class EngineTests
         // Assert
         Assert.False(state.Npcs["he_jin"].IsActive, "何进 189/8/3 必须 IsActive=false");
         Assert.Contains("何进", state.Npcs["he_jin"].DeathReason);
-        Assert.Contains("外戚崩殂", state.Chronicle[^1]);
+        Assert.Contains(state.Chronicle, e => e.Contains("外戚崩殂"));
     }
 
     [Fact]
@@ -1106,12 +1106,12 @@ public class EngineTests
         await engine.NextXunAsync();
 
         // Assert
-        Assert.True(state.Npcs.ContainsKey("dong_zhuo"), "189/9/1 董卓必须被部署");
+        Assert.True(state.Npcs["dong_zhuo"].IsActive, "189/9/1 董卓必须被部署");
         var dong = state.Npcs["dong_zhuo"];
         Assert.True(dong.IsActive, "董卓入京后必须 IsActive");
         Assert.Equal(95, dong.Power);
         Assert.Equal("洛阳宫中", dong.InitialLocation);
-        Assert.Contains("董卓入京", state.Chronicle[^1]);
+        Assert.Contains(state.Chronicle, e => e.Contains("董卓入京"));
     }
 
     [Fact]
@@ -1150,5 +1150,65 @@ public class EngineTests
         Assert.Equal(powerAfterFirstEntry, state.ImperialPower);
         Assert.DoesNotContain(state.Chronicle.GetRange(chronicleLenAfterFirst, state.Chronicle.Count - chronicleLenAfterFirst),
             e => e.Contains("董卓入京"));
+    }
+
+    // === P1-A3 NPC 寿终下野 ===
+
+    [Fact]
+    public async Task Test_A3_NpcHistoricalDeath_Retire()
+    {
+        // Arrange: 把何进 HistoricalDeathYear 改到 184/3/2 之前，让他在 184/3/2 → 3 时被自动下野
+        var state = new GameState { Year = 184, Month = 3, Xun = 2 };
+        // 何进 HistoricalDeathYear 默认 184+59=243，远大于 184，所以不会触发。
+        // 我们把一个测试 NPC 的 HistoricalDeathYear 改到 184 年。
+        var testNpc = state.Npcs["he_jin"];
+        testNpc.HistoricalDeathYear = 184; // 184 年内
+        // 让他不归 he_jin 逻辑（A2 还没触发），保持 IsActive=true
+        Assert.True(testNpc.IsActive);
+
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+        // 当前 184/3/2，下一旬 = 184/3/3，何进 HistoricalDeathYear=184 <= 184 → 触发下野
+        await engine.NextXunAsync();
+
+        Assert.False(testNpc.IsActive, "何进 HistoricalDeathYear=184 时，到 184 年应自动下野");
+        Assert.Contains("寿终", testNpc.DeathReason);
+    }
+
+    [Fact]
+    public async Task Test_A3_NpcHistoricalDeath_SkipsEventTriggeredNpcs()
+    {
+        // 董卓是"事件触发"型，HistoricalDeathYear 不应让他自动下野
+        // 玩家先跑到 9/1 部署董卓，然后设 HistoricalDeathYear=189，
+        // 再跑 1 旬（仍 189 年），董卓不应被自动下野（A2 trigger 之外的逻辑）
+        var state = new GameState { Year = 189, Month = 8, Xun = 3 };
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+        await engine.NextXunAsync(); // → 9/1 部署董卓
+        Assert.True(state.Npcs["dong_zhuo"].IsActive);
+        // 篡改董卓的死亡年为今年（A2 已 done），但因 EntryCondition=="事件触发" 应被跳过
+        state.Npcs["dong_zhuo"].HistoricalDeathYear = 189;
+
+        await engine.NextXunAsync(); // → 9/2，仍在 189 年
+
+        Assert.True(state.Npcs["dong_zhuo"].IsActive, "事件触发型 NPC 不应被寿终逻辑自动下野");
+    }
+
+    [Fact]
+    public async Task Test_A3_NpcHistoricalDeath_ReleasesGovernorProvince()
+    {
+        // 安排一个州郡的太守寿终，应自动释放 GovernorId
+        var state = new GameState { Year = 184, Month = 3, Xun = 2 };
+        var gov = state.Npcs["he_jin"]; // 大将军何进
+        gov.HistoricalDeathYear = 184;
+        // 给何进指派一个州郡
+        var prov = state.Provinces["yuzhou"];
+        prov.GovernorId = "he_jin";
+        gov.GovernedProvinceId = "yuzhou";
+
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+        await engine.NextXunAsync();
+
+        Assert.False(gov.IsActive);
+        Assert.True(gov.GovernedProvinceId == null, "太守寿终后应清空 GovernedProvinceId");
+        Assert.True(prov.GovernorId == null, "州郡 GovernorId 应被释放");
     }
 }
