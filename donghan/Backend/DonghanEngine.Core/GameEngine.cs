@@ -403,6 +403,19 @@ public partial class GameEngine
         }
 
         CheckRebellions();
+
+        // P0-3 修复：黄巾起义历史硬 trigger。
+        // 史实：184 年 3 月初 5 日，唐周告密，张角被迫提前起事，冀兖豫三州旬月之间皆应。
+        // 游戏时间 184 年 4 月（开局当月），第 2 旬强制 3 郡起事，撤换其太守（桥玄/卢植），确保历史
+        // 走向不会因"开局皇权 25 / 民心 28 / 冀州支持度 35"被反推取消。
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 184 && _state.Month == 4 && _state.Xun == 2)
+        {
+            TriggerHistoricalYellowTurban();
+        }
+
+        // P0-2 结局判定：每旬结算一次
+        UpdateOutcome();
     }
 
     public string StartGrandCourtSync()
@@ -508,4 +521,83 @@ public partial class GameEngine
 
     // Defined in GameEngine.Rebellion.cs
     partial void CheckRebellions();
+
+    // === P0-3 黄巾起义历史硬 trigger ===
+    // 在 184/4/2 旬强制 冀/兖/豫 三郡同步起事，撤换其太守入京，触发 TriggerYellowTurban 流水线。
+    // 守护：已反则跳过；太守离职时清理 GovernedProvinceId 防止孤立状态。
+    private void TriggerHistoricalYellowTurban()
+    {
+        var targetProvinces = new[] { "jizhou", "yanzhou", "yuzhou" };
+        foreach (var pid in targetProvinces)
+        {
+            if (!_state.Provinces.TryGetValue(pid, out var p) || p == null) continue;
+            if (p.IsRebelling) continue;
+
+            // 撤换太守：黄巾既起，太守实际被架空或战死，先下放回野
+            if (!string.IsNullOrEmpty(p.GovernorId) &&
+                _state.Npcs.TryGetValue(p.GovernorId, out var gov))
+            {
+                gov.GovernedProvinceId = null;
+            }
+            p.GovernorId = null;
+
+            // 强制 trigger（不依赖 LocalSupport / ImperialPower / PopularSupport）
+            TriggerYellowTurban(p);
+
+            _state.AddToChronicle($"【黄巾起事】{p.Name}太平道蜂起响应，渠帅揭竿！州郡震动，太守败走。");
+        }
+    }
+
+    // === P0-2 结局判定 ===
+    // 优先级：崩殂 > 亡国 > 中兴 > 续命（每旬结算，已有结局不再覆盖）
+    private void UpdateOutcome()
+    {
+        if (_state.Outcome != GameOutcome.Playing) return;
+
+        if (_state.Health <= 0)
+        {
+            _state.Outcome = GameOutcome.Collapse;
+            _state.AddToChronicle("【崩殂】龙驭宾天。灵帝驾崩，汉祚倾覆。");
+            return;
+        }
+
+        if (_state.PopularSupport <= 5)
+        {
+            _state.Outcome = GameOutcome.Vanquished;
+            _state.AddToChronicle("【亡国】黄巾入洛，烽烟遍地，汉鼎崩摧。");
+            return;
+        }
+
+        int age = _state.GetEmperorAge();
+        if (age >= 40)
+        {
+            int rebelCount = 0;
+            foreach (var pv in _state.Provinces.Values)
+                if (pv.IsRebelling) rebelCount++;
+            if (_state.ImperialPower >= 60 && _state.PopularSupport >= 50 && rebelCount == 0)
+            {
+                _state.Outcome = GameOutcome.ZhongXing;
+                _state.AddToChronicle($"【中兴】灵帝春秋 {_state.GetEmperorAge()} 而皇权复振、天下归心，可比光武再世！");
+            }
+            else
+            {
+                _state.Outcome = GameOutcome.XuMing;
+                _state.AddToChronicle($"【续命】灵帝春秋 {_state.GetEmperorAge()}，汉祚得以延续。");
+            }
+        }
+    }
+
+    // P0-2：把结局翻译成人话字符串（前端/控制台渲染用）
+    public string GetOutcomeMessage()
+    {
+        return _state.Outcome switch
+        {
+            GameOutcome.Playing    => "天运转，帝业待续。",
+            GameOutcome.ZhongXing  => $"★★★ 中兴之治 ★★★\n灵帝在位 {_state.GetEmperorAge()} 岁，皇权复振、民心归一、海内无叛。\n史官当记：此君可比光武再世！",
+            GameOutcome.XuMing     => $"☆ 续命成功 ☆\n灵帝在位 {_state.GetEmperorAge()} 岁，汉祚得以延续。\n虽有遗憾，到底改写了 189 年驾崩的宿命。",
+            GameOutcome.Collapse   => $"✗ 崩殂 ✗\n灵帝龙体难支，魂归上苍。\n国无长君，汉祚倾覆。",
+            GameOutcome.Vanquished => $"✗ 亡国 ✗\n黄巾入洛，烽烟遍地，汉鼎崩摧。\n天下离心，灵帝沦为阶下之囚。",
+            _                      => ""
+        };
+    }
 }

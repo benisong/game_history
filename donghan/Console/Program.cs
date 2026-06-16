@@ -178,24 +178,14 @@ class DonghanConsole
         bool running = true;
         while (running)
         {
-            if (_state.Health <= 0)
+            // P0-2 统一结局判定：引擎在每旬结算时 UpdateOutcome() 已写入 _state.Outcome
+            if (_state.Outcome != GameOutcome.Playing)
             {
                 Console.Clear();
-                Console.WriteLine("\n\n    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-                Console.WriteLine("       汉灵帝刘宏，崩于光和七年。");
-                Console.WriteLine("       享年……天命已尽。");
-                Console.WriteLine("    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-                running = false;
-                break;
-            }
-
-            if (_state.PopularSupport <= 5)
-            {
-                Console.Clear();
-                Console.WriteLine("\n    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-                Console.WriteLine("      天下民心尽失！黄巾军攻入洛阳！");
-                Console.WriteLine("      大厦倾覆，汉室……亡了。");
-                Console.WriteLine("    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+                Console.WriteLine("\n\n" + _engine.GetOutcomeMessage());
+                ShowState();
+                Console.WriteLine("\n    按任意键退出...");
+                Console.ReadKey(true);
                 running = false;
                 break;
             }

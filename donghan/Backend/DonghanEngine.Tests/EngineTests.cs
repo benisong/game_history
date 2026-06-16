@@ -664,6 +664,8 @@ public class EngineTests
     {
         // Arrange
         var state = new GameState();
+        // 关掉 P0-3 黄巾硬 trigger，避免 184/4/2 旬 -15 民心把"折子过期 -15"淹没
+        state.DisableHistoricalTriggers = true;
         var scheduler = new MockScheduler { ShouldAddEdicts = false };
         var engine = new GameEngine(state, scheduler, new MockOracle(), new MockMinisterAgent(), new MockNarrator(), new Random(42));
 
@@ -872,5 +874,201 @@ public class EngineTests
         Assert.Throws<InvalidOperationException>(() => engine.ExecuteQuickAction("sell_office"));
         // 在宣政殿不能后宫休息
         Assert.Throws<InvalidOperationException>(() => engine.ExecuteQuickAction("harem_rest"));
+    }
+
+    // === P0-3 黄巾起义历史硬 trigger ===
+
+    [Fact]
+    public async Task Test_P03_YellowTurban_HardTrigger_At184_4_2_FiresForThreeProvinces()
+    {
+        // Arrange: 默认开局就是 184/4/1，跑 1 旬进入 184/4/2 → 触发硬 trigger
+        var state = new GameState();
+        // 把 3 郡的 LocalSupport 都拉满，验证硬 trigger 仍然能无视 LocalSupport
+        state.Provinces["jizhou"].LocalSupport = 100;
+        state.Provinces["yanzhou"].LocalSupport = 100;
+        state.Provinces["yuzhou"].LocalSupport = 100;
+
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // Act
+        await engine.NextXunAsync();
+
+        // Assert: 3 郡都已反，太守被撤
+        Assert.Equal(184, state.Year);
+        Assert.Equal(4, state.Month);
+        Assert.Equal(2, state.Xun);
+        Assert.True(state.Provinces["jizhou"].IsRebelling, "冀州必须被硬 trigger");
+        Assert.True(state.Provinces["yanzhou"].IsRebelling, "兖州必须被硬 trigger");
+        Assert.True(state.Provinces["yuzhou"].IsRebelling, "豫州必须被硬 trigger");
+        Assert.Null(state.Provinces["jizhou"].GovernorId);  // 冀州太守桥玄必须被撤
+        Assert.Null(state.Provinces["yuzhou"].GovernorId);   // 豫州太守卢植必须被撤
+    }
+
+    [Fact]
+    public async Task Test_P03_YellowTurban_NoTriggerOutside184_4_2()
+    {
+        // Arrange: 把时间直接放到 184/4/3，跨过 184/4/2 之后
+        var state = new GameState { Year = 184, Month = 4, Xun = 3 };
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // Act: 推到 184/5/1（Xun 1），硬 trigger 条件（184/4/2）不再满足
+        await engine.NextXunAsync();
+
+        // Assert: 此时冀州未反（虽然 3 旬过去但 CheckRebellions 因 LocalSupport=28 + 随机因子也不一定反，
+        // 但至少 Historical trigger 没在 184/5/1 重放）
+        // 我们不严格断言 IsRebelling=false（因为 CheckRebellions 可能已随机起事），
+        // 只断言 Chroncile 里没有"黄巾起事"硬 trigger 文案
+        bool hasHardTriggerLog = state.Chronicle.Exists(c => c.Contains("太平道蜂起响应"));
+        Assert.False(hasHardTriggerLog, "硬 trigger 只在 184/4/2 触发，不应在 184/5/1 重放");
+    }
+
+    [Fact]
+    public async Task Test_P03_YellowTurban_AlreadyRebelling_SkipsCleanly()
+    {
+        // Arrange: 把冀州预设为已反，验证硬 trigger 不会重复跑 / 不会崩
+        var state = new GameState();
+        state.Provinces["jizhou"].IsRebelling = true;
+        state.Provinces["jizhou"].RebelFaction = "黄巾军";
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // Act & Assert: 不应抛
+        await engine.NextXunAsync();
+        Assert.True(state.Provinces["jizhou"].IsRebelling);
+        // 兖/豫仍应被硬 trigger
+        Assert.True(state.Provinces["yanzhou"].IsRebelling);
+        Assert.True(state.Provinces["yuzhou"].IsRebelling);
+    }
+
+    // === P0-2 结局系统 ===
+
+    [Fact]
+    public void Test_P02_Outcome_DefaultIsPlaying()
+    {
+        var state = new GameState();
+        Assert.Equal(GameOutcome.Playing, state.Outcome);
+        Assert.Equal(28, state.GetEmperorAge()); // 184 - 156 = 28
+    }
+
+    [Fact]
+    public async Task Test_P02_Outcome_Collapse_WhenHealthZero()
+    {
+        // Arrange: 把 Health 设到 0，跑一旬看 outcome
+        var state = new GameState { Health = 1 };  // 1 → 期望 NextXunAsync 内部扣减或维持 → 0
+        // 但 UpdateOutcome 优先级是 <= 0 ⇒ Collapse；为确定性，预先设 0
+        state.Health = 0;
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // Act
+        await engine.NextXunAsync();
+
+        // Assert
+        Assert.Equal(GameOutcome.Collapse, state.Outcome);
+        Assert.Contains("崩殂", engine.GetOutcomeMessage());
+    }
+
+    [Fact]
+    public async Task Test_P02_Outcome_Vanquished_WhenSupportFive()
+    {
+        // Arrange
+        var state = new GameState { PopularSupport = 5 };
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // Act
+        await engine.NextXunAsync();
+
+        // Assert: 崩殂优先级低于亡国吗？让我们看清楚 — 我设定 Health=35 默认，PopularSupport=5
+        // 优先级：Health <= 0 > PopularSupport <= 5，所以应该 Vanquished
+        Assert.Equal(GameOutcome.Vanquished, state.Outcome);
+        Assert.Contains("亡国", engine.GetOutcomeMessage());
+    }
+
+    [Fact]
+    public async Task Test_P02_Outcome_ZhongXing_WhenAllConditionsMet()
+    {
+        // Arrange: 直接跳到 灵帝 40 岁那年，皇权 60+ 民心 50+ 且无叛郡
+        var state = new GameState
+        {
+            Year = 196,        // 196 - 156 = 40
+            Month = 4,
+            Xun = 1,
+            ImperialPower = 70,
+            PopularSupport = 60,
+            Health = 80
+        };
+        // 确保无叛郡（默认就是空的，但显式断言）
+        foreach (var p in state.Provinces.Values) p.IsRebelling = false;
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // Act
+        await engine.NextXunAsync();
+
+        // Assert
+        Assert.Equal(GameOutcome.ZhongXing, state.Outcome);
+        Assert.Contains("中兴", engine.GetOutcomeMessage());
+    }
+
+    [Fact]
+    public async Task Test_P02_Outcome_XuMing_WhenAgeMetButOtherConditionsFail()
+    {
+        // Arrange: 灵帝 40 岁，但皇权 < 60 → 续命
+        var state = new GameState
+        {
+            Year = 196,        // 40 岁
+            Month = 4,
+            Xun = 1,
+            ImperialPower = 30,   // < 60
+            PopularSupport = 60,
+            Health = 80
+        };
+        foreach (var p in state.Provinces.Values) p.IsRebelling = false;
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // Act
+        await engine.NextXunAsync();
+
+        // Assert
+        Assert.Equal(GameOutcome.XuMing, state.Outcome);
+        Assert.Contains("续命", engine.GetOutcomeMessage());
+    }
+
+    [Fact]
+    public async Task Test_P02_Outcome_StaysPlaying_WhenAgeBelow40()
+    {
+        // Arrange: 灵帝 30 岁，皇权拉满也无中兴
+        var state = new GameState
+        {
+            Year = 186,        // 30 岁
+            ImperialPower = 100,
+            PopularSupport = 100,
+            Health = 100
+        };
+        foreach (var p in state.Provinces.Values) p.IsRebelling = false;
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // Act
+        await engine.NextXunAsync();
+
+        // Assert
+        Assert.Equal(GameOutcome.Playing, state.Outcome);
+    }
+
+    [Fact]
+    public async Task Test_P02_Outcome_OnceLocked_DoesNotRevert()
+    {
+        // Arrange: 先跑出 Collapse
+        var state = new GameState { Health = 0 };
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        // Act 1: 锁定为 Collapse
+        await engine.NextXunAsync();
+        Assert.Equal(GameOutcome.Collapse, state.Outcome);
+
+        // 把 Health 拉回 100，再跑一旬 — 结局应保持 Collapse（不可逆）
+        state.Health = 100;
+        state.PopularSupport = 100;
+        await engine.NextXunAsync();
+
+        // Assert
+        Assert.Equal(GameOutcome.Collapse, state.Outcome);
     }
 }

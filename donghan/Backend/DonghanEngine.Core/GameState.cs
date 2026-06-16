@@ -63,14 +63,14 @@ public class GameState
     public int Health { get; set; } = 35;        // 皇帝健康 (0-100) - 龙体极其虚弱，沉迷享乐濒危
     public string ReignTitle { get; set; } = "光和"; // 年号
     public int ReignYear { get; set; } = 7;       // 年份
-    
+
     public string CurrentLocation { get; set; } = "宣政殿";
 
     public System.Collections.Generic.Dictionary<string, NpcState> Npcs { get; set; } = new();
     public System.Collections.Generic.List<NpcRelation> NpcRelations { get; set; } = new();
     public ArmyState WestGardenArmy { get; set; } = new(); // 西园八校尉新军
     public System.Collections.Generic.Dictionary<string, Province> Provinces { get; set; } = new();
-    
+
     public List<string> Chronicle { get; set; } = new();
 
     // 纪元时间系统（旬：1-3，每旬十天，三旬为一月）
@@ -88,6 +88,17 @@ public class GameState
 
     // 异步朝局辩论缓冲区
     public System.Collections.Generic.Queue<CourtSpeech> CourtDebateQueue { get; set; } = new();
+
+    // === P0-2 结局系统 ===
+    // 历史灵帝刘宏生于 156 年，崩于 189 年（光和七年/中平元年 33 岁）。
+    // 游戏开局灵帝 28 岁；"中兴/续命"以 40 岁为达成门槛（= 12 年后，144 旬）。
+    public int EmperorBirthYear { get; set; } = 156;
+    public GameOutcome Outcome { get; set; } = GameOutcome.Playing;
+
+    public int GetEmperorAge() => Year - EmperorBirthYear;
+
+    // === P0-3 旗：测试与沙盒可关掉历史硬 trigger，避免污染"折子过期"等单测 ===
+    public bool DisableHistoricalTriggers { get; set; } = false;
 
     public GameState()
     {
@@ -204,6 +215,21 @@ public class CourtSpeech
     public string Stance { get; set; } = "OPPOSE"; // AGREED / OPPOSE / RETALIATE (迎合 / 反对 / 党羽弹劾反噬)
     public int ExpectedFavorabilityChange { get; set; }
     public int ExpectedPowerChange { get; set; }
+}
+
+// P0-2 结局枚举
+//   Playing   - 游戏中
+//   ZhongXing - 中兴之治：灵帝活到 40 + 皇权 ≥ 60 + 民心 ≥ 50 + 0 叛郡
+//   XuMing    - 续命成功：灵帝活到 40 (其他条件不满足)
+//   Collapse  - 崩殂：Health ≤ 0
+//   Vanquished- 亡国：PopularSupport ≤ 5 (黄巾入洛)
+public enum GameOutcome
+{
+    Playing,
+    ZhongXing,
+    XuMing,
+    Collapse,
+    Vanquished
 }
 
 public class AIOrchestrationResult
