@@ -82,8 +82,10 @@ public partial class GameEngine
             {
                 p.RebellionMonths++;
 
-                // 蔓延
-                int spreadBase = p.RebellionMonths >= 12 ? 75 : p.RebellionMonths >= 6 ? 55 : 35;
+                // 蔓延：P1-A4 调低（35/55/75 → 20/35/50）。原值 35% 起步太快，
+                // 184 4/2 冀兖豫三州起事 + 第 2 旬 50% 蔓延率意味着中旬就可能蔓延到 4-6 州，
+                // 玩家几乎来不及反应。原"半年内统一中原"已失衡。20/35/50 给玩家 ~2-3 旬反应窗口。
+                int spreadBase = p.RebellionMonths >= 12 ? 50 : p.RebellionMonths >= 6 ? 35 : 20;
                 foreach (var neighborId in p.Neighbors)
                 {
                     if (_state.Provinces.TryGetValue(neighborId, out var n) && !n.IsRebelling)
