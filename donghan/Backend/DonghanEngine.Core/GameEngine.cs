@@ -32,6 +32,11 @@ public partial class GameEngine
 
     public GameState GetState() => _state;
 
+    // P2-2 朝会主持人：玩家在朝会面板中可切换 4 名主要 NPC（曹操/何进/张让/蹇硕）为主持人
+    // 影响：MockScheduler 会把 activeOfficerId 在 result 中的发言移到队首
+    // 默认 "he_jin" 保持向后兼容
+    public string ActiveOfficerId { get; set; } = "he_jin";
+
     public void TravelToLocation(string newLocation)
     {
         if (newLocation != "宣政殿" && newLocation != "后宫" && newLocation != "西园")
@@ -494,7 +499,8 @@ public partial class GameEngine
         if (string.IsNullOrWhiteSpace(playerInput)) throw new ArgumentException("玩家指令不能为空。", nameof(playerInput));
 
         // 调用升级后的 OrchestrateGrandCourtAsync 以支持分析意图与多智能体朝辩
-        var orchestratorResult = await _scheduler.OrchestrateGrandCourtAsync(playerInput, "he_jin", _state);
+        // P2-2 修复：传 ActiveOfficerId（前端可切换），替代写死 "he_jin"
+        var orchestratorResult = await _scheduler.OrchestrateGrandCourtAsync(playerInput, ActiveOfficerId, _state);
         
         var dialogues = new List<MinisterDialogue>();
         foreach (var speech in orchestratorResult.Speeches)

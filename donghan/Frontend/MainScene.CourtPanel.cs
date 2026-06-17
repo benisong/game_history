@@ -17,6 +17,7 @@ public partial class MainScene : Control
     private VBoxContainer? _courtDecisionsVBox;
     private VBoxContainer? _courtFreeEdictVBox;
     private LineEdit? _courtInput;
+    private ButtonGroup? _hostButtonGroup;
     private readonly List<CourtTopicViewModel> _courtTopics = new();
 
     private void InitializeCourtPanel()
@@ -76,6 +77,51 @@ public partial class MainScene : Control
         _courtStageLabel.HorizontalAlignment = HorizontalAlignment.Center;
         _courtStageLabel.Text = $"{FormatTimeLabel()}  ·  阶段：择议";
         header.AddChild(_courtStageLabel);
+
+        // P2-2 主持人选择条：玩家点选 4 名主要 NPC 之一为主持人，影响 MockScheduler 发言顺序
+        BuildCourtHostSelector(header);
+    }
+
+    private void BuildCourtHostSelector(VBoxContainer parent)
+    {
+        var hostRow = new HBoxContainer();
+        hostRow.AddThemeConstantOverride("separation", 6);
+        hostRow.Alignment = BoxContainer.AlignmentMode.Center;
+
+        var hostLabel = new Label();
+        hostLabel.Text = "主持人：";
+        hostLabel.AddThemeColorOverride("font_color", new Color(0.95f, 0.77f, 0.28f, 1.0f));
+        hostRow.AddChild(hostLabel);
+
+        _hostButtonGroup = new ButtonGroup();
+        var currentHost = _gameEngine?.ActiveOfficerId ?? "he_jin";
+        foreach (var (id, name) in new (string Id, string Name)[]
+        {
+            ("cao_cao", "曹操"),
+            ("he_jin", "何进"),
+            ("zhang_rang", "张让"),
+            ("jian_shuo", "蹇硕")
+        })
+        {
+            var btn = new Button();
+            btn.Text = name;
+            btn.ToggleMode = true;
+            btn.CustomMinimumSize = new Vector2(80, 32);
+            btn.ButtonGroup = _hostButtonGroup;
+            btn.ButtonPressed = (currentHost == id);
+            StyleSceneActionButton(btn, ActionButtonSkin.Court);
+            string capturedId = id; // 闭包捕获
+            btn.Pressed += () => OnHostSelected(capturedId);
+            hostRow.AddChild(btn);
+        }
+
+        parent.AddChild(hostRow);
+    }
+
+    private void OnHostSelected(string hostId)
+    {
+        if (_gameEngine == null) return;
+        _gameEngine.ActiveOfficerId = hostId;
     }
 
     private void BuildCourtBody(VBoxContainer root)

@@ -82,12 +82,25 @@ public class MockScheduler : IAIScheduler
                 break;
         }
 
+        // P2-2：让 activeOfficerId（朝廷主持人）在 result 中的发言置于队首
+        MoveActiveOfficerToFront(result, activeOfficerId);
+
         return Task.FromResult(result);
     }
 
     public Task OrchestrateXunUpdateAsync(GameState state)
     {
         return Task.CompletedTask;
+    }
+
+    private void MoveActiveOfficerToFront(AIOrchestrationResult result, string activeOfficerId)
+    {
+        if (string.IsNullOrEmpty(activeOfficerId)) return;
+        if (result.Speeches.Count == 0) return;
+        var existing = result.Speeches.FirstOrDefault(s => s.MinisterId == activeOfficerId);
+        if (existing == null) return;
+        result.Speeches.Remove(existing);
+        result.Speeches.Insert(0, existing);
     }
 
     private void Emit(AIOrchestrationResult result, string id, string name, string stance, int favDelta, int powDelta, string text)
