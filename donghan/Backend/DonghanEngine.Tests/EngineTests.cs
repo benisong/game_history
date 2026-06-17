@@ -1242,4 +1242,77 @@ public class EngineTests
         Assert.Null(FactionStance.GetStance(FactionCatalog.WesternGarden, CourtIntent.Relief));
         Assert.Null(FactionStance.GetStance(FactionCatalog.Warlord, CourtIntent.Relief));
     }
+
+    // P2-7：派系对立映射应正确
+    [Fact]
+    public void FactionStance_对立派系列表与历史逻辑一致()
+    {
+        // 清流派对立阉党
+        var pureOpp = FactionStance.GetOppositionFactions(FactionCatalog.PureStream);
+        Assert.Contains(FactionCatalog.EunuchFaction, pureOpp);
+        // 阉党对立外戚 + 清流
+        var eunuchOpp = FactionStance.GetOppositionFactions(FactionCatalog.EunuchFaction);
+        Assert.Contains(FactionCatalog.ImperialClan, eunuchOpp);
+        Assert.Contains(FactionCatalog.PureStream, eunuchOpp);
+        // 外戚对立阉党 + 西园
+        var imperialOpp = FactionStance.GetOppositionFactions(FactionCatalog.ImperialClan);
+        Assert.Contains(FactionCatalog.EunuchFaction, imperialOpp);
+        Assert.Contains(FactionCatalog.WesternGarden, imperialOpp);
+        // 西园对立外戚 + 阉党
+        var wgOpp = FactionStance.GetOppositionFactions(FactionCatalog.WesternGarden);
+        Assert.Contains(FactionCatalog.ImperialClan, wgOpp);
+        Assert.Contains(FactionCatalog.EunuchFaction, wgOpp);
+        // 未定义派系返回空
+        Assert.Empty(FactionStance.GetOppositionFactions(FactionCatalog.Warlord));
+        Assert.Empty(FactionStance.GetOppositionFactions(FactionCatalog.Rebel));
+    }
+
+    // P2-7：FactionSpeechBank 应能命中现有 14 条专属桶并返回非默认台词
+    [Fact]
+    public void FactionSpeechBank_4NPC_7Intent_14专属桶全部命中()
+    {
+        var state = new GameState();
+        // 曹操 4 条
+        Assert.NotNull(FactionSpeechBank.TryGetSpeech("cao_cao", CourtIntent.Relief, state));
+        Assert.NotNull(FactionSpeechBank.TryGetSpeech("cao_cao", CourtIntent.Execute, state));
+        Assert.NotNull(FactionSpeechBank.TryGetSpeech("cao_cao", CourtIntent.Reward, state));
+        Assert.NotNull(FactionSpeechBank.TryGetSpeech("cao_cao", CourtIntent.Talent, state));
+        // 何进 4 条
+        Assert.NotNull(FactionSpeechBank.TryGetSpeech("he_jin", CourtIntent.Reward, state));
+        Assert.NotNull(FactionSpeechBank.TryGetSpeech("he_jin", CourtIntent.Treasury, state));
+        Assert.NotNull(FactionSpeechBank.TryGetSpeech("he_jin", CourtIntent.MilitaryBuild, state));
+        Assert.NotNull(FactionSpeechBank.TryGetSpeech("he_jin", CourtIntent.EunuchReform, state));
+        // 张让 3 条
+        Assert.NotNull(FactionSpeechBank.TryGetSpeech("zhang_rang", CourtIntent.Relief, state));
+        Assert.NotNull(FactionSpeechBank.TryGetSpeech("zhang_rang", CourtIntent.Treasury, state));
+        Assert.NotNull(FactionSpeechBank.TryGetSpeech("zhang_rang", CourtIntent.EunuchReform, state));
+        // 蹇硕 2 条
+        Assert.NotNull(FactionSpeechBank.TryGetSpeech("jian_shuo", CourtIntent.MilitaryBuild, state));
+        Assert.NotNull(FactionSpeechBank.TryGetSpeech("jian_shuo", CourtIntent.Talent, state));
+
+        // 张让的国帑台词应能根据 Treasury 切换两套文案
+        var lowTreasury = FactionSpeechBank.TryGetSpeech("zhang_rang", CourtIntent.Treasury, new GameState { Treasury = 1000 });
+        Assert.NotNull(lowTreasury);
+        var highTreasury = FactionSpeechBank.TryGetSpeech("zhang_rang", CourtIntent.Treasury, new GameState { Treasury = 5000 });
+        Assert.NotNull(highTreasury);
+        Assert.NotEqual(lowTreasury.Text, highTreasury.Text);
+    }
+
+    // P2-7：张让的国帑台词中 {Treasury} 占位符应被解析为实际数值
+    [Fact]
+    public void FactionSpeechBank_占位符被正确解析()
+    {
+        var state = new GameState { Treasury = 4321, Health = 67, PopularSupport = 55 };
+        var entry = FactionSpeechBank.TryGetSpeech("zhang_rang", CourtIntent.Relief, state);
+        Assert.NotNull(entry);
+        var resolved = FactionSpeechBank.ResolveTemplates(entry.Text, state);
+        Assert.Contains("4321", resolved);
+        Assert.DoesNotContain("{Treasury}", resolved);
+
+        var zhangEunuch = FactionSpeechBank.TryGetSpeech("zhang_rang", CourtIntent.EunuchReform, state);
+        Assert.NotNull(zhangEunuch);
+        var resolved2 = FactionSpeechBank.ResolveTemplates(zhangEunuch.Text, state);
+        Assert.Contains("67", resolved2);
+        Assert.DoesNotContain("{Health}", resolved2);
+    }
 }

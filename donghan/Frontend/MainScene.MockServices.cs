@@ -28,60 +28,9 @@ public class MockScheduler : IAIScheduler
         var cls = IntentClassifier.Classify(playerInput);
         result.PrimaryIntent = cls.Intent.ToString();
 
-        // P2-5：所有朝会发言 NPC 的 Stance 一律从 FactionStance 矩阵查；矩阵当前条目严格复制原硬编码语义
-        // Frontend 仍保留"赏赐何进"与"训诫张让"两条特殊文案
-        switch (cls.Intent)
-        {
-            case CourtIntent.Reward:
-                EmitFaction(result, cls.Intent, "he_jin", "何进", FactionCatalog.ImperialClan, 15, 5,
-                    "臣谢陛下隆恩！臣定当整军备战，保大汉无虞！");
-                break;
-            case CourtIntent.EunuchReform:
-                EmitFaction(result, cls.Intent, "zhang_rang", "张让", FactionCatalog.EunuchFaction, -15, -3,
-                    "陛下如今薄情如此，奴才只盼着陛下龙体安康呐...");
-                break;
-            case CourtIntent.Relief:
-                EmitFaction(result, cls.Intent, "cao_cao", "曹操", FactionCatalog.PureStream, 5, 2,
-                    "陛下圣明！赈灾乃安民之本，臣愿领旨督办！");
-                EmitFaction(result, cls.Intent, "zhang_rang", "张让", FactionCatalog.EunuchFaction, -3, 0,
-                    "陛下，国库仅 {Treasury} 万钱……不如由奴才来经办，定能省下不少银两。");
-                break;
-            case CourtIntent.Execute:
-                EmitFaction(result, cls.Intent, "cao_cao", "曹操", FactionCatalog.PureStream, 10, 5,
-                    "臣附议！乱臣贼子，人人得而诛之！");
-                break;
-            case CourtIntent.Treasury:
-                var zhangTreasuryText = state.Treasury < 3000
-                    ? "国库仅 {Treasury} 万钱，奴才愿为陛下查核诸库，纵节衣缩食亦必保军国无误。"
-                    : "国库充盈（{Treasury} 万钱），奴才愿为陛下查核诸库，绝不令军国大计因钱粮误事。";
-                EmitFaction(result, cls.Intent, "zhang_rang", "张让", FactionCatalog.EunuchFaction, 3, 2, zhangTreasuryText);
-                EmitFaction(result, cls.Intent, "he_jin", "何进", FactionCatalog.ImperialClan, -2, 0,
-                    "军费关乎社稷，不可尽付中官之手。");
-                break;
-            case CourtIntent.MilitaryBuild:
-                EmitFaction(result, cls.Intent, "he_jin", "何进", FactionCatalog.ImperialClan, 3, 2,
-                    "黄巾虽乱，朝廷威灵尚在。臣请整北军，明示天下。");
-                EmitFaction(result, cls.Intent, "jian_shuo", "蹇硕", FactionCatalog.WesternGarden, 3, 2,
-                    "西园诸校尉本为陛下亲军，愿为天子先驱。");
-                break;
-            case CourtIntent.Talent:
-                EmitFaction(result, cls.Intent, "cao_cao", "曹操", FactionCatalog.PureStream, 5, 2,
-                    "臣不敢自夸，愿以实绩报陛下知遇。");
-                EmitFaction(result, cls.Intent, "jian_shuo", "蹇硕", FactionCatalog.WesternGarden, 3, 2,
-                    "西园诸校尉皆陛下亲擢，正可分外廷之权。");
-                break;
-            case CourtIntent.Decline:
-            case CourtIntent.Idle:
-            case CourtIntent.Intel:
-            case CourtIntent.Travel:
-                // 不动朝会发言
-                break;
-            case CourtIntent.Unknown:
-            default:
-                // P2-3 兜底：从殿中未发言池按 Power 选 1 名表态
-                EmitFallback(result, state, activeOfficerId);
-                break;
-        }
+        // P2-7 完整版：动态选 2 名 NPC 发言（派系对立 + 派系相同/中立兜底）
+        // 替代原 14 个硬编码 EmitFaction；台词从 FactionSpeechBank 查，桶未命中则用 GetDefault() 兜底
+        SelectSpeakersForIntent(result, state, activeOfficerId, cls.Intent);
 
         // P2-2：让 activeOfficerId（朝廷主持人）在 result 中的发言置于队首
         MoveActiveOfficerToFront(result, activeOfficerId);
@@ -161,12 +110,60 @@ public class MockScheduler : IAIScheduler
         _spokenThisXun.Add(id);
     }
 
-    // P2-5：按 NPC 派系 + 当前 Intent 查 FactionStance 矩阵查 stance；矩阵未命中则不发声
-    private void EmitFaction(AIOrchestrationResult result, CourtIntent intent, string id, string name, string faction, int favDelta, int powDelta, string text)
+    // P2-7 完整版：按"派系对立 → 派系相同 → 派系中立"3 选 2 动态挑选朝会发言 NPC
+    // 选 NPC 时同时校验：(1) FactionStance 矩阵有 Stance；(2) FactionSpeechBank 有专属台词桶
+    // 桶未命中但选出来 → 用 GetDefault() 兜底（不跳过这名 NPC，保留朝会张力）
+    private void SelectSpeakersForIntent(AIOrchestrationResult result, GameState state, string activeOfficerId, CourtIntent intent)
     {
-        var stance = FactionStance.GetStance(faction, intent);
-        if (stance == null) return;  // 该派系对此 Intent 不主动表态
-        Emit(result, id, name, stance, favDelta, powDelta, text);
+        if (string.IsNullOrEmpty(activeOfficerId) || !state.Npcs.TryGetValue(activeOfficerId, out var active))
+        {
+            // 无主持人：退化为单 NPC 兜底（保留 P2-3 兜底行为）
+            EmitFallback(result, state, activeOfficerId);
+            return;
+        }
+
+        var pool = state.Npcs.Values
+            .Where(n => n.IsActive && !n.IsHostile && n.InitialLocation == "洛阳朝堂"
+                     && !_spokenThisXun.Contains(n.Id) && n.Id != activeOfficerId)
+            .OrderByDescending(n => n.Power)
+            .ToList();
+
+        var opponents = FactionStance.GetOppositionFactions(active.Faction);
+        var chosen = new HashSet<string>();
+
+        // 第 1 名：派系对立
+        var opp = pool.FirstOrDefault(n =>
+            opponents.Contains(n.Faction) && FactionStance.GetStance(n.Faction, intent) != null);
+        if (opp != null) TryAddSpeaker(result, state, opp, intent, chosen);
+
+        // 第 2 名：派系相同（除主持人自身）
+        if (chosen.Count < 2)
+        {
+            var ally = pool.FirstOrDefault(n =>
+                n.Faction == active.Faction && n.Id != activeOfficerId
+                && FactionStance.GetStance(n.Faction, intent) != null);
+            if (ally != null) TryAddSpeaker(result, state, ally, intent, chosen);
+        }
+
+        // 第 2 名兜底：剩余池中 Power 最大且不是已选 / 不是主持人
+        if (chosen.Count < 2)
+        {
+            var neutral = pool.FirstOrDefault(n =>
+                !chosen.Contains(n.Id) && FactionStance.GetStance(n.Faction, intent) != null);
+            if (neutral != null) TryAddSpeaker(result, state, neutral, intent, chosen);
+        }
+    }
+
+    private void TryAddSpeaker(AIOrchestrationResult result, GameState state, NpcState npc, CourtIntent intent, HashSet<string> chosen)
+    {
+        var stance = FactionStance.GetStance(npc.Faction, intent);
+        if (stance == null) return;  // 防御：上层已校验，这里再保一次
+
+        var entry = FactionSpeechBank.TryGetSpeech(npc.Id, intent, state) ?? FactionSpeechBank.GetDefault();
+        var text = FactionSpeechBank.ResolveTemplates(entry.Text, state);
+
+        Emit(result, npc.Id, npc.Name, stance, entry.FavDelta, entry.PowDelta, text);
+        chosen.Add(npc.Id);
     }
 
     private void EmitFallback(AIOrchestrationResult result, GameState state, string activeOfficerId)
