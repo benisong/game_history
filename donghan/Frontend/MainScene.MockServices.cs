@@ -85,12 +85,39 @@ public class MockScheduler : IAIScheduler
         // P2-2：让 activeOfficerId（朝廷主持人）在 result 中的发言置于队首
         MoveActiveOfficerToFront(result, activeOfficerId);
 
+        // P2-7：过滤已下野 / 敌对 / 不在殿中的 NPC 发言，并从 _spokenThisXun 同步清理
+        FilterIneligibleSpeakers(result, state);
+
+        // P2-7：过滤后若无任何合格发言，从殿中未发言池按 Power 选 1 名兜底
+        if (result.Speeches.Count == 0)
+        {
+            EmitFallback(result, state, activeOfficerId);
+        }
+
         return Task.FromResult(result);
     }
 
     public Task OrchestrateXunUpdateAsync(GameState state)
     {
         return Task.CompletedTask;
+    }
+
+    private void FilterIneligibleSpeakers(AIOrchestrationResult result, GameState state)
+    {
+        var toRemove = new HashSet<string>();
+        foreach (var s in result.Speeches)
+        {
+            if (!state.Npcs.TryGetValue(s.MinisterId, out var n)
+                || !n.IsActive
+                || n.IsHostile
+                || n.InitialLocation != "洛阳朝堂")
+            {
+                toRemove.Add(s.MinisterId);
+            }
+        }
+        if (toRemove.Count == 0) return;
+        result.Speeches.RemoveAll(s => toRemove.Contains(s.MinisterId));
+        foreach (var id in toRemove) _spokenThisXun.Remove(id);
     }
 
     private void MoveActiveOfficerToFront(AIOrchestrationResult result, string activeOfficerId)
