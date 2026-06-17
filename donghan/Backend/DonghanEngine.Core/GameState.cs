@@ -19,7 +19,7 @@ public class NpcState
     public System.Collections.Generic.List<string> Traits { get; set; } = new(); // 经天纬地、孔武有力、老谋深算、贪得无厌
     public string Personality { get; set; } = "中庸";     // 性格简述 (如：阴险、刚直、谄媚)
     public string Style { get; set; } = "明哲保身";       // 处事风格 (如：结党营私、雷厉风行、拥兵自重)
-    public string Faction { get; set; } = "清流派";       // 派系归属 (清流派/外戚派/阉党派/割据军阀)
+    public string Faction { get; set; } = FactionCatalog.PureStream;       // 派系归属 (清流派/外戚派/阉党派/西园亲军/割据军阀/反叛势力)
 
     // 生存与生命周期控制
     public int Health { get; set; } = 100;               // 健康值 (0-100)，归 0 则病逝

@@ -1211,4 +1211,35 @@ public class EngineTests
         Assert.True(gov.GovernedProvinceId == null, "太守寿终后应清空 GovernedProvinceId");
         Assert.True(prov.GovernorId == null, "州郡 GovernorId 应被释放");
     }
+
+    // P2-5 守住 FactionStance 矩阵不漂移：现有 4 硬编码 NPC × 7 Intent 的 Stance 行为应严格保留
+    [Fact]
+    public void FactionStance_矩阵与现有硬编码一致()
+    {
+        // 赈灾：清流派(曹操)=AGREED, 阉党派(张让)=OPPOSE
+        Assert.Equal("AGREED", FactionStance.GetStance(FactionCatalog.PureStream, CourtIntent.Relief));
+        Assert.Equal("OPPOSE", FactionStance.GetStance(FactionCatalog.EunuchFaction, CourtIntent.Relief));
+        // 诛杀：清流派=AGREED
+        Assert.Equal("AGREED", FactionStance.GetStance(FactionCatalog.PureStream, CourtIntent.Execute));
+        // 奖赏：清流派=AGREED, 外戚派(何进)=AGREED
+        Assert.Equal("AGREED", FactionStance.GetStance(FactionCatalog.PureStream, CourtIntent.Reward));
+        Assert.Equal("AGREED", FactionStance.GetStance(FactionCatalog.ImperialClan, CourtIntent.Reward));
+        // 国帑：阉党派=AGREED, 外戚派=OPPOSE
+        Assert.Equal("AGREED", FactionStance.GetStance(FactionCatalog.EunuchFaction, CourtIntent.Treasury));
+        Assert.Equal("OPPOSE", FactionStance.GetStance(FactionCatalog.ImperialClan, CourtIntent.Treasury));
+        // 整军：外戚派=AGREED, 西园亲军(蹇硕)=AGREED
+        Assert.Equal("AGREED", FactionStance.GetStance(FactionCatalog.ImperialClan, CourtIntent.MilitaryBuild));
+        Assert.Equal("AGREED", FactionStance.GetStance(FactionCatalog.WesternGarden, CourtIntent.MilitaryBuild));
+        // 整饬宦官：外戚派=AGREED, 阉党派=OPPOSE
+        Assert.Equal("AGREED", FactionStance.GetStance(FactionCatalog.ImperialClan, CourtIntent.EunuchReform));
+        Assert.Equal("OPPOSE", FactionStance.GetStance(FactionCatalog.EunuchFaction, CourtIntent.EunuchReform));
+        // 举荐：清流派=AGREED, 西园亲军=AGREED
+        Assert.Equal("AGREED", FactionStance.GetStance(FactionCatalog.PureStream, CourtIntent.Talent));
+        Assert.Equal("AGREED", FactionStance.GetStance(FactionCatalog.WesternGarden, CourtIntent.Talent));
+
+        // 矩阵未命中的派系×意图组合应返回 null（不主动表态）
+        Assert.Null(FactionStance.GetStance(FactionCatalog.PureStream, CourtIntent.MilitaryBuild));
+        Assert.Null(FactionStance.GetStance(FactionCatalog.WesternGarden, CourtIntent.Relief));
+        Assert.Null(FactionStance.GetStance(FactionCatalog.Warlord, CourtIntent.Relief));
+    }
 }

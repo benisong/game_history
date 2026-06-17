@@ -28,47 +28,46 @@ public class MockScheduler : IAIScheduler
         var cls = IntentClassifier.Classify(playerInput);
         result.PrimaryIntent = cls.Intent.ToString();
 
-        // P2-6 按意图派反应（保留 Frontend 既有的"赏赐何进" 与"训诫张让" 文案）
+        // P2-5：所有朝会发言 NPC 的 Stance 一律从 FactionStance 矩阵查；矩阵当前条目严格复制原硬编码语义
+        // Frontend 仍保留"赏赐何进"与"训诫张让"两条特殊文案
         switch (cls.Intent)
         {
             case CourtIntent.Reward:
-                // 与原"赏赐何进/重赏何进" 行为一致：以 Reward intent 触发
-                Emit(result, "he_jin", "何进", "AGREED", 15, 5,
+                EmitFaction(result, cls.Intent, "he_jin", "何进", FactionCatalog.ImperialClan, 15, 5,
                     "臣谢陛下隆恩！臣定当整军备战，保大汉无虞！");
                 break;
             case CourtIntent.EunuchReform:
-                // 与原"冷落张让/训诫张让" 行为一致：以 EunuchReform intent 触发
-                Emit(result, "zhang_rang", "张让", "OPPOSE", -15, -3,
+                EmitFaction(result, cls.Intent, "zhang_rang", "张让", FactionCatalog.EunuchFaction, -15, -3,
                     "陛下如今薄情如此，奴才只盼着陛下龙体安康呐...");
                 break;
             case CourtIntent.Relief:
-                Emit(result, "cao_cao", "曹操", "AGREED", 5, 2,
+                EmitFaction(result, cls.Intent, "cao_cao", "曹操", FactionCatalog.PureStream, 5, 2,
                     "陛下圣明！赈灾乃安民之本，臣愿领旨督办！");
-                Emit(result, "zhang_rang", "张让", "OPPOSE", -3, 0,
+                EmitFaction(result, cls.Intent, "zhang_rang", "张让", FactionCatalog.EunuchFaction, -3, 0,
                     "陛下，国库仅 {Treasury} 万钱……不如由奴才来经办，定能省下不少银两。");
                 break;
             case CourtIntent.Execute:
-                Emit(result, "cao_cao", "曹操", "AGREED", 10, 5,
+                EmitFaction(result, cls.Intent, "cao_cao", "曹操", FactionCatalog.PureStream, 10, 5,
                     "臣附议！乱臣贼子，人人得而诛之！");
                 break;
             case CourtIntent.Treasury:
                 var zhangTreasuryText = state.Treasury < 3000
                     ? "国库仅 {Treasury} 万钱，奴才愿为陛下查核诸库，纵节衣缩食亦必保军国无误。"
                     : "国库充盈（{Treasury} 万钱），奴才愿为陛下查核诸库，绝不令军国大计因钱粮误事。";
-                Emit(result, "zhang_rang", "张让", "AGREED", 3, 2, zhangTreasuryText);
-                Emit(result, "he_jin", "何进", "OPPOSE", -2, 0,
+                EmitFaction(result, cls.Intent, "zhang_rang", "张让", FactionCatalog.EunuchFaction, 3, 2, zhangTreasuryText);
+                EmitFaction(result, cls.Intent, "he_jin", "何进", FactionCatalog.ImperialClan, -2, 0,
                     "军费关乎社稷，不可尽付中官之手。");
                 break;
             case CourtIntent.MilitaryBuild:
-                Emit(result, "he_jin", "何进", "AGREED", 3, 2,
+                EmitFaction(result, cls.Intent, "he_jin", "何进", FactionCatalog.ImperialClan, 3, 2,
                     "黄巾虽乱，朝廷威灵尚在。臣请整北军，明示天下。");
-                Emit(result, "jian_shuo", "蹇硕", "AGREED", 3, 2,
+                EmitFaction(result, cls.Intent, "jian_shuo", "蹇硕", FactionCatalog.WesternGarden, 3, 2,
                     "西园诸校尉本为陛下亲军，愿为天子先驱。");
                 break;
             case CourtIntent.Talent:
-                Emit(result, "cao_cao", "曹操", "AGREED", 5, 2,
+                EmitFaction(result, cls.Intent, "cao_cao", "曹操", FactionCatalog.PureStream, 5, 2,
                     "臣不敢自夸，愿以实绩报陛下知遇。");
-                Emit(result, "jian_shuo", "蹇硕", "AGREED", 3, 2,
+                EmitFaction(result, cls.Intent, "jian_shuo", "蹇硕", FactionCatalog.WesternGarden, 3, 2,
                     "西园诸校尉皆陛下亲擢，正可分外廷之权。");
                 break;
             case CourtIntent.Decline:
@@ -160,6 +159,14 @@ public class MockScheduler : IAIScheduler
             ExpectedPowerChange = powDelta
         });
         _spokenThisXun.Add(id);
+    }
+
+    // P2-5：按 NPC 派系 + 当前 Intent 查 FactionStance 矩阵查 stance；矩阵未命中则不发声
+    private void EmitFaction(AIOrchestrationResult result, CourtIntent intent, string id, string name, string faction, int favDelta, int powDelta, string text)
+    {
+        var stance = FactionStance.GetStance(faction, intent);
+        if (stance == null) return;  // 该派系对此 Intent 不主动表态
+        Emit(result, id, name, stance, favDelta, powDelta, text);
     }
 
     private void EmitFallback(AIOrchestrationResult result, GameState state, string activeOfficerId)
