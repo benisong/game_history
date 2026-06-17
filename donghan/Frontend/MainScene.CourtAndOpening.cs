@@ -272,7 +272,7 @@ public partial class MainScene : Control
         seal.AddThemeFontSizeOverride("font_size", 27);
         box.AddChild(seal);
 
-        var dateLabel = new Label { Text = "光和七年 · 春" };
+        var dateLabel = new Label { Text = "光和七年 · 孟夏" };
         StyleColumnTitle(dateLabel, PopupSkin.Court);
         dateLabel.AddThemeColorOverride("font_color", new Color(0.88f, 0.62f, 0.20f, 1.0f));
         box.AddChild(dateLabel);

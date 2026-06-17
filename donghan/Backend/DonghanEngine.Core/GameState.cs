@@ -75,7 +75,7 @@ public class GameState
 
     // 纪元时间系统（旬：1-3，每旬十天，三旬为一月）
     public int Year { get; set; } = 184; // 中平元年
-    public int Month { get; set; } = 4;  // 孟春/仲春
+    public int Month { get; set; } = 4;  // 孟夏（四月）
     public int Xun { get; set; } = 1;    // 1: 上旬, 2: 中旬, 3: 下旬
 
     // 记录上一次进行 NPC 衰老病退物理结算的时间戳 (格式：Year * 1000 + Month * 10 + Xun)
@@ -171,6 +171,26 @@ public class GameState
         AssignInitialGovernor("jizhou", "qiao_xuan");
         AssignInitialGovernor("yuzhou", "lu_zhi");
         AssignInitialGovernor("bingzhou", "huangfu_song");
+
+        RefreshReignEra();
+    }
+
+    // 灵帝年号系统：光和(178 - 184年11月)，184年12月改元中平(184 - 189)。
+    // 之前的实现把 ReignTitle 永远固定为"光和"、ReignYear 逐年 ++，
+    // 跑到 189 年会显示"光和12年"——既超出光和实际年数(仅7年)，也无视了184年底的改元。
+    // 这里按 Year/Month 实时推导正确年号，每次时间推进后调用。
+    public void RefreshReignEra()
+    {
+        if (Year < 184 || (Year == 184 && Month < 12))
+        {
+            ReignTitle = "光和";
+            ReignYear = Year - 177; // 178 = 光和元年
+        }
+        else
+        {
+            ReignTitle = "中平";
+            ReignYear = Year - 183; // 184 = 中平元年
+        }
     }
 
     private void AssignInitialGovernor(string provinceId, string npcId)

@@ -166,7 +166,7 @@ public partial class GameEngine
         {
             _state.PrivateTreasury = Math.Clamp(_state.PrivateTreasury + 1000, 0, 999999);
             _state.ImperialPower = Math.Clamp(_state.ImperialPower - 3, 0, 100); 
-            _state.AddToChronicle("【西园】皇帝下旨拍卖东郡太守一职，得钱一千万钱，悉数运入西园天子私库。");
+            _state.AddToChronicle("【西园】皇帝下旨拍卖并州刺史、东郡太守等要职，得钱一千万钱，悉数运入西园天子私库。");
             
             result.StoryText = "【西园鬻官】\n\n陛下端坐在西园精舍中，亲自朱笔御批，将并州刺史、东郡太守等要职明码标价，引得四方豪商、世家庶子趋之若鹜。抬着真金白银的箱子在西园外排成长龙。\n\n[color=green]● 天子西园私库：+1000 万钱 (得钱一千万)[/color]\n[color=red]● 朝廷皇权声望：-3 (买官鬻爵，纲纪败坏，民心不稳)[/color]";
         }
@@ -371,9 +371,11 @@ public partial class GameEngine
             {
                 _state.Month = 1;
                 _state.Year++;
-                _state.ReignYear++;
             }
         }
+
+        // 按 Year/Month 实时推导年号（光和→184年底改元中平），取代旧的 ReignYear++ 逐年递增
+        _state.RefreshReignEra();
 
         _state.AddToChronicle($"【时间更迭】大汉历纪：{_state.Year}年{_state.Month}月 {(_state.Xun == 1 ? "上旬" : _state.Xun == 2 ? "中旬" : "下旬")}。");
 
