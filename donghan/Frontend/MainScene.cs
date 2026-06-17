@@ -46,6 +46,14 @@ public partial class MainScene : Control
     private Control? _courtRitualOverlay;
     private bool _isUnskippableTransitionActive;
 
+    // P1-B2 修复：缓存朝会仪式 overlay 的子节点引用，避免每帧 GetNodeOrNull + ! 强制解引用风险
+    private Label? _ritualTitleLabel;
+    private Label? _ritualSceneNameLabel;
+    private TextureRect? _ritualArtworkRect;
+    private RichTextLabel? _ritualImageTextLabel;
+    private Label? _ritualCaptionLabel;
+    private Label? _ritualPreloadHintLabel;
+
     // A1 结局面板：游戏结局弹出后只显示一次，避免 _Process 每帧重弹
     private bool _outcomeHandled;
     private GameOutcome _handledOutcome = GameOutcome.Playing;

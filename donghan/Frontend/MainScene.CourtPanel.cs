@@ -651,6 +651,7 @@ public partial class MainScene : Control
         StylePopupTitle(title, PopupSkin.Court);
         title.AddThemeFontSizeOverride("font_size", 28);
         root.AddChild(title);
+        _ritualTitleLabel = title; // P1-B2: 缓存引用避免 ! 强制解引用
 
         var picture = new Panel { Name = "RitualPicture", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, SizeFlagsVertical = Control.SizeFlags.ExpandFill };
         picture.AddThemeStyleboxOverride("panel", CreateCourtRitualPictureStyle());
@@ -667,6 +668,7 @@ public partial class MainScene : Control
         };
         SetFullRect(artwork);
         picture.AddChild(artwork);
+        _ritualArtworkRect = artwork; // P1-B2: 缓存引用
 
         var artworkWash = new ColorRect
         {
@@ -691,6 +693,7 @@ public partial class MainScene : Control
         StyleColumnTitle(sceneName, PopupSkin.Court);
         sceneName.AddThemeFontSizeOverride("font_size", 23);
         pictureBox.AddChild(sceneName);
+        _ritualSceneNameLabel = sceneName; // P1-B2: 缓存引用
 
         var imageText = new RichTextLabel
         {
@@ -704,17 +707,20 @@ public partial class MainScene : Control
         imageText.AddThemeColorOverride("default_color", new Color(0.91f, 0.76f, 0.46f, 1.0f));
         imageText.AddThemeFontSizeOverride("normal_font_size", 21);
         pictureBox.AddChild(imageText);
+        _ritualImageTextLabel = imageText; // P1-B2: 缓存引用
 
         var caption = new Label { Name = "RitualCaption" };
         StylePopupBodyText(caption, PopupSkin.Court);
         caption.HorizontalAlignment = HorizontalAlignment.Center;
         caption.AddThemeFontSizeOverride("font_size", 18);
         root.AddChild(caption);
+        _ritualCaptionLabel = caption; // P1-B2: 缓存引用
 
         var preload = CreateActionPreviewLabel(PopupSkin.Court);
         preload.Name = "RitualPreloadHint";
         preload.HorizontalAlignment = HorizontalAlignment.Center;
         root.AddChild(preload);
+        _ritualPreloadHintLabel = preload; // P1-B2: 缓存引用
 
         var lockLabel = new Label
         {
@@ -763,28 +769,29 @@ public partial class MainScene : Control
     {
         if (_courtRitualOverlay == null) return;
 
-        _courtRitualOverlay.GetNodeOrNull<Label>("RitualRoot/RitualTitle")!.Text = slide.Title;
-        _courtRitualOverlay.GetNodeOrNull<Label>("RitualRoot/RitualPicture/RitualPictureBox/RitualSceneName")!.Text = slide.SceneName;
-        var artwork = _courtRitualOverlay.GetNodeOrNull<TextureRect>("RitualRoot/RitualPicture/RitualArtwork");
-        if (artwork != null)
+        // P1-B2 修复：用 BuildCourtRitualOverlay 时缓存的引用，避免 ! 强制解引用
+        if (_ritualTitleLabel != null) _ritualTitleLabel.Text = slide.Title;
+        if (_ritualSceneNameLabel != null) _ritualSceneNameLabel.Text = slide.SceneName;
+        if (_ritualArtworkRect != null)
         {
-            artwork.Texture = string.IsNullOrWhiteSpace(slide.ImagePath) ? null : LoadTextureFromProjectFile(slide.ImagePath);
-            if (artwork.Texture == null && !string.IsNullOrWhiteSpace(slide.ImagePath))
+            _ritualArtworkRect.Texture = string.IsNullOrWhiteSpace(slide.ImagePath) ? null : LoadTextureFromProjectFile(slide.ImagePath);
+            if (_ritualArtworkRect.Texture == null && !string.IsNullOrWhiteSpace(slide.ImagePath))
             {
                 GD.PrintErr($"朝会仪式图片未载入：{slide.ImagePath}");
             }
         }
-        _courtRitualOverlay.GetNodeOrNull<RichTextLabel>("RitualRoot/RitualPicture/RitualPictureBox/RitualImageText")!.Text = $"[center]{slide.ImageText}[/center]";
-        _courtRitualOverlay.GetNodeOrNull<Label>("RitualRoot/RitualCaption")!.Text = slide.Caption;
-        _courtRitualOverlay.GetNodeOrNull<Label>("RitualRoot/RitualPreloadHint")!.Text = slide.PreloadHint;
+        if (_ritualImageTextLabel != null) _ritualImageTextLabel.Text = $"[center]{slide.ImageText}[/center]";
+        if (_ritualCaptionLabel != null) _ritualCaptionLabel.Text = slide.Caption;
+        if (_ritualPreloadHintLabel != null) _ritualPreloadHintLabel.Text = slide.PreloadHint;
     }
 
     private void RenderCourtRitualWaitingSlide(CourtRitualSlide slide)
     {
         if (_courtRitualOverlay == null) return;
 
+        // 先用 slide 数据填充各 label，再覆盖 preload hint
         RenderCourtRitualSlide(slide);
-        _courtRitualOverlay.GetNodeOrNull<Label>("RitualRoot/RitualPreloadHint")!.Text = "天机演算中。";
+        if (_ritualPreloadHintLabel != null) _ritualPreloadHintLabel.Text = "天机演算中。";
     }
 
     private static void ClearChildren(VBoxContainer box)
