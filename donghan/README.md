@@ -26,7 +26,10 @@
 
 `GameState.Year=184`（中平元年，光和七年）、`Month=4`、`Xun=1`（上旬）。三旬为月、十二月为年。
 
-### 2.3 十三州郡 (`Province`)
+### 2.3 六郡 (`Province`)
+
+> P1-B3 修复：README 此前写"十三州"但代码只实装 6 郡。改用"六郡"，并在叙事文案中保留"十三州"作历史氛围。
+> 实装 6 郡：司隶 / 冀州 / 并州 / 兖州 / 豫州 / 荆州。其余 7 州（青/徐/扬/益/交/凉/幽）待 P2+ 扩展。
 
 每郡独立维护 `LocalSupport`（0-100）、`Garrison`、`Wealth`、`GovernorId`、`IsRebelling`、`RebelFaction`、`RebellionMonths`、`LowSupportStreakMonths`。叛乱规则在 `GameEngine.Province.cs` 中实现：
 
@@ -247,7 +250,7 @@
 主界面 `MainScene.cs` 采取第一人称视角。御案上**横向并排 4 张 portrait 卡**（270×405，3:4 竖版），居中放置：
 
 - **大朝会**：点击弹出朝会输入，确认后触发三段式大朝仪遮罩动画，再进入玩家诏令的异步处理流程。
-- **黄门密札**：点击进入【情报】独占弹窗，显示十三州预警、地方局势与可执行的治理动作。
+- **黄门密札**：点击进入【情报】独占弹窗，显示六郡预警、地方局势与可执行的治理动作。
 - **西园别苑**：点击进入西园独立面板，管理新军、账目、募兵。
 - **起驾巡幸**：点击后切换至后宫/西园相关地点，并刷新主界面状态。
 
@@ -271,7 +274,7 @@
 | `MainScene.CourtPanel.cs` | 810 | 大朝会五段式转场、择议/群臣奏对、群臣辩论渲染 |
 | `MainScene.CourtAndOpening.cs` | 389 | 开场"黄巾乱起 · 天子临朝"、横幅岁月、起驾面板 |
 | `MainScene.CourtTopics.cs` | 137 | 五大常议议题数据 |
-| `MainScene.IntelPanel.cs` | 297 | 黄门密札 13 州预警 + 叛乱 + 地方详情 |
+| `MainScene.IntelPanel.cs` | 297 | 黄门密札 6 郡预警 + 叛乱 + 地方详情 |
 | `MainScene.IntelActions.cs` | 411 | 情报决策（召还/外任/颁授虎符/招安） |
 | `MainScene.WestGardenPanel.cs` | 474 | 西园犒赏/募兵/军簿/账目 |
 | `MainScene.DeskAndAffairs.cs` | 475 | 御案折匣 · 尚书台批阅、起居注 |
@@ -348,7 +351,7 @@ game_history/
         ├── MainScene.CourtPanel.cs                     # 大朝会五段式转场 (810)
         ├── MainScene.CourtTopics.cs                    # 五大常议议题 (137)
         ├── MainScene.DeskAndAffairs.cs                 # 御案折匣 · 尚书台 (475)
-        ├── MainScene.IntelPanel.cs                     # 黄门密札 13 州 (297)
+        ├── MainScene.IntelPanel.cs                     # 黄门密札 6 郡 (297)
         ├── MainScene.IntelActions.cs                   # 情报决策 (411)
         ├── MainScene.Ministers.cs                      # 群臣档案 + 籍没 (408)
         ├── MainScene.WestGardenPanel.cs                # 西园犒赏/募兵/账目 (474)
