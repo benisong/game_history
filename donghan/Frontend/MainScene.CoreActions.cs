@@ -80,7 +80,6 @@ public partial class MainScene : Control
         _caoCaoButton?.Hide();
         _jianShuoButton?.Hide();
         _travelButton?.Hide();
-        _npcScrollContainer?.Hide();
     }
 
     // 动态控制右侧控制面板

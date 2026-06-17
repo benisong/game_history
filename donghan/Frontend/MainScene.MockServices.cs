@@ -10,7 +10,10 @@ namespace DonghanFrontend;
 // Mock 调试组件以便在编译期直接提供依赖
 public class MockScheduler : IAIScheduler
 {
-    public INpcLifecycleManager NpcManager { get; } = null!;
+    // P3 修复：此前为 null!，导致 GameEngine 的董卓进京 trigger（189/9）调用
+    // _scheduler?.NpcManager?.DeployNpcToCourt 时被 ?. 短路，董卓永远无法入京。
+    // 接上真实生命周期管理器（与 Console/Program.cs、EngineTests 一致）。
+    public INpcLifecycleManager NpcManager { get; } = new NpcLifecycleManager(new NpcRegistry());
 
     public Task<AIOrchestrationResult> OrchestrateGrandCourtAsync(string playerInput, string activeOfficerId, GameState state)
     {
@@ -65,8 +68,55 @@ public class MockScheduler : IAIScheduler
 
     public Task OrchestrateXunUpdateAsync(GameState state)
     {
+        // P3 修复：此前为空实现，导致前端 state.ActiveEdicts 永远为空，
+        // 御案折匣（尚书台批阅）系统在 Godot 前端形同虚设。
+        // 对齐 Console 版：每旬按 state 真实状态动态补充奏折（去重避免重复堆积）。
+        if (!ShouldAddEdicts) return Task.CompletedTask;
+
+        // 赈灾急报折：民心跌破 50 且尚无在途赈灾折时生成
+        if (state.PopularSupport < 50 && !state.ActiveEdicts.Any(e => e.Title.Contains("赈灾")))
+        {
+            state.ActiveEdicts.Add(new ImperialEdict
+            {
+                Title = "冀州旱灾急折",
+                Type = EdictType.UrgentCrisis,
+                SubmittingNpcId = "cao_cao",
+                TargetNpcId = "cao_cao",
+                NarrativeContent = "冀州大旱三月，赤地千里，流民数十万嗷嗷待哺。请陛下速发国库 2000 万钱赈济灾民！",
+                ExpiryXun = 3,
+                Options = new List<EdictOption>
+                {
+                    new() { Description = "准奏！命曹操督办（廉洁可靠）", TreasuryDelta = -2000, PopularSupportDelta = 15, TargetNpcPowerDelta = 5, TargetNpcFavorabilityDelta = 10 },
+                    new() { Description = "准奏…但命张让督办（中饱私囊风险极高）", TreasuryDelta = -2000, PopularSupportDelta = -5, TargetNpcPowerDelta = 5, TargetNpcFavorabilityDelta = 5 },
+                    new() { Description = "留中不发（贪墨府库不予赈济）", HealthDelta = 0 }
+                }
+            });
+        }
+
+        // 十常侍邀功折：张让在朝且尚无其在途奏折时生成
+        if (state.Npcs.ContainsKey("zhang_rang") && !state.ActiveEdicts.Any(e => e.SubmittingNpcId == "zhang_rang"))
+        {
+            state.ActiveEdicts.Add(new ImperialEdict
+            {
+                Title = "十常侍邀功折",
+                Type = EdictType.Merit,
+                SubmittingNpcId = "zhang_rang",
+                TargetNpcId = "zhang_rang",
+                NarrativeContent = "奴才张让叩请陛下，念奴才多年忠心侍奉，赐奴才金帛之赏。",
+                ExpiryXun = 3,
+                Options = new List<EdictOption>
+                {
+                    new() { Description = "赏千金（安抚阉党）", TreasuryDelta = -100, TargetNpcFavorabilityDelta = 10 },
+                    new() { Description = "驳斥：贪得无厌！（削减其权势）", TargetNpcFavorabilityDelta = -20, TargetNpcPowerDelta = -5 }
+                }
+            });
+        }
+
         return Task.CompletedTask;
     }
+
+    // 是否每旬补充奏折（对齐 Console MockScheduler；测试/沙盒可关）
+    public bool ShouldAddEdicts { get; set; } = true;
 
     private void FilterIneligibleSpeakers(AIOrchestrationResult result, GameState state)
     {

@@ -281,12 +281,12 @@ public partial class MainScene : Control
     {
         return npc.Faction switch
         {
-            "外戚派" => 0,
-            "阉党派" => 1,
-            "西园亲军" => 2,
-            "清流派" => 3,
-            "地方州牧" => 4,
-            "割据军阀" => 5,
+            FactionCatalog.ImperialClan => 0,   // 外戚派
+            FactionCatalog.EunuchFaction => 1,  // 阉党派
+            FactionCatalog.WesternGarden => 2,  // 西园亲军
+            FactionCatalog.PureStream => 3,     // 清流派
+            FactionCatalog.Warlord => 4,        // 割据军阀
+            FactionCatalog.Rebel => 5,          // 反叛势力
             _ => 6
         };
     }
@@ -295,12 +295,12 @@ public partial class MainScene : Control
     {
         return faction switch
         {
-            "外戚派" => "【外戚武臣】",
-            "阉党派" => "【中官近侍】",
-            "西园亲军" => "【西园亲军】",
-            "清流派" => "【清流名臣】",
-            "地方州牧" => "【外镇州牧】",
-            "割据军阀" => "【边军豪强】",
+            FactionCatalog.ImperialClan => "【外戚武臣】",
+            FactionCatalog.EunuchFaction => "【中官近侍】",
+            FactionCatalog.WesternGarden => "【西园亲军】",
+            FactionCatalog.PureStream => "【清流名臣】",
+            FactionCatalog.Warlord => "【边军豪强】",
+            FactionCatalog.Rebel => "【反叛势力】",
             _ => $"【{faction}】"
         };
     }
@@ -519,6 +519,7 @@ public partial class MainScene : Control
     {
         if (_courtDecisionsVBox == null) return;
         ClearChildrenExceptHeader(_courtDecisionsVBox);
+        AddDecisionButton("御案折匣", "批阅尚书台待决奏折（赈灾、邀功、弹劾等）。", OpenAffairsFromCourt);
         AddDecisionButton("亲拟圣旨", "展开自由输入，直接口召百官。", ShowFreeEdictBox);
         AddDecisionButton("退朝", "关闭朝会，回到御案。", CloseCourtSession);
     }
@@ -534,6 +535,7 @@ public partial class MainScene : Control
         }
 
         AddDecisionButton("亲拟圣旨", "展开自由输入，乾纲独断。", ShowFreeEdictBox);
+        AddDecisionButton("御案折匣", "批阅尚书台待决奏折。", OpenAffairsFromCourt);
         AddDecisionButton("退朝", "结束本次朝议。", CloseCourtSession);
     }
 
@@ -593,6 +595,13 @@ public partial class MainScene : Control
     {
         _courtFreeEdictVBox?.Show();
         _courtInput?.GrabFocus();
+    }
+
+    // 从朝会"御前裁断"进入御案折匣：先退出朝会弹窗，再开折匣（均为独占弹窗，不可叠加）。
+    private void OpenAffairsFromCourt()
+    {
+        _windowManager.PopWindow();
+        OnAffairsBoxPressed();
     }
 
     private void ExecuteCourtDecision(CourtDecisionViewModel decision)

@@ -169,7 +169,6 @@ public partial class MainScene : Control
         if (_sellOfficeButton != null) _sellOfficeButton.Pressed += () => DoQuickAction("sell_office");
         if (_haremRestButton != null) _haremRestButton.Pressed += () => DoQuickAction("harem_rest");
 
-        InitializeDynamicNpcList();
         InitializeAffairsPanel();
         InitializeIntelPanel();
         InitializeCourtPanel();
