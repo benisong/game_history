@@ -13,7 +13,7 @@ class MockScheduler : IAIScheduler
 
     public Task<AIOrchestrationResult> OrchestrateGrandCourtAsync(string playerInput, string activeOfficerId, GameState state)
     {
-        var result = new AIOrchestrationResult { PrimaryIntent = "POLITICS" };
+        var result = new AIOrchestrationResult();
 
         // P2-3 修复：旬变重置"本旬已发言"集合，避免同一旬内同一 NPC 重复表态；同时保证无关键词命中时朝会不再冷场
         int xk = XunKeyOf(state);
@@ -23,55 +23,97 @@ class MockScheduler : IAIScheduler
             _lastXunKey = xk;
         }
 
-        // 根据玩家输入生成简单的大臣反应
-        if (playerInput.Contains("赈") || playerInput.Contains("灾"))
-        {
-            result.Speeches.Add(new CourtSpeech { MinisterId = "cao_cao", MinisterName = "曹操", SpeechText = "陛下圣明！赈灾乃安民之本，臣愿领旨督办！", Stance = "AGREED", ExpectedFavorabilityChange = 5, ExpectedPowerChange = 2 });
-            result.Speeches.Add(new CourtSpeech { MinisterId = "zhang_rang", MinisterName = "张让", SpeechText = "陛下，国库空虚啊……不如由奴才来经办，定能省下不少银两。", Stance = "OPPOSE", ExpectedFavorabilityChange = -3, ExpectedPowerChange = 0 });
-            _spokenThisXun.Add("cao_cao");
-            _spokenThisXun.Add("zhang_rang");
-        }
-        else if (playerInput.Contains("抄") || playerInput.Contains("诛"))
-        {
-            result.Speeches.Add(new CourtSpeech { MinisterId = "cao_cao", MinisterName = "曹操", SpeechText = "臣附议！乱臣贼子，人人得而诛之！", Stance = "AGREED", ExpectedFavorabilityChange = 10, ExpectedPowerChange = 5 });
-            _spokenThisXun.Add("cao_cao");
-        }
-        else if (playerInput.Contains("赏") || playerInput.Contains("升"))
-        {
-            result.Speeches.Add(new CourtSpeech { MinisterId = "cao_cao", MinisterName = "曹操", SpeechText = "陛下隆恩浩荡！臣定当鞠躬尽瘁！", Stance = "AGREED", ExpectedFavorabilityChange = 15, ExpectedPowerChange = 3 });
-            _spokenThisXun.Add("cao_cao");
-        }
-        else
-        {
-            // P2-3 兜底：玩家输入未匹配任何意图分支时，从殿中未发言 NPC 池选 1 名表态（避免朝会冷场）
-            // 优先 activeOfficerId（若他还未发言且在殿中），否则按 Power 降序挑首位
-            var pool = state.Npcs.Values
-                .Where(n => n.IsActive && n.InitialLocation == "洛阳朝堂" && !_spokenThisXun.Contains(n.Id))
-                .OrderByDescending(n => n.Power)
-                .ToList();
+        // P2-6 意图分类
+        var cls = IntentClassifier.Classify(playerInput);
+        result.PrimaryIntent = cls.Intent.ToString();
 
-            string chosenId = !string.IsNullOrEmpty(activeOfficerId)
-                && pool.Any(n => n.Id == activeOfficerId)
-                ? activeOfficerId
-                : (pool.FirstOrDefault()?.Id ?? string.Empty);
-
-            if (!string.IsNullOrEmpty(chosenId) && state.Npcs.TryGetValue(chosenId, out var npc))
-            {
-                result.Speeches.Add(new CourtSpeech
-                {
-                    MinisterId = npc.Id,
-                    MinisterName = npc.Name,
-                    SpeechText = "臣等谨遵圣谕。",
-                    Stance = "AGREED",
-                    ExpectedFavorabilityChange = 1,
-                    ExpectedPowerChange = 0
-                });
-                _spokenThisXun.Add(npc.Id);
-            }
-            // 池子空了（罕见）：本旬所有人都已发言，返空 result，由前端 ViewModel 自行处理
+        // P2-6 按意图派反应
+        switch (cls.Intent)
+        {
+            case CourtIntent.Relief:
+                Emit(result, "cao_cao", "曹操", "AGREED", 5, 2,
+                    "陛下圣明！赈灾乃安民之本，臣愿领旨督办！");
+                Emit(result, "zhang_rang", "张让", "OPPOSE", -3, 0,
+                    "陛下，国库空虚啊……不如由奴才来经办，定能省下不少银两。");
+                break;
+            case CourtIntent.Execute:
+                Emit(result, "cao_cao", "曹操", "AGREED", 10, 5,
+                    "臣附议！乱臣贼子，人人得而诛之！");
+                break;
+            case CourtIntent.Reward:
+                Emit(result, "cao_cao", "曹操", "AGREED", 15, 3,
+                    "陛下隆恩浩荡！臣定当鞠躬尽瘁！");
+                break;
+            case CourtIntent.Treasury:
+                Emit(result, "zhang_rang", "张让", "AGREED", 3, 2,
+                    "奴才愿为陛下查核诸库，绝不令军国大计因钱粮误事。");
+                Emit(result, "he_jin", "何进", "OPPOSE", -2, 0,
+                    "军费关乎社稷，不可尽付中官之手。");
+                break;
+            case CourtIntent.MilitaryBuild:
+                Emit(result, "he_jin", "何进", "AGREED", 3, 2,
+                    "黄巾虽乱，朝廷威灵尚在。臣请整北军，明示天下。");
+                Emit(result, "jian_shuo", "蹇硕", "AGREED", 3, 2,
+                    "西园诸校尉本为陛下亲军，愿为天子先驱。");
+                break;
+            case CourtIntent.EunuchReform:
+                Emit(result, "he_jin", "何进", "AGREED", 5, 2,
+                    "中官干政，朝纲日坏。臣请陛下稍裁其权，以安百官。");
+                Emit(result, "zhang_rang", "张让", "OPPOSE", -5, 0,
+                    "奴才等侍奉禁中，所恃不过陛下一念信任。外臣此言，其心可诛。");
+                break;
+            case CourtIntent.Talent:
+                Emit(result, "cao_cao", "曹操", "AGREED", 5, 2,
+                    "臣不敢自夸，愿以实绩报陛下知遇。");
+                Emit(result, "jian_shuo", "蹇硕", "AGREED", 3, 2,
+                    "西园诸校尉皆陛下亲擢，正可分外廷之权。");
+                break;
+            case CourtIntent.Decline:
+            case CourtIntent.Idle:
+            case CourtIntent.Intel:
+            case CourtIntent.Travel:
+                // 玩家驳回/静候/转情报/转场：不动朝会发言（NPC 已在视图层表达态度）
+                break;
+            case CourtIntent.Unknown:
+            default:
+                // P2-3 兜底：从殿中未发言池按 Power 选 1 名表态
+                EmitFallback(result, state, activeOfficerId);
+                break;
         }
 
         return Task.FromResult(result);
+    }
+
+    private void Emit(AIOrchestrationResult result, string id, string name, string stance, int favDelta, int powDelta, string text)
+    {
+        result.Speeches.Add(new CourtSpeech
+        {
+            MinisterId = id,
+            MinisterName = name,
+            Stance = stance,
+            SpeechText = text,
+            ExpectedFavorabilityChange = favDelta,
+            ExpectedPowerChange = powDelta
+        });
+        _spokenThisXun.Add(id);
+    }
+
+    private void EmitFallback(AIOrchestrationResult result, GameState state, string activeOfficerId)
+    {
+        var pool = state.Npcs.Values
+            .Where(n => n.IsActive && n.InitialLocation == "洛阳朝堂" && !_spokenThisXun.Contains(n.Id))
+            .OrderByDescending(n => n.Power)
+            .ToList();
+
+        string chosenId = !string.IsNullOrEmpty(activeOfficerId)
+            && pool.Any(n => n.Id == activeOfficerId)
+            ? activeOfficerId
+            : (pool.FirstOrDefault()?.Id ?? string.Empty);
+
+        if (!string.IsNullOrEmpty(chosenId) && state.Npcs.TryGetValue(chosenId, out var npc))
+        {
+            Emit(result, npc.Id, npc.Name, "AGREED", 1, 0, "臣等谨遵圣谕。");
+        }
     }
 
     // P2-3 旬变追踪：每旬开始时清空"已发言 NPC 集合"，避免跨旬误判
