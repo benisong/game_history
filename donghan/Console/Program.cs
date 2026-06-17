@@ -34,7 +34,7 @@ class MockScheduler : IAIScheduler
                 Emit(result, "cao_cao", "曹操", "AGREED", 5, 2,
                     "陛下圣明！赈灾乃安民之本，臣愿领旨督办！");
                 Emit(result, "zhang_rang", "张让", "OPPOSE", -3, 0,
-                    "陛下，国库空虚啊……不如由奴才来经办，定能省下不少银两。");
+                    "陛下，国库仅 {Treasury} 万钱……不如由奴才来经办，定能省下不少银两。");
                 break;
             case CourtIntent.Execute:
                 Emit(result, "cao_cao", "曹操", "AGREED", 10, 5,
@@ -45,8 +45,10 @@ class MockScheduler : IAIScheduler
                     "陛下隆恩浩荡！臣定当鞠躬尽瘁！");
                 break;
             case CourtIntent.Treasury:
-                Emit(result, "zhang_rang", "张让", "AGREED", 3, 2,
-                    "奴才愿为陛下查核诸库，绝不令军国大计因钱粮误事。");
+                var zhangTreasuryText = state.Treasury < 3000
+                    ? "国库仅 {Treasury} 万钱，奴才愿为陛下查核诸库，纵节衣缩食亦必保军国无误。"
+                    : "国库充盈（{Treasury} 万钱），奴才愿为陛下查核诸库，绝不令军国大计因钱粮误事。";
+                Emit(result, "zhang_rang", "张让", "AGREED", 3, 2, zhangTreasuryText);
                 Emit(result, "he_jin", "何进", "OPPOSE", -2, 0,
                     "军费关乎社稷，不可尽付中官之手。");
                 break;
@@ -60,7 +62,7 @@ class MockScheduler : IAIScheduler
                 Emit(result, "he_jin", "何进", "AGREED", 5, 2,
                     "中官干政，朝纲日坏。臣请陛下稍裁其权，以安百官。");
                 Emit(result, "zhang_rang", "张让", "OPPOSE", -5, 0,
-                    "奴才等侍奉禁中，所恃不过陛下一念信任。外臣此言，其心可诛。");
+                    "奴才等侍奉禁中，所恃不过陛下一念信任（龙体 {Health}/100）。外臣此言，其心可诛。");
                 break;
             case CourtIntent.Talent:
                 Emit(result, "cao_cao", "曹操", "AGREED", 5, 2,
@@ -84,6 +86,9 @@ class MockScheduler : IAIScheduler
         // P2-2：让 activeOfficerId（朝廷主持人）在 result 中的发言置于队首
         MoveActiveOfficerToFront(result, activeOfficerId);
 
+        // P2-1：台词模板占位符解析（{Treasury}/{Health}/{PopularSupport}/{Morale}）
+        ResolveTemplates(result, state);
+
         // P2-7：过滤已下野 / 敌对 / 不在殿中的 NPC 发言，并从 _spokenThisXun 同步清理
         FilterIneligibleSpeakers(result, state);
 
@@ -94,6 +99,19 @@ class MockScheduler : IAIScheduler
         }
 
         return Task.FromResult(result);
+    }
+
+    private void ResolveTemplates(AIOrchestrationResult result, GameState state)
+    {
+        var morale = state.WestGardenArmy?.Morale.ToString() ?? "—";
+        foreach (var s in result.Speeches)
+        {
+            s.SpeechText = s.SpeechText
+                .Replace("{Treasury}", state.Treasury.ToString())
+                .Replace("{Health}", state.Health.ToString())
+                .Replace("{PopularSupport}", state.PopularSupport.ToString())
+                .Replace("{Morale}", morale);
+        }
     }
 
     private void FilterIneligibleSpeakers(AIOrchestrationResult result, GameState state)
