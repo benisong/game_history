@@ -37,6 +37,9 @@ public partial class MainScene : Control
     private Button? _btnTravelCarriage;  // 御驾马车
     private Label? _mainTimeLabel;       // 主界面必要时间显示
 
+    // P1-C2 自动推进：主界面"快进 N 旬"按钮
+    private Button? _fastForwardButton;
+
     // 辅助面板层
     private Control? _panelAffairs;
 
@@ -116,6 +119,8 @@ public partial class MainScene : Control
         _storyOutput = GetNodeOrNull<RichTextLabel>("CenterPanel/StoryOutput");
         _playerInputEdit = GetNodeOrNull<LineEdit>("BottomPanel/PlayerInputEdit");
         _submitButton = GetNodeOrNull<Button>("BottomPanel/SubmitButton");
+        // P1-C2：主界面"快进 N 旬"按钮
+        _fastForwardButton = GetNodeOrNull<Button>("BottomPanel/FastForwardButton");
 
         // 右侧大臣及场景节点
         _sceneTitleLabel = GetNodeOrNull<Label>("RightPanel/Ministers/SceneTitle");
@@ -142,6 +147,8 @@ public partial class MainScene : Control
         // 4. 绑定交互事件
         if (_submitButton != null) _submitButton.Pressed += OnSubmitButtonPressed;
         if (_playerInputEdit != null) _playerInputEdit.TextSubmitted += OnPlayerInputSubmitted;
+        // P1-C2：绑定"快进 N 旬"按钮 + F 键
+        if (_fastForwardButton != null) _fastForwardButton.Pressed += ShowFastForwardDialog;
 
         // 大臣头像详情点击
         if (_heJinButton != null) _heJinButton.Pressed += () => ShowMinisterDetails("he_jin");
@@ -204,6 +211,21 @@ public partial class MainScene : Control
 
         if (@event is InputEventKey or InputEventMouseButton or InputEventScreenTouch or InputEventJoypadButton)
         {
+            GetViewport().SetInputAsHandled();
+        }
+    }
+
+    // P1-C2：F 键全局触发"快进 N 旬"弹窗（避免与底部 LineEdit 文字输入冲突，仅在无文本输入框聚焦时生效）
+    public override void _UnhandledKeyInput(InputEvent @event)
+    {
+        if (@event is InputEventKey k && k.Pressed && !k.Echo && k.Keycode == Key.F)
+        {
+            // 跳过当玩家正在 LineEdit 中输入（避免和"福"等字符冲突）
+            var focus = GetViewport().GuiGetFocusOwner();
+            if (focus is LineEdit) return;
+            if (_gameState == null || _gameEngine == null) return;
+            if (_gameState.Outcome != GameOutcome.Playing) return; // 已结局不能再快进
+            ShowFastForwardDialog();
             GetViewport().SetInputAsHandled();
         }
     }

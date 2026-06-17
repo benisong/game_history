@@ -331,6 +331,7 @@ class DonghanConsole
                 case ConsoleKey.T: DoTravel(); break;
                 case ConsoleKey.S: ShowState(); break;
                 case ConsoleKey.H: ShowTutorial(); break;
+                case ConsoleKey.F: await DoFastForward(); break;
                 case ConsoleKey.Q: running = false; break;
             }
         }
@@ -502,7 +503,7 @@ class DonghanConsole
         Console.WriteLine("  A. 任命地方官      U. 军事平叛");
         Console.WriteLine("  I. 安抚平叛        N. 推进一旬");
         Console.WriteLine("  T. 起驾换场景      S. 国势总览      Q. 退位");
-        Console.WriteLine("  H. 新手指引");
+        Console.WriteLine("  H. 新手指引        F. 快进 N 旬");
 
         Console.ForegroundColor = ConsoleColor.Green;
         Console.Write("\n  陛下请吩咐 > ");
@@ -799,6 +800,144 @@ class DonghanConsole
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"⚠ {expired.Count} 封奏折即将过期！请速批阅！");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+
+        Console.WriteLine("\n按任意键返回……"); Console.ReadKey(true);
+    }
+
+    // P1-C2 自动推进（快进 N 旬）：每旬后检测临界事件，命中即暂停避免亡国
+    // 临界事件：新叛变 / 健康≤30 / 国库≤1000 / 结局已定 / 历史 trigger 命中
+    static async Task DoFastForward()
+    {
+        Console.Clear();
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("═══ 御 批 · 快 进 N 旬 ═══\n");
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine("将连续推进 N 旬（默认 3，上限 30）。");
+        Console.WriteLine("遇以下情形会立即暂停，等待陛下御裁：");
+        Console.WriteLine("  · 新叛变暴起");
+        Console.WriteLine("  · 龙体欠安（健康 ≤ 30）");
+        Console.WriteLine("  · 国帑枯竭（国库 ≤ 1000 万）");
+        Console.WriteLine("  · 触发重大历史事件");
+        Console.WriteLine("  · 灵帝崩殂 / 亡国 / 中兴 / 续命\n");
+
+        Console.Write("请输入快进旬数（1-30，默认 3，回车取消）：");
+        string? input = Console.ReadLine();
+        if (string.IsNullOrWhiteSpace(input)) { Console.WriteLine("\n已取消。"); Console.ReadKey(true); return; }
+        if (!int.TryParse(input, out int n)) { Console.WriteLine("\n输入无效。"); Console.ReadKey(true); return; }
+        n = Math.Clamp(n, 1, 30);
+
+        Console.WriteLine($"\n陛下临朝静观，时光快进 {n} 旬……\n");
+        Console.ForegroundColor = ConsoleColor.DarkGray;
+        Console.WriteLine($"  起始：{_state!.ReignTitle}{_state.ReignYear}年 {_state.Year}年{_state.Month}月{(_state.Xun == 1 ? "上" : _state.Xun == 2 ? "中" : "下")}旬");
+        Console.ForegroundColor = ConsoleColor.White;
+
+        int ran = 0;
+        int newRebellions = 0;
+        int pacifiedRebellions = 0;
+        bool aborted = false;
+        string abortReason = "";
+
+        for (int i = 0; i < n; i++)
+        {
+            if (_state!.Outcome != GameOutcome.Playing)
+            {
+                aborted = true;
+                abortReason = $"灵帝 {_state.GetEmperorAge()} 岁，{_engine.GetOutcomeMessage()}";
+                break;
+            }
+
+            // Snapshot province rebellion set BEFORE NextXun
+            var wasRebelling = _state.Provinces.Values.Where(p => p.IsRebelling).Select(p => p.Id).ToHashSet();
+
+            // Snapshot chronicle length to detect "new entries this xun"
+            int chronicleBefore = _state.Chronicle.Count;
+
+            await _engine!.NextXunAsync();
+
+            // Detect critical events
+            int prevRebellions = wasRebelling.Count;
+            var nowRebelling = _state.Provinces.Values.Where(p => p.IsRebelling).Select(p => p.Id).ToHashSet();
+            var newlyRebelling = nowRebelling.Except(wasRebelling).ToList();
+            var pacified = wasRebelling.Except(nowRebelling).ToList();
+            newRebellions += newlyRebelling.Count;
+            pacifiedRebellions += pacified.Count;
+
+            // Per-旬 summary line
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
+            string xunName = (_state.Xun == 1 ? "上" : _state.Xun == 2 ? "中" : "下");
+            Console.WriteLine($"  ┄ {_state.ReignTitle}{_state.ReignYear}年 {_state.Year}年{_state.Month}月{xunName}旬 ┄ 皇权:{_state.ImperialPower}  健康:{_state.Health}  民心:{_state.PopularSupport}  国库:{_state.Treasury}");
+            if (newlyRebelling.Count > 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                var names = string.Join("、", newlyRebelling.Select(id => _state.Provinces[id].Name));
+                Console.WriteLine($"    ⚠ 新叛变：{names}");
+            }
+            if (pacified.Count > 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                var names = string.Join("、", pacified.Select(id => _state.Provinces[id].Name));
+                Console.WriteLine($"    ✓ 平息：{names}");
+            }
+            // Show new chronicle entries (historical triggers)
+            var newChronicle = _state.Chronicle.Skip(chronicleBefore).ToList();
+            foreach (var entry in newChronicle)
+            {
+                if (entry.Contains("黄巾") || entry.Contains("何进") || entry.Contains("董卓") || entry.Contains("崩殂") || entry.Contains("中兴") || entry.Contains("续命"))
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"    ★ {entry}");
+                }
+            }
+            Console.ForegroundColor = ConsoleColor.White;
+            ran++;
+
+            // Critical event checks
+            if (_state.Outcome != GameOutcome.Playing)
+            {
+                aborted = true;
+                abortReason = $"灵帝 {_state.GetEmperorAge()} 岁，{_engine.GetOutcomeMessage()}";
+                break;
+            }
+            if (newlyRebelling.Count > 0)
+            {
+                aborted = true;
+                var names = string.Join("、", newlyRebelling.Select(id => _state.Provinces[id].Name));
+                abortReason = $"{names} 起兵叛乱！请速平叛。";
+                break;
+            }
+            if (_state.Health <= 30)
+            {
+                aborted = true;
+                abortReason = $"龙体欠安（健康 {_state.Health}）。请移驾后宫调养。";
+                break;
+            }
+            if (_state.Treasury <= 1000)
+            {
+                aborted = true;
+                abortReason = $"国帑枯竭（国库 {_state.Treasury} 万钱）。请赈灾/抄家/卖官补充。";
+                break;
+            }
+        }
+
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine($"\n═══ 快进结束：推进 {ran} 旬 ═══");
+        Console.ForegroundColor = ConsoleColor.White;
+        if (newRebellions > 0 || pacifiedRebellions > 0)
+        {
+            Console.WriteLine($"  叛乱变化：+{newRebellions} 新起 / -{pacifiedRebellions} 平息");
+        }
+        if (aborted)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"\n⚠ 快进中止：{abortReason}");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("\n  一切平稳，未触发临界事件。");
             Console.ForegroundColor = ConsoleColor.White;
         }
 

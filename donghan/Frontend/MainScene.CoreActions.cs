@@ -514,6 +514,242 @@ public partial class MainScene : Control
         ShowStoryReportPopup(fallbackTitle, storyText, GetTravelReportSkin(location));
     }
 
+    // === P1-C2 自动推进（快进 N 旬）===
+    // 主入口弹窗：步数输入（1-30，默认 3）
+    // 异步循环 NextXunAsync，每旬后检测临界事件（新叛变 / 健康≤30 / 国库≤1000 / 结局已定 / 历史 trigger）
+    // 命中即弹 ShowWarningReportPopup 中断 + 摘要
+    private void ShowFastForwardDialog()
+    {
+        if (_gameState == null || _gameEngine == null) return;
+        if (_gameState.Outcome != GameOutcome.Playing) return;
+
+        var panel = new Panel();
+        ConfigureCenteredPopupPanel(panel, PopupSkin.Court, new Vector2(580, 420));
+
+        var vBox = CreateActionPopupRoot(panel, 22, 18);
+
+        var title = new Label { Text = "御 批 · 快 进 N 旬" };
+        StylePopupTitle(title, PopupSkin.Court);
+        vBox.AddChild(title);
+
+        var desc = new Label
+        {
+            Text = $"将连续推进 N 旬（1-30）。\n" +
+                   $"遇以下情形会立即暂停弹奏报：\n" +
+                   $"  · 新叛变暴起\n" +
+                   $"  · 龙体欠安（健康 ≤ 30）\n" +
+                   $"  · 国帑枯竭（国库 ≤ 1000 万钱）\n" +
+                   $"  · 触发重大历史事件\n" +
+                   $"  · 灵帝崩殂 / 亡国 / 中兴 / 续命\n\n" +
+                   $"当前：{_gameState.ReignTitle}{_gameState.ReignYear}年 {_gameState.Year}年{_gameState.Month}月"
+        };
+        desc.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        StylePopupBodyText(desc, PopupSkin.Court);
+        vBox.AddChild(desc);
+
+        var stepSpin = new SpinBox
+        {
+            MinValue = 1,
+            MaxValue = 30,
+            Step = 1,
+            Value = 3,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        StylePopupInput(stepSpin, PopupSkin.Court);
+        vBox.AddChild(stepSpin);
+
+        var previewFrame = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        previewFrame.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Court));
+        var previewMargin = new MarginContainer();
+        SetFullRect(previewMargin);
+        previewMargin.AddThemeConstantOverride("margin_left", 10);
+        previewMargin.AddThemeConstantOverride("margin_right", 10);
+        previewMargin.AddThemeConstantOverride("margin_top", 8);
+        previewMargin.AddThemeConstantOverride("margin_bottom", 8);
+        previewFrame.AddChild(previewMargin);
+        var preview = CreateActionPreviewLabel(PopupSkin.Court);
+        previewMargin.AddChild(preview);
+        vBox.AddChild(previewFrame);
+
+        void RefreshPreview(double value)
+        {
+            int n = Math.Clamp((int)value, 1, 30);
+            preview.Text = $"快进 {n} 旬 ≈ {(n + 2) / 3} 个月。\n" +
+                          $"期间可能触发黄巾、何进之死、董卓入京等历史 trigger。";
+        }
+        stepSpin.ValueChanged += RefreshPreview;
+        RefreshPreview(stepSpin.Value);
+
+        var row = CreateActionPopupButtonRow();
+        var confirm = new Button { Text = "驾临快进", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        var cancel = new Button { Text = "暂缓", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        StyleSceneActionButton(confirm, ActionButtonSkin.Court);
+        StyleSceneActionButton(cancel, ActionButtonSkin.Court);
+        row.AddChild(confirm);
+        row.AddChild(cancel);
+        vBox.AddChild(row);
+
+        confirm.Pressed += () =>
+        {
+            int n = Math.Clamp((int)stepSpin.Value, 1, 30);
+            _windowManager.PopWindow();
+            _ = DoFastForwardAsync(n);
+        };
+        cancel.Pressed += _windowManager.PopWindow;
+
+        PushTemporaryPopup(panel);
+    }
+
+    // 异步执行快进：每旬调 NextXunAsync 并检测临界事件
+    private async Task DoFastForwardAsync(int n)
+    {
+        if (_gameState == null || _gameEngine == null) return;
+        if (_gameState.Outcome != GameOutcome.Playing) return;
+
+        // 禁用按钮避免重复点击
+        if (_fastForwardButton != null) _fastForwardButton.Disabled = true;
+
+        try
+        {
+            int ran = 0;
+            int newRebellions = 0;
+            int pacifiedRebellions = 0;
+            var newRebellionNames = new List<string>();
+            var pacifiedNames = new List<string>();
+            var historicalEvents = new List<string>();
+            bool aborted = false;
+            string abortReason = "";
+            string criticalTitle = "";
+
+            for (int i = 0; i < n; i++)
+            {
+                if (_gameState.Outcome != GameOutcome.Playing)
+                {
+                    aborted = true;
+                    abortReason = $"灵帝 {_gameState.GetEmperorAge()} 岁：{_gameEngine.GetOutcomeMessage()}";
+                    break;
+                }
+
+                var wasRebelling = _gameState.Provinces.Values.Where(p => p.IsRebelling).Select(p => p.Id).ToHashSet();
+                int chronicleBefore = _gameState.Chronicle.Count;
+
+                await _gameEngine.NextXunAsync();
+                ran++;
+
+                var nowRebelling = _gameState.Provinces.Values.Where(p => p.IsRebelling).Select(p => p.Id).ToHashSet();
+                var newlyRebelling = nowRebelling.Except(wasRebelling).ToList();
+                var pacified = wasRebelling.Except(nowRebelling).ToList();
+                newRebellions += newlyRebelling.Count;
+                pacifiedRebellions += pacified.Count;
+                newRebellionNames.AddRange(newlyRebelling.Select(id => _gameState.Provinces[id].Name));
+                pacifiedNames.AddRange(pacified.Select(id => _gameState.Provinces[id].Name));
+
+                // 历史 trigger：扫新增 chronicle
+                var newChronicle = _gameState.Chronicle.Skip(chronicleBefore).ToList();
+                foreach (var entry in newChronicle)
+                {
+                    if (entry.Contains("黄巾") || entry.Contains("何进") || entry.Contains("董卓"))
+                    {
+                        historicalEvents.Add(entry);
+                    }
+                }
+
+                // 刷新主界面
+                UpdateUI();
+                SetAnnualMajorEventBanner();
+
+                // 临界事件检查
+                if (_gameState.Outcome != GameOutcome.Playing)
+                {
+                    aborted = true;
+                    abortReason = $"灵帝 {_gameState.GetEmperorAge()} 岁：{_gameEngine.GetOutcomeMessage()}";
+                    break;
+                }
+                if (newlyRebelling.Count > 0)
+                {
+                    aborted = true;
+                    abortReason = string.Join("、", newRebellionNames.Distinct()) + " 起兵叛乱！请速平叛。";
+                    break;
+                }
+                if (_gameState.Health <= 30)
+                {
+                    aborted = true;
+                    abortReason = $"龙体欠安（健康 {_gameState.Health}）。请移驾后宫调养。";
+                    break;
+                }
+                if (_gameState.Treasury <= 1000)
+                {
+                    aborted = true;
+                    abortReason = $"国帑枯竭（国库 {_gameState.Treasury} 万钱）。请赈灾/抄家/卖官补充。";
+                    break;
+                }
+
+                // 短暂延迟避免阻塞 UI
+                await ToSignal(GetTree().CreateTimer(0.05), SceneTreeTimer.SignalName.Timeout);
+            }
+
+            // 构造奏报
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"【快进 {ran} 旬完毕】");
+            sb.AppendLine($"当前：{_gameState.ReignTitle}{_gameState.ReignYear}年 {_gameState.Year}年{_gameState.Month}月{(_gameState.Xun == 1 ? "上" : _gameState.Xun == 2 ? "中" : "下")}旬");
+            sb.AppendLine($"皇权：{_gameState.ImperialPower}  健康：{_gameState.Health}  民心：{_gameState.PopularSupport}  国库：{_gameState.Treasury} 万钱");
+            if (newRebellions > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine($"⚡ 新叛乱：+{newRebellions} 郡（{string.Join("、", newRebellionNames.Distinct())}）");
+            }
+            if (pacifiedRebellions > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine($"✓ 平息：-{pacifiedRebellions} 郡（{string.Join("、", pacifiedNames.Distinct())}）");
+            }
+            if (historicalEvents.Count > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("★ 历史事件：");
+                foreach (var ev in historicalEvents)
+                    sb.AppendLine($"  · {ev}");
+            }
+
+            if (aborted)
+            {
+                criticalTitle = "快进中止";
+                sb.AppendLine();
+                sb.AppendLine($"⚠ {abortReason}");
+            }
+            else if (ran < n)
+            {
+                criticalTitle = "快进提前结束";
+                sb.AppendLine();
+                sb.AppendLine($"已推进 {ran}/{n} 旬。");
+            }
+            else
+            {
+                criticalTitle = "快进完成";
+                sb.AppendLine();
+                sb.AppendLine("  一切平稳，未触发临界事件。");
+            }
+
+            // 中止或有事件 → 弹警告；平稳完成 → 弹 Document 奏报
+            if (aborted || historicalEvents.Count > 0 || newRebellions > 0)
+            {
+                ShowWarningReportPopup(criticalTitle, sb.ToString());
+            }
+            else
+            {
+                ShowDocumentReportPopup(criticalTitle, sb.ToString());
+            }
+        }
+        catch (System.Exception ex)
+        {
+            ShowWarningReportPopup("快进出错", $"【快进出错】\n\n{ex.Message}");
+        }
+        finally
+        {
+            if (_fastForwardButton != null) _fastForwardButton.Disabled = false;
+        }
+    }
+
     private void ShowStoryReportPopup(string fallbackTitle, string storyText, PopupSkin skin)
     {
         if (string.IsNullOrWhiteSpace(storyText)) return;
