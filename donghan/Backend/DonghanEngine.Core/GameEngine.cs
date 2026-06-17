@@ -435,8 +435,26 @@ public partial class GameEngine
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
+        // P3 事件叙事：每旬检查并追加叙事感文字
+        CheckEventNarratives();
+
         // P1-A3：NPC 按 HistoricalDeathYear 自动下野（不杀"事件触发"型）
         CheckNpcHistoricalDeaths();
+    }
+
+    // P3 事件叙事：扫描注册表，时间匹配且未触发过的追加到 Chronicle
+    // 与 trigger 硬逻辑（黄巾/何进之死/董卓进京）解耦，仅做"叙事感"补充
+    // 不受 DisableHistoricalTriggers 约束：测试可单独关 trigger 硬逻辑但保留叙事层
+    private void CheckEventNarratives()
+    {
+        if (_state.Outcome != GameOutcome.Playing) return;
+
+        foreach (var ev in EventNarratives.FindTriggering(_state.Year, _state.Month, _state.Xun))
+        {
+            if (_triggeredEventNarratives.Contains(ev.Id)) continue;
+            _state.AddToChronicle($"【{ev.Category}·{ev.Title}】{ev.Description}");
+            _triggeredEventNarratives.Add(ev.Id);
+        }
     }
 
     public string StartGrandCourtSync()
@@ -623,10 +641,13 @@ public partial class GameEngine
         };
     }
 
-    // === P1-A2 历史 trigger：189 年何进之死 / 董卓进京 ===
+    // P1-A2 历史 trigger：189 年何进之死 / 董卓进京
     // 幂等标志：A2 trigger 各自只在首次进入目标旬时跑一次
     private bool _heJinDeathTriggered;
     private bool _dongZhuoEntryTriggered;
+
+    // P3 事件叙事：防重复触发（每个 EventNarrative 只能触发一次）
+    private readonly HashSet<string> _triggeredEventNarratives = new();
 
     // === P1-A3 NPC 寿终下野 ===
     // P0 警告：HistoricalDeathYear=史实倾向参考，不强制死亡。

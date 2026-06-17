@@ -1363,4 +1363,94 @@ public class EngineTests
         Assert.Contains("赈济", generic.Text);  // 清流派赈灾文案含"赈济"关键词
         Assert.True(generic.FavDelta >= 0);
     }
+
+    // P3：EventNarratives 注册表 3 个事件全部定义且字段非空
+    [Fact]
+    public void EventNarratives_注册表3个事件字段完整()
+    {
+        var all = EventNarratives.All;
+        Assert.Equal(3, all.Count);
+        foreach (var n in all)
+        {
+            Assert.False(string.IsNullOrWhiteSpace(n.Id));
+            Assert.False(string.IsNullOrWhiteSpace(n.Title));
+            Assert.False(string.IsNullOrWhiteSpace(n.Description));
+            Assert.False(string.IsNullOrWhiteSpace(n.Category));
+            Assert.True(n.TriggerYear >= 184 && n.TriggerYear <= 192);
+            Assert.InRange(n.TriggerMonth, 1, 12);
+            Assert.InRange(n.TriggerXun, 1, 3);
+        }
+    }
+
+    // P3：按 ID 查
+    [Fact]
+    public void EventNarratives_按ID查询()
+    {
+        var y = EventNarratives.TryGet("yellow_turban_184_4_2");
+        Assert.NotNull(y);
+        Assert.Equal("黄巾起事", y.Title);
+        Assert.Equal(184, y.TriggerYear);
+        Assert.Equal(4, y.TriggerMonth);
+        Assert.Equal(2, y.TriggerXun);
+
+        Assert.Null(EventNarratives.TryGet("不存在的ID"));
+    }
+
+    // P3：FindTriggering 按 (year, month, xun) 精确匹配
+    [Fact]
+    public void EventNarratives_按时间精确匹配()
+    {
+        // 184/4/2 应命中黄巾起事
+        var matches = EventNarratives.FindTriggering(184, 4, 2).ToList();
+        Assert.Single(matches);
+        Assert.Equal("yellow_turban_184_4_2", matches[0].Id);
+
+        // 184/4/1 不命中
+        Assert.Empty(EventNarratives.FindTriggering(184, 4, 1));
+
+        // 189/8/3 命中何进之死
+        var hj = EventNarratives.FindTriggering(189, 8, 3).ToList();
+        Assert.Single(hj);
+        Assert.Equal("he_jin_death_189_8_3", hj[0].Id);
+
+        // 189/9/1 命中董卓入京
+        var dz = EventNarratives.FindTriggering(189, 9, 1).ToList();
+        Assert.Single(dz);
+        Assert.Equal("dong_zhuo_entry_189_9_1", dz[0].Id);
+    }
+
+    // P3：CheckEventNarratives 触发后写入 Chronicle 且不重复
+    [Fact]
+    public async Task GameEngine_CheckEventNarratives_184年4月2旬触发黄巾叙事()
+    {
+        var state = new GameState
+        {
+            Year = 184, Month = 4, Xun = 1,  // 当前在 4/1，下一旬进入 4/2
+            DisableHistoricalTriggers = true,  // 关掉 trigger 硬逻辑，只测叙事层
+            Npcs = new System.Collections.Generic.Dictionary<string, NpcState>()
+        };
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+        await engine.NextXunAsync();  // 4/1 → 4/2，触发黄巾叙事
+        Assert.Contains(state.Chronicle, s => s.Contains("黄巾起事"));
+    }
+
+    // P3：触发过的 EventNarrative 不重复
+    [Fact]
+    public async Task GameEngine_CheckEventNarratives_不重复触发()
+    {
+        var state = new GameState
+        {
+            Year = 184, Month = 4, Xun = 1,
+            DisableHistoricalTriggers = true,
+            Npcs = new System.Collections.Generic.Dictionary<string, NpcState>()
+        };
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+        await engine.NextXunAsync();
+        var countAfterFirst = state.Chronicle.Count(s => s.Contains("黄巾起事"));
+
+        // 再调一次（Xun++ 走到 4/3，不应再触发黄巾）
+        await engine.NextXunAsync();
+        var countAfterSecond = state.Chronicle.Count(s => s.Contains("黄巾起事"));
+        Assert.Equal(countAfterFirst, countAfterSecond);  // 数量不变（不重复触发）
+    }
 }
