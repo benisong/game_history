@@ -159,7 +159,10 @@ public class MockScheduler : IAIScheduler
         var stance = FactionStance.GetStance(npc.Faction, intent);
         if (stance == null) return;  // 防御：上层已校验，这里再保一次
 
-        var entry = FactionSpeechBank.TryGetSpeech(npc.Id, intent, state) ?? FactionSpeechBank.GetDefault();
+        // 命中优先级：专属桶 → 派系通用桶 → 默认桶
+        var entry = FactionSpeechBank.TryGetSpeech(npc.Id, intent, state)
+                    ?? FactionSpeechBank.TryGetGenericEntry(npc.Faction, intent, stance)
+                    ?? FactionSpeechBank.GetDefault();
         var text = FactionSpeechBank.ResolveTemplates(entry.Text, state);
 
         Emit(result, npc.Id, npc.Name, stance, entry.FavDelta, entry.PowDelta, text);

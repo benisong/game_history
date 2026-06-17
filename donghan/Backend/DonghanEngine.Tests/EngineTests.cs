@@ -1315,4 +1315,52 @@ public class EngineTests
         Assert.Contains("67", resolved2);
         Assert.DoesNotContain("{Health}", resolved2);
     }
+
+    // B：派系通用桶 4 派系 × 7 Intent = 28 条全部命中
+    [Fact]
+    public void FactionSpeechBank_派系通用桶28条全部命中()
+    {
+        var factions = new[] {
+            FactionCatalog.PureStream, FactionCatalog.ImperialClan,
+            FactionCatalog.EunuchFaction, FactionCatalog.WesternGarden
+        };
+        var intents = new[] {
+            CourtIntent.Relief, CourtIntent.Execute, CourtIntent.Reward,
+            CourtIntent.Treasury, CourtIntent.MilitaryBuild,
+            CourtIntent.EunuchReform, CourtIntent.Talent
+        };
+
+        int count = 0;
+        foreach (var f in factions)
+        foreach (var i in intents)
+        {
+            // OPPOSE 用外戚-赈灾不命中（清流派才表态 Relief），用真实 OPPOSE 组合
+            var stance = f == FactionCatalog.EunuchFaction && i == CourtIntent.Relief ? "OPPOSE"
+                       : f == FactionCatalog.ImperialClan && i == CourtIntent.Treasury ? "OPPOSE"
+                       : f == FactionCatalog.EunuchFaction && i == CourtIntent.EunuchReform ? "OPPOSE"
+                       : "AGREED";
+            var entry = FactionSpeechBank.TryGetGenericEntry(f, i, stance);
+            Assert.NotNull(entry);
+            Assert.False(string.IsNullOrWhiteSpace(entry.Text), $"派系 {f} × Intent {i} 文案应非空");
+            // fav/pow 与 stance 一致
+            if (stance == "OPPOSE") Assert.True(entry.FavDelta <= 0, $"{f} × {i} OPPOSE 应 fav<=0");
+            else if (stance == "AGREED") Assert.True(entry.FavDelta >= 0, $"{f} × {i} AGREED 应 fav>=0");
+            count++;
+        }
+        Assert.Equal(28, count);
+    }
+
+    // B：新 NPC 走派系通用桶示例：袁绍（清流派，Power 60）的赈灾发言
+    [Fact]
+    public void FactionSpeechBank_新NPC走派系通用桶()
+    {
+        // 假设袁绍是清流派 NPC，撞 Relief Intent
+        var entry = FactionSpeechBank.TryGetSpeech("yuan_shao", CourtIntent.Relief, new GameState());
+        Assert.Null(entry);  // 专属桶未命中
+        // 派系通用桶命中
+        var generic = FactionSpeechBank.TryGetGenericEntry(FactionCatalog.PureStream, CourtIntent.Relief, "AGREED");
+        Assert.NotNull(generic);
+        Assert.Contains("赈济", generic.Text);  // 清流派赈灾文案含"赈济"关键词
+        Assert.True(generic.FavDelta >= 0);
+    }
 }
