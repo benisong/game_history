@@ -13,7 +13,8 @@ public partial class MainScene : Control
     private Label? _courtStageLabel;
     private VBoxContainer? _courtOfficialsVBox;
     private VBoxContainer? _courtTopicsVBox;
-    private RichTextLabel? _courtDebateLabel;
+    private ScrollContainer? _courtDebateScroll;       // P2-视觉 群臣奏对滚动容器（替换旧 _courtDebateLabel 文字段）
+    private VBoxContainer? _courtDebateContent;        // 群臣奏对卡片堆叠容器
     private VBoxContainer? _courtDecisionsVBox;
     private VBoxContainer? _courtFreeEdictVBox;
     private LineEdit? _courtInput;
@@ -138,11 +139,17 @@ public partial class MainScene : Control
         _courtTopicsVBox.AddThemeConstantOverride("separation", 8);
         middle.AddChild(_courtTopicsVBox);
 
-        _courtDebateLabel = new RichTextLabel();
-        _courtDebateLabel.BbcodeEnabled = true;
-        _courtDebateLabel.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
-        _courtDebateLabel.Visible = false;
-        middle.AddChild(_courtDebateLabel);
+        _courtDebateScroll = new ScrollContainer();
+        _courtDebateScroll.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        _courtDebateScroll.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _courtDebateScroll.Visible = false;
+        _courtDebateScroll.VerticalScrollMode = ScrollContainer.ScrollMode.Auto;
+        middle.AddChild(_courtDebateScroll);
+
+        _courtDebateContent = new VBoxContainer();
+        _courtDebateContent.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        _courtDebateContent.AddThemeConstantOverride("separation", 10);
+        _courtDebateScroll.AddChild(_courtDebateContent);
 
         _courtFreeEdictVBox = new VBoxContainer();
         _courtFreeEdictVBox.Visible = false;
@@ -345,8 +352,8 @@ public partial class MainScene : Control
 
     private void RenderCourtTopics()
     {
-        if (_courtTopicsVBox == null || _courtDebateLabel == null) return;
-        _courtDebateLabel.Hide();
+        if (_courtTopicsVBox == null || _courtDebateScroll == null) return;
+        _courtDebateScroll.Hide();
         _courtTopicsVBox.Show();
         _courtFreeEdictVBox?.Hide();
         ClearChildren(_courtTopicsVBox);
@@ -373,21 +380,139 @@ public partial class MainScene : Control
 
     private void SelectCourtTopic(CourtTopicViewModel topic)
     {
-        if (_courtTopicsVBox == null || _courtDebateLabel == null) return;
+        if (_courtTopicsVBox == null || _courtDebateScroll == null || _courtDebateContent == null) return;
 
         RenderCourtOfficials(topic.Id);
         _courtTopicsVBox.Hide();
         _courtFreeEdictVBox?.Hide();
-        _courtDebateLabel.Show();
+        _courtDebateScroll.Show();
         if (_courtStageLabel != null) _courtStageLabel.Text = $"{FormatTimeLabel()}  ·  阶段：群臣奏对";
 
-        string text = $"[b]【议题】{topic.Title}[/b]\n[color=gray]{topic.Summary}[/color]\n\n";
+        // 清空旧卡片
+        ClearChildren(_courtDebateContent);
+
+        // 议题标题 + 摘要
+        var title = new Label();
+        title.Text = $"【议题】{topic.Title}";
+        title.AddThemeFontSizeOverride("font_size", 18);
+        title.AddThemeColorOverride("font_color", new Color(0.95f, 0.77f, 0.28f, 1.0f));
+        _courtDebateContent.AddChild(title);
+
+        var summary = new Label();
+        summary.Text = topic.Summary;
+        summary.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        summary.AddThemeColorOverride("font_color", new Color(0.70f, 0.65f, 0.55f));
+        _courtDebateContent.AddChild(summary);
+
+        // 分割线
+        var divider = new HSeparator();
+        _courtDebateContent.AddChild(divider);
+
+        // 每条发言一张卡
         foreach (var speech in topic.Speeches)
         {
-            text += $"[color=yellow]{speech.MinisterName}[/color]（{speech.Faction}）：\n“{speech.Speech}”\n[color=gray]倾向：{speech.Attitude}[/color]\n\n";
+            _courtDebateContent.AddChild(BuildSpeechCard(speech));
         }
-        _courtDebateLabel.Text = text;
+
+        // 自动滚到最新
+        CallDeferred(nameof(ScrollDebateToEnd));
+
         RenderCourtDecisions(topic);
+    }
+
+    // P2-视觉：发言列表追加后滚到底
+    private void ScrollDebateToEnd()
+    {
+        if (_courtDebateScroll == null) return;
+        var bar = _courtDebateScroll.GetVScrollBar();
+        if (bar != null) bar.Value = bar.MaxValue;
+    }
+
+    // P2-视觉：朝会发言卡片
+    // 边框颜色 = 态度倾向：绿=赞同 / 红=反对 / 黄=中庸 / 灰=默认
+    // 派系用 3 色 chip：外戚武臣=暗红 / 中官近侍=暗紫 / 西园武臣=暗青
+    private Panel BuildSpeechCard(CourtSpeechViewModel speech)
+    {
+        var card = new Panel();
+        card.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+
+        var stylebox = new StyleBoxFlat();
+        stylebox.BgColor = new Color(0.13f, 0.10f, 0.08f, 0.95f);
+        stylebox.BorderColor = ResolveStanceBorderColor(speech.Attitude);
+        stylebox.SetBorderWidthAll(2);
+        stylebox.SetCornerRadiusAll(4);
+        stylebox.ContentMarginLeft = 14;
+        stylebox.ContentMarginRight = 14;
+        stylebox.ContentMarginTop = 8;
+        stylebox.ContentMarginBottom = 10;
+        card.AddThemeStyleboxOverride("panel", stylebox);
+
+        var vbox = new VBoxContainer();
+        vbox.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        vbox.AddThemeConstantOverride("separation", 5);
+        card.AddChild(vbox);
+
+        // 头部行：名字 + 派系 chip + 态度
+        var headerRow = new HBoxContainer();
+        headerRow.AddThemeConstantOverride("separation", 10);
+        headerRow.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        vbox.AddChild(headerRow);
+
+        var nameLabel = new Label();
+        nameLabel.Text = speech.MinisterName;
+        nameLabel.AddThemeColorOverride("font_color", new Color(0.96f, 0.84f, 0.50f, 1.0f));
+        nameLabel.AddThemeFontSizeOverride("font_size", 16);
+        headerRow.AddChild(nameLabel);
+
+        var factionChip = new Label();
+        factionChip.Text = $"【{speech.Faction}】";
+        factionChip.AddThemeColorOverride("font_color", ResolveFactionChipColor(speech.Faction));
+        factionChip.AddThemeFontSizeOverride("font_size", 12);
+        headerRow.AddChild(factionChip);
+
+        var spacer = new Control();
+        spacer.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        headerRow.AddChild(spacer);
+
+        var attitudeLabel = new Label();
+        attitudeLabel.Text = speech.Attitude;
+        attitudeLabel.AddThemeColorOverride("font_color", ResolveStanceBorderColor(speech.Attitude));
+        attitudeLabel.AddThemeFontSizeOverride("font_size", 13);
+        headerRow.AddChild(attitudeLabel);
+
+        // 台词正文
+        var speechText = new Label();
+        speechText.Text = $"“{speech.Speech}”";
+        speechText.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        speechText.AddThemeColorOverride("font_color", new Color(0.94f, 0.92f, 0.86f));
+        speechText.AddThemeFontSizeOverride("font_size", 14);
+        vbox.AddChild(speechText);
+
+        return card;
+    }
+
+    // 态度 → 边框颜色（AGREED 绿 / NEUTRAL 黄 / OPPOSE 红 / 默认灰）
+    private static Color ResolveStanceBorderColor(string attitude)
+    {
+        if (attitude.Contains("反对") || attitude.Contains("弹劾") || attitude.Contains("驳"))
+            return new Color(0.86f, 0.30f, 0.30f, 1.0f);  // 红：反对
+        if (attitude.Contains("请战") || attitude.Contains("扩权") || attitude.Contains("主张")
+            || attitude.Contains("裁抑") || attitude.Contains("准") || attitude.Contains("请任")
+            || attitude.Contains("速战") || attitude.Contains("掌财") || attitude.Contains("固宠"))
+            return new Color(0.30f, 0.78f, 0.42f, 1.0f);  // 绿：赞同
+        if (attitude.Contains("制衡") || attitude.Contains("缓治") || attitude.Contains("务实") || attitude.Contains("求制"))
+            return new Color(0.85f, 0.74f, 0.30f, 1.0f);  // 黄：中庸
+        return new Color(0.55f, 0.55f, 0.55f, 1.0f);  // 灰：默认
+    }
+
+    // 派系 → chip 颜色（与 Card 边框色独立，保留视觉差异）
+    private static Color ResolveFactionChipColor(string faction)
+    {
+        if (faction == "外戚武臣") return new Color(0.82f, 0.42f, 0.38f, 1.0f);
+        if (faction == "中官近侍") return new Color(0.72f, 0.42f, 0.82f, 1.0f);
+        if (faction == "西园武臣") return new Color(0.42f, 0.72f, 0.82f, 1.0f);
+        if (faction == "清流派")   return new Color(0.55f, 0.78f, 0.55f, 1.0f);
+        return new Color(0.70f, 0.70f, 0.70f, 1.0f);
     }
 
     private void RenderCourtDefaultDecisions()
