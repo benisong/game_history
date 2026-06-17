@@ -35,7 +35,8 @@ class MockScheduler : IAIScheduler
 
     public Task OrchestrateXunUpdateAsync(GameState state)
     {
-        state.IntelReports.Add("【暗探密报】大将军何进近日频繁调动北军五营，西园校尉蹇硕忧心忡忡。");
+        // P1-B1 修复：动态生成情报（基于 state 真实状态，去重避免重复）
+        GenerateDynamicIntelReports(state);
 
         if (ShouldAddEdicts)
         {
@@ -78,6 +79,124 @@ class MockScheduler : IAIScheduler
         }
 
         return Task.CompletedTask;
+    }
+
+    // === P1-B1 动态情报生成器 ===
+    // 每旬根据 state 真实状态生成 1-3 条暗探密报，覆盖：
+    //   1) 叛郡警报  2) 权臣动向  3) 国帑危机  4) 民生凋敝  5) 龙体欠安  6) 西园军情
+    // 去重：每旬只生成"自上次生成以来新出现"的状态变化，避免每旬重复相同报告
+    // 频控：每旬最多 3 条新报告（保护玩家注意力）
+    private int _lastIntelXun = -99;
+    private int _lastIntelYear = -99;
+    private uint _reportedSigMask = 0; // bit mask of recently-reported categories
+
+    private const int CAT_REBELLION = 1 << 0;    // 叛郡
+    private const int CAT_POWERNPC  = 1 << 1;    // 权臣
+    private const int CAT_TREASURY  = 1 << 2;    // 国帑
+    private const int CAT_POPULAR   = 1 << 3;    // 民生
+    private const int CAT_HEALTH    = 1 << 4;    // 龙体
+    private const int CAT_WESTGARDEN= 1 << 5;    // 西园军
+
+    private void GenerateDynamicIntelReports(GameState state)
+    {
+        // 旬首（年初/新旬）重置去重位 — 给玩家"本周新消息"感
+        bool isNewXun = state.Year != _lastIntelYear || state.Month * 3 + state.Xun != _lastIntelXun;
+        if (isNewXun)
+        {
+            _reportedSigMask = 0;
+            _lastIntelYear = state.Year;
+            _lastIntelXun = state.Month * 3 + state.Xun;
+        }
+
+        int added = 0;
+        const int maxPerXun = 3;
+
+        // 1) 叛郡警报：列出所有 IsRebelling 郡
+        if ((_reportedSigMask & CAT_REBELLION) == 0)
+        {
+            var rebelling = state.Provinces.Values.Where(p => p.IsRebelling).ToList();
+            if (rebelling.Count > 0)
+            {
+                var names = string.Join("、", rebelling.Select(p => p.Name));
+                state.IntelReports.Add(
+                    $"【暗探密报】{names} 等 {rebelling.Count} 州郡已陷入叛乱，" +
+                    $"州郡兵戈四起，叛军蔓延中，陛下宜速作部署。");
+                _reportedSigMask |= CAT_REBELLION;
+                added++;
+            }
+        }
+
+        // 2) 权臣动向：列出 Power >= 70 的活跃 NPC
+        if ((_reportedSigMask & CAT_POWERNPC) == 0 && added < maxPerXun)
+        {
+            var powerful = state.Npcs.Values
+                .Where(n => n.IsActive && n.Power >= 70 && n.Faction != "反叛势力")
+                .OrderByDescending(n => n.Power)
+                .Take(3)
+                .ToList();
+            if (powerful.Count > 0)
+            {
+                var desc = powerful.Select(n => $"{n.Name}（权势 {n.Power}）");
+                state.IntelReports.Add(
+                    $"【朝堂风向】{string.Join("、", desc)} 等权势日盛，私议朝政，" +
+                    $"陛下宜留意制衡，以免尾大不掉。");
+                _reportedSigMask |= CAT_POWERNPC;
+                added++;
+            }
+        }
+
+        // 3) 国帑危机：Treasury < 3000
+        if ((_reportedSigMask & CAT_TREASURY) == 0 && added < maxPerXun)
+        {
+            if (state.Treasury < 3000)
+            {
+                state.IntelReports.Add(
+                    $"【户部急报】国帑仅余 {state.Treasury} 万钱，" +
+                    $"军饷官俸即将无以为继，户部侍郎焦头烂额。");
+                _reportedSigMask |= CAT_TREASURY;
+                added++;
+            }
+        }
+
+        // 4) 民生凋敝：PopularSupport < 35
+        if ((_reportedSigMask & CAT_POPULAR) == 0 && added < maxPerXun)
+        {
+            if (state.PopularSupport < 35)
+            {
+                state.IntelReports.Add(
+                    $"【黄门密札】天下民心仅余 {state.PopularSupport}，" +
+                    $"流民蜂起于野，饿殍遍于沟渠，民怨沸腾。");
+                _reportedSigMask |= CAT_POPULAR;
+                added++;
+            }
+        }
+
+        // 5) 龙体欠安：Health < 40
+        if ((_reportedSigMask & CAT_HEALTH) == 0 && added < maxPerXun)
+        {
+            if (state.Health < 40)
+            {
+                state.IntelReports.Add(
+                    $"【御医急奏】陛下龙体抱恙（健康 {state.Health}/100），" +
+                    $"御膳房进奉的参汤药石均无大效，请陛下保重龙体。");
+                _reportedSigMask |= CAT_HEALTH;
+                added++;
+            }
+        }
+
+        // 6) 西园军情：Morale < 40 或 Loyalty < 40
+        if ((_reportedSigMask & CAT_WESTGARDEN) == 0 && added < maxPerXun)
+        {
+            if (state.WestGardenArmy != null &&
+                (state.WestGardenArmy.Morale < 40 || state.WestGardenArmy.Loyalty < 40))
+            {
+                state.IntelReports.Add(
+                    $"【西园密探】西园军心不稳（士气 {state.WestGardenArmy.Morale}，" +
+                    $"忠诚 {state.WestGardenArmy.Loyalty}），将士私议哗变之语。");
+                _reportedSigMask |= CAT_WESTGARDEN;
+                added++;
+            }
+        }
     }
 }
 
