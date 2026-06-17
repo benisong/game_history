@@ -56,6 +56,10 @@ public partial class MainScene : Control
 
     // A1 结局面板：游戏结局弹出后只显示一次，避免 _Process 每帧重弹
     private bool _outcomeHandled;
+
+    // P1-C1 Godot 开局新手引导：仅在第一次启动时显示，可点击/Enter 关闭
+    private static bool _openingTutorialShown = false;
+    private Control? _openingTutorialOverlay;
     private GameOutcome _handledOutcome = GameOutcome.Playing;
 
     // 场景专属 Action 节点引用
@@ -168,6 +172,11 @@ public partial class MainScene : Control
         // 渲染初始界面状态
         UpdateUI();
         SetAnnualMajorEventBanner();
+        // P1-C1 开局新手引导（仅首次启动；DONGHAN_SKIP_TUTORIAL=1 可跳过）
+        if (OS.GetEnvironment("DONGHAN_SKIP_TUTORIAL") != "1" && !_openingTutorialShown)
+        {
+            ShowOpeningTutorial();
+        }
         if (OS.GetEnvironment("DONGHAN_SKIP_OPENING") != "1")
         {
             ShowOpeningOverlay();
@@ -197,5 +206,137 @@ public partial class MainScene : Control
         {
             GetViewport().SetInputAsHandled();
         }
+    }
+
+    // === P1-C1 Godot 开局新手引导 ===
+    // 全屏半透明遮罩 + 中央面板，列出玩法要点。仅首次启动显示。
+    // 按 Enter / Space / 鼠标点击 均可关闭。再次启动不会重弹。
+    private void ShowOpeningTutorial()
+    {
+        if (_openingTutorialShown) return;
+
+        var overlay = new ColorRect
+        {
+            Name = "OpeningTutorialOverlay",
+            Color = new Color(0, 0, 0, 0.88f),
+            MouseFilter = Control.MouseFilterEnum.Stop,
+            ZIndex = 2_900
+        };
+        SetFullRect(overlay);
+        AddChild(overlay);
+
+        // 中央内容面板
+        var panel = new Panel { ZIndex = 2_901 };
+        panel.SetSize(new Vector2(820, 620));
+        panel.Position = new Vector2((Size.X - 820) / 2, (Size.Y - 620) / 2);
+        panel.MouseFilter = Control.MouseFilterEnum.Stop;
+        ApplyOpaquePanelTheme(panel);
+        overlay.AddChild(panel);
+
+        var margin = new MarginContainer();
+        margin.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        margin.AddThemeConstantOverride("margin_left", 36);
+        margin.AddThemeConstantOverride("margin_right", 36);
+        margin.AddThemeConstantOverride("margin_top", 28);
+        margin.AddThemeConstantOverride("margin_bottom", 28);
+        panel.AddChild(margin);
+
+        var vbox = new VBoxContainer();
+        vbox.AddThemeConstantOverride("separation", 14);
+        margin.AddChild(vbox);
+
+        // 标题
+        var title = new Label
+        {
+            Text = "新 手 指 引 · 灵 帝 江 山",
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        title.AddThemeColorOverride("font_color", new Color(0.94f, 0.78f, 0.36f, 1.0f));
+        title.AddThemeFontSizeOverride("font_size", 32);
+        vbox.AddChild(title);
+
+        // 内容（RichTextLabel 支持 BBCode 加粗/换行）
+        var body = new RichTextLabel
+        {
+            BbcodeEnabled = true,
+            FitContent = true,
+            ScrollActive = false,
+            CustomMinimumSize = new Vector2(740, 460)
+        };
+        body.AddThemeColorOverride("default_color", new Color(0.91f, 0.85f, 0.66f, 1.0f));
+        body.AddThemeFontSizeOverride("normal_font_size", 18);
+        vbox.AddChild(body);
+
+        body.Text = "[b][color=#f0c85a]▍ 你是谁[/color][/b]\n" +
+            "汉灵帝刘宏。光和七年（中平元年）四月，太平道张角聚众谋反，" +
+            "外戚何进与十常侍张让明争暗斗，天下摇摇欲坠。你的目标：活过 189 年。\n\n" +
+
+            "[b][color=#f0c85a]▍ 四张御案卡[/color][/b]\n" +
+            "[color=#cfa860]· 大朝会[/color] — 召集群臣决议（赈灾/讨伐/招安/卖官）\n" +
+            "[color=#cfa860]· 黄门密札[/color] — 情报：六郡局势 + 群臣动向 + 待办决策\n" +
+            "[color=#cfa860]· 西园别苑[/color] — 私库、新军、犒赏、卖官\n" +
+            "[color=#cfa860]· 起驾巡幸[/color] — 切场景（宣政殿/西园/后宫）\n\n" +
+
+            "[b][color=#f0c85a]▍ 时间[/color][/b]\n" +
+            "三旬为月，十二月为年。点 N 或 Enter 推进一旬 — 期间会触发叛乱检测、奏折过期、历史事件。\n\n" +
+
+            "[b][color=#f0c85a]▍ 张让忠告[/color][/b]\n" +
+            "1) [color=#ff7a5a]别先抄家！[/color] 10 月之前攒皇权到 50。\n" +
+            "2) [color=#ff7a5a]184/4/2 黄巾必爆[/color]，提前给冀州派桥玄。\n" +
+            "3) [color=#ff7a5a]189/9[/color] 何进伏诛、董卓入京。\n" +
+            "4) 实时状态看 S 国势总览，9 看密札情报。";
+
+        // 关闭提示
+        var hint = new Label
+        {
+            Text = "— 按 Enter / Space / 点击任意位置 关闭 —",
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        hint.AddThemeColorOverride("font_color", new Color(0.70f, 0.62f, 0.40f, 1.0f));
+        hint.AddThemeFontSizeOverride("font_size", 16);
+        vbox.AddChild(hint);
+
+        // 关闭逻辑：键盘/鼠标任一事件触发即关闭
+        void Dismiss()
+        {
+            if (_openingTutorialShown) return;
+            _openingTutorialShown = true;
+            if (IsInstanceValid(overlay))
+            {
+                overlay.QueueFree();
+            }
+            _openingTutorialOverlay = null;
+        }
+
+        // 监听键盘
+        overlay.GuiInput += (InputEvent ev) =>
+        {
+            if (ev is InputEventKey k && (k.Pressed) &&
+                (k.Keycode == Key.Enter || k.Keycode == Key.KpEnter || k.Keycode == Key.Space))
+            {
+                Dismiss();
+                GetViewport().SetInputAsHandled();
+            }
+        };
+        // 监听鼠标点击
+        overlay.GuiInput += (InputEvent ev) =>
+        {
+            if (ev is InputEventMouseButton mb && mb.Pressed)
+            {
+                Dismiss();
+                GetViewport().SetInputAsHandled();
+            }
+        };
+        // Esc 也可关闭
+        overlay.GuiInput += (InputEvent ev) =>
+        {
+            if (ev is InputEventKey k2 && k2.Pressed && k2.Keycode == Key.Escape)
+            {
+                Dismiss();
+                GetViewport().SetInputAsHandled();
+            }
+        };
+
+        _openingTutorialOverlay = overlay;
     }
 }

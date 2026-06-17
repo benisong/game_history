@@ -330,6 +330,7 @@ class DonghanConsole
                 case ConsoleKey.N: await DoNextXun(); break;
                 case ConsoleKey.T: DoTravel(); break;
                 case ConsoleKey.S: ShowState(); break;
+                case ConsoleKey.H: ShowTutorial(); break;
                 case ConsoleKey.Q: running = false; break;
             }
         }
@@ -409,6 +410,69 @@ class DonghanConsole
         Console.ReadKey(true);
     }
 
+    // P1-C1 新手指引：H 键查看完整玩法。涵盖目标、键位、机制、忠告。
+    static void ShowTutorial()
+    {
+        Console.Clear();
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("  ╔════════════════════════════════════════════════════╗");
+        Console.WriteLine("  ║         新 手 指 引 · 灵 帝 江 山 策             ║");
+        Console.WriteLine("  ╚════════════════════════════════════════════════════╝");
+        Console.ForegroundColor = ConsoleColor.White;
+
+        Console.WriteLine();
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("  ▍ 目标");
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine("    你扮演汉灵帝刘宏。光和七年（中平元年）四月，太平道张角聚众谋反。");
+        Console.WriteLine("    你的目标：在灵帝驾崩前活过 189 年。结局有 4 种：");
+        Console.WriteLine("    · 中兴之治（40 岁+ / 皇权 60+ / 民心 50+ / 0 叛郡）");
+        Console.WriteLine("    · 续命成功（活过 189 年但中兴条件未满）");
+        Console.WriteLine("    · 崩殂（健康 0）");
+        Console.WriteLine("    · 亡国（6 郡全叛）");
+        Console.WriteLine();
+
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("  ▍ 三旬一月、一月一年");
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine("    游戏时间以'旬'推进：上旬/中旬/下旬，3 旬为 1 月，12 月为 1 年。");
+        Console.WriteLine("    按 N 推进一旬（可同时触发：叛乱检测 / 弹劾 / 奏折过期 / 历史 trigger）。");
+        Console.WriteLine();
+
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("  ▍ 六郡与叛变");
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine("    实装 6 郡：司隶/冀州/并州/兖州/豫州/荆州。");
+        Console.WriteLine("    · LocalSupport 跌至 0 以下连续 3 月 → 黄巾起事");
+        Console.WriteLine("    · 太守野心 + LocalSupport 10-30 → 野心叛乱");
+        Console.WriteLine("    · 叛郡蔓延至邻郡，半年后概率 35%");
+        Console.WriteLine("    应对：U 军事平叛（强攻）或 I 安抚平叛（怀柔）");
+        Console.WriteLine();
+
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("  ▍ 三场景切换");
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine("    · 宣政殿 — 大朝会、批阅奏折、调兵遣将");
+        Console.WriteLine("    · 西园   — 私库、新军、卖官、犒赏");
+        Console.WriteLine("    · 后宫   — 调养龙体、临幸健康");
+        Console.WriteLine("    按 T 起驾切换。某些行动只在特定场景可用。");
+        Console.WriteLine();
+
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("  ▍ 忠告（来自张让）");
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine("    1) 开局别先抄家！10 月之前攒皇权到 50 再说。");
+        Console.WriteLine("    2) 黄巾之乱 184/4/2 必定爆发，提前给冀州派桥玄。");
+        Console.WriteLine("    3) 9 月 1 旬时西园军 morale 会被 188 年事件扣 25。");
+        Console.WriteLine("    4) 9 月下旬何进会伏诛，189 年 9 月董卓入京。");
+        Console.WriteLine("    5) 看不懂时按 S 看国势总览，9 看密札情报。");
+        Console.WriteLine();
+
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("  按任意键返回……");
+        Console.ReadKey(true);
+    }
+
     static void ShowMainMenu()
     {
         Console.Clear();
@@ -438,6 +502,7 @@ class DonghanConsole
         Console.WriteLine("  A. 任命地方官      U. 军事平叛");
         Console.WriteLine("  I. 安抚平叛        N. 推进一旬");
         Console.WriteLine("  T. 起驾换场景      S. 国势总览      Q. 退位");
+        Console.WriteLine("  H. 新手指引");
 
         Console.ForegroundColor = ConsoleColor.Green;
         Console.Write("\n  陛下请吩咐 > ");
