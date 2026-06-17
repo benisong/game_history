@@ -15,23 +15,69 @@ class MockScheduler : IAIScheduler
     {
         var result = new AIOrchestrationResult { PrimaryIntent = "POLITICS" };
 
+        // P2-3 修复：旬变重置"本旬已发言"集合，避免同一旬内同一 NPC 重复表态；同时保证无关键词命中时朝会不再冷场
+        int xk = XunKeyOf(state);
+        if (xk != _lastXunKey)
+        {
+            _spokenThisXun.Clear();
+            _lastXunKey = xk;
+        }
+
         // 根据玩家输入生成简单的大臣反应
         if (playerInput.Contains("赈") || playerInput.Contains("灾"))
         {
             result.Speeches.Add(new CourtSpeech { MinisterId = "cao_cao", MinisterName = "曹操", SpeechText = "陛下圣明！赈灾乃安民之本，臣愿领旨督办！", Stance = "AGREED", ExpectedFavorabilityChange = 5, ExpectedPowerChange = 2 });
             result.Speeches.Add(new CourtSpeech { MinisterId = "zhang_rang", MinisterName = "张让", SpeechText = "陛下，国库空虚啊……不如由奴才来经办，定能省下不少银两。", Stance = "OPPOSE", ExpectedFavorabilityChange = -3, ExpectedPowerChange = 0 });
+            _spokenThisXun.Add("cao_cao");
+            _spokenThisXun.Add("zhang_rang");
         }
         else if (playerInput.Contains("抄") || playerInput.Contains("诛"))
         {
             result.Speeches.Add(new CourtSpeech { MinisterId = "cao_cao", MinisterName = "曹操", SpeechText = "臣附议！乱臣贼子，人人得而诛之！", Stance = "AGREED", ExpectedFavorabilityChange = 10, ExpectedPowerChange = 5 });
+            _spokenThisXun.Add("cao_cao");
         }
         else if (playerInput.Contains("赏") || playerInput.Contains("升"))
         {
             result.Speeches.Add(new CourtSpeech { MinisterId = "cao_cao", MinisterName = "曹操", SpeechText = "陛下隆恩浩荡！臣定当鞠躬尽瘁！", Stance = "AGREED", ExpectedFavorabilityChange = 15, ExpectedPowerChange = 3 });
+            _spokenThisXun.Add("cao_cao");
+        }
+        else
+        {
+            // P2-3 兜底：玩家输入未匹配任何意图分支时，从殿中未发言 NPC 池选 1 名表态（避免朝会冷场）
+            // 优先 activeOfficerId（若他还未发言且在殿中），否则按 Power 降序挑首位
+            var pool = state.Npcs.Values
+                .Where(n => n.IsActive && n.InitialLocation == "洛阳朝堂" && !_spokenThisXun.Contains(n.Id))
+                .OrderByDescending(n => n.Power)
+                .ToList();
+
+            string chosenId = !string.IsNullOrEmpty(activeOfficerId)
+                && pool.Any(n => n.Id == activeOfficerId)
+                ? activeOfficerId
+                : (pool.FirstOrDefault()?.Id ?? string.Empty);
+
+            if (!string.IsNullOrEmpty(chosenId) && state.Npcs.TryGetValue(chosenId, out var npc))
+            {
+                result.Speeches.Add(new CourtSpeech
+                {
+                    MinisterId = npc.Id,
+                    MinisterName = npc.Name,
+                    SpeechText = "臣等谨遵圣谕。",
+                    Stance = "AGREED",
+                    ExpectedFavorabilityChange = 1,
+                    ExpectedPowerChange = 0
+                });
+                _spokenThisXun.Add(npc.Id);
+            }
+            // 池子空了（罕见）：本旬所有人都已发言，返空 result，由前端 ViewModel 自行处理
         }
 
         return Task.FromResult(result);
     }
+
+    // P2-3 旬变追踪：每旬开始时清空"已发言 NPC 集合"，避免跨旬误判
+    private int _lastXunKey = -1;
+    private readonly HashSet<string> _spokenThisXun = new();
+    private static int XunKeyOf(GameState s) => s.Year * 10000 + s.Month * 100 + s.Xun;
 
     public Task OrchestrateXunUpdateAsync(GameState state)
     {

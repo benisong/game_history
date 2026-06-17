@@ -25,6 +25,7 @@ public class MockScheduler : IAIScheduler
                 ExpectedFavorabilityChange = 15,
                 ExpectedPowerChange = 5
             });
+            _spokenThisXun.Add("he_jin");
         }
         else if (playerInput.Contains("冷落张让") || playerInput.Contains("训诫张让"))
         {
@@ -37,6 +38,41 @@ public class MockScheduler : IAIScheduler
                 ExpectedFavorabilityChange = -15,
                 ExpectedPowerChange = -3
             });
+            _spokenThisXun.Add("zhang_rang");
+        }
+        else
+        {
+            // P2-3 兜底：玩家输入未匹配任何意图分支时，从殿中未发言 NPC 池选 1 名表态（避免朝会冷场）
+            int xk = XunKeyOf(state);
+            if (xk != _lastXunKey)
+            {
+                _spokenThisXun.Clear();
+                _lastXunKey = xk;
+            }
+
+            var pool = state.Npcs.Values
+                .Where(n => n.IsActive && n.InitialLocation == "洛阳朝堂" && !_spokenThisXun.Contains(n.Id))
+                .OrderByDescending(n => n.Power)
+                .ToList();
+
+            string chosenId = !string.IsNullOrEmpty(activeOfficerId)
+                && pool.Any(n => n.Id == activeOfficerId)
+                ? activeOfficerId
+                : (pool.FirstOrDefault()?.Id ?? string.Empty);
+
+            if (!string.IsNullOrEmpty(chosenId) && state.Npcs.TryGetValue(chosenId, out var npc))
+            {
+                result.Speeches.Add(new CourtSpeech
+                {
+                    MinisterId = npc.Id,
+                    MinisterName = npc.Name,
+                    SpeechText = "臣等谨遵圣谕。",
+                    Stance = "AGREED",
+                    ExpectedFavorabilityChange = 1,
+                    ExpectedPowerChange = 0
+                });
+                _spokenThisXun.Add(npc.Id);
+            }
         }
         return Task.FromResult(result);
     }
@@ -45,6 +81,11 @@ public class MockScheduler : IAIScheduler
     {
         return Task.CompletedTask;
     }
+
+    // P2-3 旬变追踪：每旬开始时清空"已发言 NPC 集合"，避免同一旬内同一 NPC 重复表态
+    private int _lastXunKey = -1;
+    private readonly HashSet<string> _spokenThisXun = new();
+    private static int XunKeyOf(GameState s) => s.Year * 10000 + s.Month * 100 + s.Xun;
 }
 
 public class MockOracle : IEventOracle
