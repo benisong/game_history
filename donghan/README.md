@@ -395,3 +395,45 @@ dotnet build DonghanFrontend.csproj -v minimal
 - `donghan/Frontend/godot/`（runtime app_userdata 日志）
 - `donghan/Frontend/bin/` `obj/` `*.import`（编译产物）
 - `wuxia-inheritance/` `xiuxian-game/` `武侠/`（其他子项目）
+
+---
+
+## 10. 待处理 / 平衡性待办（Backlog）
+
+> 本节登记尚未实现、需在后续迭代统一处理的设计待办。每条注明触发背景与处理时机。
+
+### 10.1 「藏锋于词」trait 系统重写（数值区间派生 + 执行率加成 + 五色品阶）
+
+当前 trait 是**孤立挂载的字符串标签**，与五维数值完全脱钩（庸臣也能被硬挂「经天纬地」吃满 ×1.20）。计划重写为**数值驱动**模型：
+
+- **词条 = 五维数值区间派生（分档）**：数值落在哪档，既决定显示哪个词条，也决定执行对应事件时的系数。词条即档位的人话翻译。
+- **五色品阶 × 区间 × 系数**（红最强 → 灰最弱，中线落在「精良/紫」档 = ×1.0）：
+
+  | 品阶 | 色 | 区间 | 系数 |
+  |---|---|---|---|
+  | 神级 | 🔴 红 | 90–100 | ×1.5 |
+  | 史诗 | 🟡 金 | 75–89 | ×1.2 |
+  | 精良 | 🟣 紫 | 55–74 | ×1.0 |
+  | 普通 | 🔵 蓝 | 35–54 | ×0.8 |
+  | 平庸 | ⚪ 灰 | 0–34 | ×0.5 |
+
+- **维度 → 事件映射**：赈灾→政治、阅兵士气→武力、阅兵忠诚→统帅、平叛战力→武力+统帅、抄家心机折减→政治、后宫随驾→魅力、漂没→廉洁。
+- **品性类新增 `Integrity`（廉洁）维度**：管漂没/贪腐，纳入区间派生（取代现 `Corruption` 的散装判定）。
+- **每 NPC 最多显示 3 个词条**：五维各派生一条候选，按「偏离中线绝对值」排序，神级强项与致命短板优先。
+- 涉及改动：`NpcState`（+Integrity）、`TraitNames`（按维度重组 + 配色枚举）、`NpcTraitEvaluator`（改区间函数）、`HistoricalNpcPresets`（71 人补 Integrity、删手工 trait）、前端着色 + Top3 渲染、60 个测试重写。
+
+### 10.2 ⚠️ AI 在线模式数值生成边界（与 10.1 强耦合，须一并处理）
+
+**背景**：在线模式下 AI 可经 `INpcRegistry.RegisterNpc(NpcState, state)` 凭空生成并注入 NPC（接口注释明确「由可视化界面或 AI 导入」）。当前 `RegisterNpc` **仅校验 `Id` 非空，对五维/权势/好感/贪腐/寿命/官阶一律不做边界夹取**——AI 可注入 politics=999 或 martial=-50 的非法臣。
+
+**为何必须处理**：10.1 的 trait 派生与执行率加成，整套建立在「五维 ∈ [0,100] 合法值」之上。一旦 AI 注入越界数值，五色区间无定义、Top-3 排序被霸榜、加成系数溢出，平衡彻底崩坏。
+
+**待办方案**：在 NPC 注入路径增设「数值净化闸门」，对 AI 来源的 NpcState 强制夹取：
+
+- 五维 / 权势 Power / 好感 Favorability / 贪腐 Corruption / 廉洁 Integrity / 健康 Health → `Clamp(0,100)`
+- `TitleTier` → `Clamp(0,4)`；`BaseLongevity` / `StashedWealth` → 合理上下界
+- 入口建议：`RegisterNpc` 内统一净化，或新增 `SanitizeAiNpc(NpcState)` 前置。
+
+**对照**：`OracleEvent` 随机事件落账走 `GameState.ApplyNumericalDelta`，已有 `Clamp(0,100)`/`Clamp(0,999999)` 兜底，相对安全；但 `CourtSpeech.ExpectedFavorabilityChange / ExpectedPowerChange`（AI 朝会群辩预期增减）的落账是否夹取**待核查**，一并纳入本闸门。
+
+**处理时机**：与 10.1 同批实现（Integrity 维度落地时，闸门须同时覆盖 Integrity）。
