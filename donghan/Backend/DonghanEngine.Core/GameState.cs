@@ -116,7 +116,7 @@ public class GameState
             Id = "zhang_rang", Name = "张让", Title = "十常侍之首", TitleTier = 3,
             Favorability = 65, Power = 75, Corruption = 90, StashedWealth = 6000, BirthYear = 130, BaseLongevity = 60,
             Traits = new() { TraitNames.TanDeWuYan, TraitNames.ChanMeiZhuanQuan }, Personality = "阴险", Style = TraitNames.ChanMeiZhuanQuan, Faction = "阉党派",
-            Martial = 10, Leadership = 15, Politics = 55, Charisma = 60, Ambition = 85,
+            Martial = 32, Leadership = 33, Politics = 55, Charisma = 60, Ambition = 85,
             InitialLocation = "洛阳宫中", EntryCondition = "开局", HistoricalRole = "十常侍核心，灵帝宠宦，内廷卖官与诏令枢纽"
         };
         
@@ -134,7 +134,7 @@ public class GameState
             Id = "jian_shuo", Name = "蹇硕", Title = "西园上军校尉", TitleTier = 2,
             Favorability = 80, Power = 30, Corruption = 25, StashedWealth = 300, BirthYear = 145, BaseLongevity = 50,
             Traits = new() { TraitNames.KongWuYouLi }, Personality = "刚直", Style = "保皇尽忠", Faction = "西园亲军",
-            Martial = 65, Leadership = 45, Politics = 20, Charisma = 30, Ambition = 40,
+            Martial = 65, Leadership = 45, Politics = 31, Charisma = 30, Ambition = 40,
             InitialLocation = "洛阳西园", EntryCondition = "开局", HistoricalRole = "灵帝亲信宦官，西园军上军校尉"
         };
 
