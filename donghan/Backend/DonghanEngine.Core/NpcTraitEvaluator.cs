@@ -5,128 +5,94 @@ namespace DonghanEngine.Core;
 
 /// <summary>
 /// 无状态静态特征评估器。所有方法均为纯函数。
-/// 
-/// 叠加规则：系数类修正采用累乘（Compounded Multiplicative）。
-/// 例如同时拥有「老谋深算」(×0.70) 和「说话直率」(×0.60) = 0.70 × 0.60 = 0.42。
-/// 数值损益类（目标反噬加重）采用累加（Additive）。
+///
+/// 【藏锋于词 · 数值驱动重写】
+/// 加成不再读取 Traits 字符串，而是由对应能力维度的【真实数值区间】决定品阶系数
+/// (红1.5 / 金1.2 / 紫1.0 / 蓝0.8 / 灰0.5)。词组只是该数值落档的显示名，已并入颜色系数，
+/// 不再单独产生修正。强者(高数值/红档)能扭转大局，庸者(低数值/灰档)会把事搞砸。
+///
+/// 数值对玩家隐藏(后台黑盒)，玩家只见 TraitDeriver 派生的词组去"猜"。
+///
+/// 维度 → 事件映射:
+///   赈灾民心 → 政治    阅兵士气 → 武力    阅兵忠诚 → 统帅
+///   漂没贪墨 → 廉洁    抄家心机折减 → 政治    战力 → 武力+统帅    政治外交 → 政治+魅力
 /// </summary>
 public static class NpcTraitEvaluator
 {
-    // 1. 获取开仓赈灾民心提振系数（支持类乘共存）
+    // 1. 开仓赈灾民心提振系数：看政治品阶
     public static double GetDisasterReliefSupportMultiplier(NpcState officer)
-    {
-        double multiplier = 1.0;
-        if (officer.Traits.Contains(TraitNames.JingTianWeiDi)) multiplier *= 1.20;
-        if (officer.Traits.Contains(TraitNames.ShanChangMinZheng)) multiplier *= 1.08;
-        if (officer.Traits.Contains(TraitNames.AiMinRuZi)) multiplier *= 1.15;
-        if (officer.Traits.Contains(TraitNames.QinMinWenHe)) multiplier *= 1.05;
-        if (officer.Traits.Contains(TraitNames.HaoSheWuDu)) multiplier *= 0.75;
-        if (officer.Traits.Contains(TraitNames.PuZhangLangFei)) multiplier *= 0.90;
-        if (officer.Traits.Contains(TraitNames.BuXueWuShu)) multiplier *= 0.80;
-        if (officer.Traits.Contains(TraitNames.CaiShuXueQian)) multiplier *= 0.90;
-        return multiplier;
-    }
+        => TraitVocabulary.MultiplierOf(TraitVocabulary.TierOf(officer.Politics));
 
-    // 2. 获取阅兵发饷将领的禁军士气提振系数（支持类乘共存）
+    // 2. 阅兵发饷将领的禁军士气提振系数：看武力品阶
     public static double GetDrillMoraleMultiplier(NpcState officer)
-    {
-        double multiplier = 1.0;
-        if (officer.Traits.Contains(TraitNames.KongWuYouLi)) multiplier *= 1.30;
-        if (officer.Traits.Contains(TraitNames.YouXieLiQi)) multiplier *= 1.10;
-        if (officer.Traits.Contains(TraitNames.ZhiJunYanZheng)) multiplier *= 1.25;
-        if (officer.Traits.Contains(TraitNames.DongDianBingFa)) multiplier *= 1.10;
-        if (officer.Traits.Contains(TraitNames.BuXueWuShu)) multiplier *= 0.80;
-        if (officer.Traits.Contains(TraitNames.CaiShuXueQian)) multiplier *= 0.90;
-        return multiplier;
-    }
+        => TraitVocabulary.MultiplierOf(TraitVocabulary.TierOf(officer.Martial));
 
-    // 3. 获取阅兵发饷将领的禁军天子忠诚提振系数
+    // 3. 阅兵发饷将领的禁军天子忠诚提振系数：看统帅品阶
     public static double GetDrillLoyaltyMultiplier(NpcState officer)
+        => TraitVocabulary.MultiplierOf(TraitVocabulary.TierOf(officer.Leadership));
+
+    // 4. 经办官员中饱漂没修正：看廉洁(Integrity)品阶。
+    //    入参 siphonBase 为"最大可漂没基数"(上限)，返回实际漂没 = 基数 × 廉洁档比例。
+    //    廉洁越高漂没越少:红→0(两袖清风) 金→0.25 紫→0.5 蓝→0.75 灰→1.0(贪墨吃满)。
+    public static int ApplyEmbezzlementSiphon(NpcState officer, int siphonBase)
     {
-        double multiplier = 1.0;
-        if (officer.Traits.Contains(TraitNames.AiBingRuZi)) multiplier *= 1.20;
-        if (officer.Traits.Contains(TraitNames.TiXuShiZu)) multiplier *= 1.08;
-        return multiplier;
+        double factor = TraitVocabulary.TierOf(officer.Integrity) switch
+        {
+            TraitTier.Red => 0.0,
+            TraitTier.Gold => 0.25,
+            TraitTier.Purple => 0.5,
+            TraitTier.Blue => 0.75,
+            TraitTier.Gray => 1.0,
+            _ => 0.5
+        };
+        return (int)(siphonBase * factor);
     }
 
-    // 4. 获取经办官员中饱漂没比例的系数修正
-    public static int ApplyEmbezzlementSiphon(NpcState officer, int originalSiphon)
-    {
-        if (officer.Traits.Contains(TraitNames.QingZhengLianJie))
-        {
-            return 0;
-        }
-        if (officer.Traits.Contains(TraitNames.BuNaGongKuan))
-        {
-            return (int)(originalSiphon * 0.50);
-        }
-        if (officer.Traits.Contains(TraitNames.TanDeWuYan))
-        {
-            return (int)(originalSiphon * 1.50);
-        }
-        if (officer.Traits.Contains(TraitNames.YouXieShouZang))
-        {
-            return (int)(originalSiphon * 1.20);
-        }
-        return originalSiphon;
-    }
-
-    // 5. 获取强行抄家时，由近臣诬陷钦差导致的朝堂党羽政治反噬的扣除皇权
+    // 5. 强行抄家时由钦差心机决定的政治反噬折减：看钦差政治品阶。
+    //    政治越高越能化解党羽反噬。基础损失 15:
+    //    红→0(权谋通天,豁免) 金→5 紫→10 蓝→13 灰→15(全额反噬)
+    //    目标的权势/门第仍按其真实数值加重反噬(高权势/高魅力者党羽更多)。
     public static int GetConfiscationImperialPowerLoss(NpcState framer, NpcState target)
     {
-        if (framer.Traits.Contains(TraitNames.GangZhiBuE))
+        int finalLoss = TraitVocabulary.TierOf(framer.Politics) switch
         {
-            return 0; // Bypass all backlash!
-        }
+            TraitTier.Red => 0,
+            TraitTier.Gold => 5,
+            TraitTier.Purple => 10,
+            TraitTier.Blue => 13,
+            TraitTier.Gray => 15,
+            _ => 15
+        };
 
-        int basePowerLoss = 15;
-        double mitigationMultiplier = 1.0;
-
-        if (framer.Traits.Contains(TraitNames.LaoMouShenSuan)) mitigationMultiplier *= 0.70; // 30% reduction (ends at 10)
-        if (framer.Traits.Contains(TraitNames.YouXieXinJi)) mitigationMultiplier *= 0.90; // 10% reduction (ends at 13)
-        if (framer.Traits.Contains(TraitNames.ShuoHuaZhiLv)) mitigationMultiplier *= 0.60; // 40% reduction (ends at 9)
-
-        int finalLoss = (int)(basePowerLoss * mitigationMultiplier);
-
-        // Target escalations
-        if (target.Traits.Contains(TraitNames.YongBingZiZhong)) finalLoss += 5;
-        if (target.Traits.Contains(TraitNames.ShouXiaYouBing)) finalLoss += 2;
-        if (target.Traits.Contains(TraitNames.MenFaShiJia)) finalLoss += 8;
-        if (target.Traits.Contains(TraitNames.ChuShenMingMen)) finalLoss += 3;
+        // 目标反噬加重:权势越高(党羽多)、魅力越高(门生故吏广)，抄家越招怨。
+        if (target.Power >= 70) finalLoss += 5;
+        else if (target.Power >= 40) finalLoss += 2;
+        if (target.Charisma >= 75) finalLoss += 8;
+        else if (target.Charisma >= 55) finalLoss += 3;
 
         return finalLoss;
     }
 
-    // 6. 计算将领作战力（武力×0.4 + 统帅×0.6，Trait 修正）
+    // 6. 将领作战力(武力×0.4 + 统帅×0.6)。复合两维，各维品阶系数加权后作用于基础值。
     public static double GetCombatPower(NpcState npc)
     {
         double baseVal = npc.Martial * 0.4 + npc.Leadership * 0.6;
-        double mult = 1.0;
-        if (npc.Traits.Contains(TraitNames.KongWuYouLi)) mult *= 1.30;
-        if (npc.Traits.Contains(TraitNames.YouXieLiQi)) mult *= 1.10;
-        if (npc.Traits.Contains(TraitNames.ZhiJunYanZheng)) mult *= 1.25;
-        if (npc.Traits.Contains(TraitNames.DongDianBingFa)) mult *= 1.10;
-        if (npc.Traits.Contains(TraitNames.BuXueWuShu)) mult *= 0.80;
-        if (npc.Traits.Contains(TraitNames.CaiShuXueQian)) mult *= 0.90;
+        double mult = TraitVocabulary.MultiplierOf(TraitVocabulary.TierOf(npc.Martial)) * 0.4
+                    + TraitVocabulary.MultiplierOf(TraitVocabulary.TierOf(npc.Leadership)) * 0.6;
         double corruptionPenalty = (npc.Corruption / 100.0) * 20;
         return baseVal * mult - corruptionPenalty;
     }
 
-    // 7. 计算政治外交力（政治×0.6 + 魅力×0.4，Trait 修正）
+    // 7. 政治外交力(政治×0.6 + 魅力×0.4)。复合两维加权品阶系数。
     public static double GetPoliticalSkill(NpcState npc)
     {
         double baseVal = npc.Politics * 0.6 + npc.Charisma * 0.4;
-        double mult = 1.0;
-        if (npc.Traits.Contains(TraitNames.JingTianWeiDi)) mult *= 1.20;
-        if (npc.Traits.Contains(TraitNames.ShanChangMinZheng)) mult *= 1.08;
-        if (npc.Traits.Contains(TraitNames.AiMinRuZi)) mult *= 1.15;
-        if (npc.Traits.Contains(TraitNames.LaoMouShenSuan)) mult *= 1.15;
-        if (npc.Traits.Contains(TraitNames.GangZhiBuE)) mult *= 1.10;
-        if (npc.Traits.Contains(TraitNames.TanDeWuYan)) mult *= 0.75;
+        double mult = TraitVocabulary.MultiplierOf(TraitVocabulary.TierOf(npc.Politics)) * 0.6
+                    + TraitVocabulary.MultiplierOf(TraitVocabulary.TierOf(npc.Charisma)) * 0.4;
         return baseVal * mult;
     }
 
-    // 8. 获取特使阵亡概率（0-100）
+    // 8. 特使阵亡概率(0-100)：纯数值(武力)，保持不变。
     public static int GetEnvoyDeathRisk(NpcState envoy, int rebellionMonths, int distance, bool usedPunishment, int imperialPower)
     {
         int risk = 40; // base

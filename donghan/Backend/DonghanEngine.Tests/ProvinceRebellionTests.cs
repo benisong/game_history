@@ -84,13 +84,13 @@ public class ProvinceRebellionTests
     public void Test_CombatPower_CalculatesCorrectly()
     {
         var cao = new NpcState { Martial = 72, Leadership = 90, Corruption = 5 };
-        cao.Traits.AddRange(new[] { "经天纬地", "老谋深算" }); // These don't affect combat
 
         double power = NpcTraitEvaluator.GetCombatPower(cao);
-        // base = 72*0.4 + 90*0.6 = 28.8 + 54 = 82.8
-        // no combat traits, corruption penalty = 5/100*20 = 1
-        // 82.8 * 1.0 - 1 = 81.8
-        Assert.True(power > 80 && power < 83, $"Expected ~81.8, got {power}");
+        // 数值驱动品阶系数:base = 72*0.4 + 90*0.6 = 82.8
+        // 武72紫档×1.0(权重0.4) + 统90红档×1.5(权重0.6) = 0.4 + 0.9 = 1.3
+        // corruption penalty = 5/100*20 = 1
+        // 82.8 * 1.3 - 1 = 106.64 (高统帅红档显著放大战力，符合"强者扭转大局")
+        Assert.True(power > 105 && power < 108, $"Expected ~106.6, got {power}");
     }
 
     [Fact]

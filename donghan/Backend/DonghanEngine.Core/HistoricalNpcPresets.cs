@@ -177,6 +177,7 @@ public static class HistoricalNpcPresets
         Politics = template.Politics,
         Charisma = template.Charisma,
         Ambition = template.Ambition,
+        Integrity = template.Integrity,
         GovernedProvinceId = template.GovernedProvinceId,
         InitialLocation = template.InitialLocation,
         EntryCondition = template.EntryCondition,
@@ -203,6 +204,8 @@ public static class HistoricalNpcPresets
             Favorability = favorability,
             Power = power,
             Corruption = corruption,
+            // 廉洁度由贪腐度反推(互为表里):张让贪腐90→廉洁10，曹操贪腐5→廉洁95。
+            Integrity = System.Math.Clamp(100 - corruption, 0, 100),
             StashedWealth = wealth,
             Martial = martial,
             Leadership = leadership,

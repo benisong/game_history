@@ -185,7 +185,7 @@ public class EngineTests
         state.CurrentLocation = "西园";
         var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
 
-        // 验证高贪腐张让经办 (Corruption = 90%，漂没比例 = 45%)
+        // 验证低廉洁张让经办 (Integrity=10 灰档→漂没吃满基数)
         int initialPrivateTreasury = state.PrivateTreasury;
         int initialZhangRangPower = state.Npcs["zhang_rang"].Power;
 
@@ -199,7 +199,8 @@ public class EngineTests
         Assert.Equal(initialZhangRangPower + 2, state.Npcs["zhang_rang"].Power);
         Assert.Contains("张让", result.StoryText);
         Assert.Contains("漂没", result.StoryText);
-        Assert.Contains("675 万钱", result.StoryText);
+        // 漂没基数 = 1000×0.5 = 500，灰档 factor 1.0 → 漂没 500 万钱
+        Assert.Contains("500 万钱", result.StoryText);
     }
 
     [Fact]
@@ -210,7 +211,7 @@ public class EngineTests
         state.CurrentLocation = "西园";
         var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
 
-        // 验证廉洁曹操经办
+        // 验证廉洁曹操经办 (Integrity=95 红档→两袖清风，零漂没)
         int initialPrivateTreasury = state.PrivateTreasury;
         int initialCaoCaoPower = state.Npcs["cao_cao"].Power;
 
@@ -222,7 +223,9 @@ public class EngineTests
         // 代天子犒军，权势稳定成长 +2 点
         Assert.Equal(initialCaoCaoPower + 2, state.Npcs["cao_cao"].Power);
         Assert.Contains("曹操", result.StoryText);
-        Assert.Contains("漂没 25 万钱", result.StoryText);
+        // 红档廉洁 factor=0 → 零漂没，叙事不出现"中饱私囊/漂没"字样
+        Assert.DoesNotContain("中饱私囊", result.StoryText);
+        Assert.DoesNotContain("贪污漂没", result.StoryText);
     }
 
     [Fact]
@@ -325,7 +328,8 @@ public class EngineTests
         // 实际得粮不足活命线，民心暴跌
         Assert.True(state.PopularSupport < initialSupport);
         Assert.Contains("灾民食之腹胀而死", result.StoryText);
-        Assert.Contains("中饱私囊：+2000 万钱", result.StoryText);
+        // 张让 Integrity=10 灰档→漂没吃满基数:赈款 2000×0.75 = 1500 万钱
+        Assert.Contains("中饱私囊：+1500 万钱", result.StoryText);
     }
 
     [Fact]
@@ -351,7 +355,8 @@ public class EngineTests
         // 民心显著上升
         Assert.True(state.PopularSupport > initialSupport);
         Assert.Contains("数万嗷嗷待哺的灾民得保一命", result.StoryText);
-        Assert.Contains("中饱私囊：+75 万钱", result.StoryText);
+        // 曹操 Integrity=95 红档→两袖清风，零漂没
+        Assert.Contains("中饱私囊：+0 万钱", result.StoryText);
     }
 
     [Fact]
@@ -535,42 +540,41 @@ public class EngineTests
         var presetNpcs = manager.GetPresetNpcsFallback();
         Assert.Contains(presetNpcs, n => n.Name == "董卓");
 
-        // 2. 验证统一接口登录刘备
+        // 2. 验证统一接口登录刘备(仁政能臣:政治红档、廉洁满)
         var liuBei = new NpcState
         {
             Id = "liu_bei", Name = "刘备", Title = "平原相",
-            BirthYear = 161, BaseLongevity = 62, Traits = new() { TraitNames.JingTianWeiDi },
+            BirthYear = 161, BaseLongevity = 62,
+            Politics = 95, Integrity = 100,
             Corruption = 0, Power = 10, Favorability = 90
         };
         registry.RegisterNpc(liuBei, state);
         Assert.True(state.Npcs.ContainsKey("liu_bei"));
 
-        // 3. 验证单 Traits [经天纬地] 的 1.20x 开仓赈灾民心修正
+        // 3. 验证【政治红档】赈灾民心 ×1.5、廉洁满→零漂没
         state.CurrentLocation = "宣政殿";
         int initialSupport = state.PopularSupport;
-        // 拨发 2000万 赈灾，钦差为刘备（贪腐 0%，漂没 0%，到手 2000 > 1000 溢出线）
-        // 基础 supportDelta = 12 * (2000 / 1000) = 24 点
-        // 经天纬地额外 1.2x：24 * 1.20 = 28 点民心提振
+        // 拨发 2000万 赈灾，钦差刘备(廉洁满，漂没0，到手 2000)
+        // supportDelta = int(12 * (2000/1000)) = 24；政治红档 ×1.5 → 36
         engine.ExecuteDisasterReliefAction(2000, "liu_bei");
-        Assert.Equal(initialSupport + 28, state.PopularSupport);
+        Assert.Equal(initialSupport + 36, state.PopularSupport);
 
-        // 4. 验证文学词汇 [老谋深算] 降低抄家反噬
-        // 曹操 (Traits 包含老谋深算) 诬陷抄家张让（张让 Power 75 触发党羽反噬）
-        // 关系网会额外加压：十常侍同党被牵连，曹操虽老谋深算，皇权仍多损 6 点。
-        state.Npcs["liu_bei"].Favorability = 30; // 降至门槛以下，确保曹操当选
+        // 4. 验证【钦差政治品阶】决定抄家反噬折减
+        // 钦差由 FindConfiscationFramer 选出(Favorability≥55 且 Corruption<40)。
+        // 曹操(Fav90,Corr5,政治85金档)当选 → 反噬基础5；张让 Power75(+5)、Charisma60(+3)。
+        state.Npcs["liu_bei"].Favorability = 30; // 降至门槛以下，避免刘备当选
         state.Npcs["cao_cao"].Favorability = 90;
         int initialPower = state.ImperialPower;
         engine.ExecuteConfiscationAction("zhang_rang", "国库");
-        Assert.Equal(initialPower - 16, state.ImperialPower);
+        int powerLoss = initialPower - state.ImperialPower;
+        Assert.True(powerLoss >= 13 && powerLoss <= 20,
+            $"抄家反噬应在 13~20(基础13+可能的关系网加压)，实得 {powerLoss}");
 
-        // 5. 验证 Traits 累乘共存：刘备同时拥有 [经天纬地] 1.20x 与 [爱民如子] 1.15x
-        // 累计系数：1.20 * 1.15 = 1.38x
-        liuBei.Traits.Add(TraitNames.AiMinRuZi);
+        // 5. 验证再次赈灾(政治红档 ×1.5)
         int secondarySupport = state.PopularSupport;
-        // 再次赈灾 1000万，基础 supportDelta = 12 * (1000 / 1000) = 12点
-        // 复合提振：12 * 1.38 = 16.56 -> 16 点提振
+        // 赈灾 1000万：supportDelta = int(12*1.0)=12；×1.5 → 18
         engine.ExecuteDisasterReliefAction(1000, "liu_bei");
-        Assert.Equal(secondarySupport + 16, state.PopularSupport);
+        Assert.Equal(secondarySupport + 18, state.PopularSupport);
 
         // 6. 验证衰老机制 + 确定性随机（seeded Random）
         state.Month = 1;
@@ -838,29 +842,27 @@ public class EngineTests
     }
 
     [Fact]
-    public void Test_TraitEvaluator_ConflictingTraits_CompoundingMultiplier()
+    public void Test_TraitEvaluator_DisasterReliefMultiplier_ByPoliticsTier()
     {
-        // 验证正负 traits 共存时的累乘行为
-        var officer = new NpcState
-        {
-            Id = "test", Name = "测试官",
-            Traits = new() { TraitNames.JingTianWeiDi, TraitNames.HaoSheWuDu } // 1.20 * 0.75 = 0.90
-        };
+        // 赈灾系数由【政治】品阶决定(数值驱动)。
+        var redOfficer = new NpcState { Id = "r", Name = "经天纬地", Politics = 95 };   // 红档 ×1.5
+        var grayOfficer = new NpcState { Id = "g", Name = "不学无术", Politics = 20 };   // 灰档 ×0.5
 
-        double multiplier = NpcTraitEvaluator.GetDisasterReliefSupportMultiplier(officer);
-        Assert.Equal(0.90, multiplier, 4);
+        Assert.Equal(1.5, NpcTraitEvaluator.GetDisasterReliefSupportMultiplier(redOfficer), 4);
+        Assert.Equal(0.5, NpcTraitEvaluator.GetDisasterReliefSupportMultiplier(grayOfficer), 4);
     }
 
     [Fact]
     public void Test_TraitEvaluator_Embezzlement_CleanVsCorrupt()
     {
-        var cleanOfficer = new NpcState { Id = "c", Name = "清官", Traits = new() { TraitNames.QingZhengLianJie } };
-        var greedyOfficer = new NpcState { Id = "g", Name = "贪官", Traits = new() { TraitNames.TanDeWuYan } };
+        // 漂没由【廉洁 Integrity】品阶决定。基数(上限)=100。
+        var cleanOfficer = new NpcState { Id = "c", Name = "清官", Integrity = 95 };  // 红档 factor 0.0
+        var greedyOfficer = new NpcState { Id = "g", Name = "贪官", Integrity = 10 }; // 灰档 factor 1.0
 
-        int siphon = 100;
+        int siphonBase = 100;
 
-        Assert.Equal(0, NpcTraitEvaluator.ApplyEmbezzlementSiphon(cleanOfficer, siphon));
-        Assert.Equal(150, NpcTraitEvaluator.ApplyEmbezzlementSiphon(greedyOfficer, siphon));
+        Assert.Equal(0, NpcTraitEvaluator.ApplyEmbezzlementSiphon(cleanOfficer, siphonBase));
+        Assert.Equal(100, NpcTraitEvaluator.ApplyEmbezzlementSiphon(greedyOfficer, siphonBase));
     }
 
     [Fact]

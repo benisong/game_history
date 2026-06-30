@@ -72,9 +72,11 @@ public partial class GameEngine
     {
         var army = _state.WestGardenArmy;
 
-        double corruptionRate = (officer.Corruption / 100.0) * 0.50;
-        int siphonedAmount = (int)(paidAmount * corruptionRate);
-        siphonedAmount = NpcTraitEvaluator.ApplyEmbezzlementSiphon(officer, siphonedAmount);
+        // 漂没只由廉洁(Integrity)品阶决定(单一真相)。基数为犒军额的 50% 上限，
+        // 实际漂没比例 = ApplyEmbezzlementSiphon 按廉洁档给的 factor(红0/金0.5/紫1.0/蓝1.5/灰2.0)。
+        // 廉洁红档→0 漂没；廉洁灰档(贪)→吃满基数。
+        int siphonBase = (int)(paidAmount * 0.50);
+        int siphonedAmount = NpcTraitEvaluator.ApplyEmbezzlementSiphon(officer, siphonBase);
         if (siphonedAmount > paidAmount) siphonedAmount = paidAmount;
 
         int actualReceivedAmount = paidAmount - siphonedAmount;
@@ -150,9 +152,9 @@ public partial class GameEngine
 
     private DisasterReliefSettlement CalculateDisasterReliefSettlement(int reliefAmount, NpcState officer)
     {
-        double corruptionRate = (officer.Corruption / 100.0) * 0.75;
-        int siphonedAmount = (int)(reliefAmount * corruptionRate);
-        siphonedAmount = NpcTraitEvaluator.ApplyEmbezzlementSiphon(officer, siphonedAmount);
+        // 赈灾漂没同样只由廉洁品阶决定。基数为赈款的 75% 上限。
+        int siphonBase = (int)(reliefAmount * 0.75);
+        int siphonedAmount = NpcTraitEvaluator.ApplyEmbezzlementSiphon(officer, siphonBase);
         if (siphonedAmount > reliefAmount) siphonedAmount = reliefAmount;
 
         int actualReliefReceived = reliefAmount - siphonedAmount;

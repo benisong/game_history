@@ -34,6 +34,12 @@ public class NpcState
     public int Charisma   { get; set; } = 40;  // 魅力
     public int Ambition   { get; set; } = 40;  // 野心
 
+    // === 品性维度 (0-100) ===
+    // 廉洁度：高=清廉两袖清风，低=贪墨。与 Corruption(贪腐度)互为表里，
+    // 用于派生廉洁品性词组与后台漂没结算。默认 60(中性偏清)。
+    // 注:历史人物在 preset 中按其贪腐倾向显式赋值，未显式赋值者取默认。
+    public int Integrity  { get; set; } = 60;  // 廉洁
+
     // === 地方治理 ===
     public string? GovernedProvinceId { get; set; } = null; // 正在治理的郡 ID
 
@@ -106,6 +112,7 @@ public class GameState
         Npcs["he_jin"] = new NpcState { 
             Id = "he_jin", Name = "何进", Title = "大将军", TitleTier = 4,
             Favorability = 35, Power = 80, Corruption = 45, StashedWealth = 1500, BirthYear = 135, BaseLongevity = 44,
+            Integrity = 55,
             Traits = new() { TraitNames.YongBingZiZhong, TraitNames.ShouXiaYouBing }, Personality = "平庸", Style = "优柔寡断", Faction = "外戚派",
             Martial = 40, Leadership = 35, Politics = 30, Charisma = 40, Ambition = 60,
             InitialLocation = "洛阳朝堂", EntryCondition = "开局", HistoricalRole = "外戚权臣，何皇后之兄，掌中央军权"
@@ -115,6 +122,7 @@ public class GameState
         Npcs["zhang_rang"] = new NpcState { 
             Id = "zhang_rang", Name = "张让", Title = "十常侍之首", TitleTier = 3,
             Favorability = 65, Power = 75, Corruption = 90, StashedWealth = 6000, BirthYear = 130, BaseLongevity = 60,
+            Integrity = 10,
             Traits = new() { TraitNames.TanDeWuYan, TraitNames.ChanMeiZhuanQuan }, Personality = "阴险", Style = TraitNames.ChanMeiZhuanQuan, Faction = "阉党派",
             Martial = 32, Leadership = 33, Politics = 55, Charisma = 60, Ambition = 85,
             InitialLocation = "洛阳宫中", EntryCondition = "开局", HistoricalRole = "十常侍核心，灵帝宠宦，内廷卖官与诏令枢纽"
@@ -124,6 +132,7 @@ public class GameState
         Npcs["cao_cao"] = new NpcState { 
             Id = "cao_cao", Name = "曹操", Title = "议郎/典军校尉", TitleTier = 1,
             Favorability = 45, Power = 15, Corruption = 5, StashedWealth = 50, BirthYear = 155, BaseLongevity = 65,
+            Integrity = 95,
             Traits = new() { TraitNames.JingTianWeiDi, TraitNames.LaoMouShenSuan }, Personality = "深沉", Style = "雷厉风行", Faction = "清流派",
             Martial = 72, Leadership = 90, Politics = 85, Charisma = 80, Ambition = 75,
             InitialLocation = "洛阳朝堂", EntryCondition = "开局", HistoricalRole = "青年能臣，西园八校尉之一，未来乱世枭雄"
@@ -133,6 +142,7 @@ public class GameState
         Npcs["jian_shuo"] = new NpcState { 
             Id = "jian_shuo", Name = "蹇硕", Title = "西园上军校尉", TitleTier = 2,
             Favorability = 80, Power = 30, Corruption = 25, StashedWealth = 300, BirthYear = 145, BaseLongevity = 50,
+            Integrity = 75,
             Traits = new() { TraitNames.KongWuYouLi }, Personality = "刚直", Style = "保皇尽忠", Faction = "西园亲军",
             Martial = 65, Leadership = 45, Politics = 31, Charisma = 30, Ambition = 40,
             InitialLocation = "洛阳西园", EntryCondition = "开局", HistoricalRole = "灵帝亲信宦官，西园军上军校尉"
