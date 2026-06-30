@@ -155,9 +155,23 @@
 
 详细的逐维度真相(尤其廉洁/忠奸)需走**情报查探**(见 §5.4)。
 
-### 5.4 情报查探与"情报头目"准确度(后端已就绪,前端阶段2接入)
+### 5.4 情报查探与「黄门暗探」供养系统(后端已实现)
 
-`TraitDeriver.BuildIntelAssessment(npc, accuracy, rng)` 返回逐维度评价。`accuracy`(情报组织头目能力 0-100)越高,评价越贴近真实档位;越低越可能 ±1~2 档偏移,造成误导 —— 情报头子无能,探来的情报本身就不可靠。
+`TraitDeriver.BuildIntelAssessment(npc, accuracy, rng)` 返回逐维度评价,`accuracy` 由情报机构供养档位决定 —— **天子每月从私库拨款维持暗探,给得越多暗探"工作热情"越高、情报越准;克扣或断供则常被误导。**
+
+供养档位(`IntelAgency` / `GameEngine.SetIntelFunding` / `InvestigateNpc`):
+
+| 档位 | 月供(私库) | 工作热情 Zeal | 准确率 |
+|---|---|---|---|
+| 未供养 / 私库不足 | 0 | 0 | 35% |
+| 克扣 | 100 万 | 50 | 55% |
+| 正常 | 200 万 | 100 | 75% |
+| 打赏 | 300 万 | 150 | 95% |
+
+- **准确率公式**:`准确率% = 75 + K × (Zeal − 100) × 0.25`,平衡常数 **K = 1.6**(`IntelAgency.AccuracyBalanceK`,调参旋钮)。
+- **给钱需皇帝确认**:`SetIntelFunding(tier)` 立即从私库支付本月月供;私库不足以付所选档位则视同未供养(降为 None)。
+- **每月自动续付**:`NextXunAsync` 月初(上旬)从私库扣当前档位月供;私库不继则暗探涣散、自动降为未供养。
+- 钱出**私库**(内廷黄门暗探属天子私人耳目)。
 
 ### 5.5 维度 → 事件映射(后台加成,`NpcTraitEvaluator`)
 
@@ -428,8 +442,8 @@ dotnet build DonghanFrontend.csproj -v minimal
 - 新增/改动:`TraitVocabulary.cs`(词组库+五色枚举)、`TraitDeriver.cs`(派生+风评+情报)、
   `NpcTraitEvaluator.cs`(纯数值驱动重写)、`NpcState.Integrity`、71人+4硬编码补 Integrity、
   漂没改单一廉洁驱动、`TraitVocabularyTests.cs`(9 个专项测试)。
-- **阶段二待做**:前端情报页接入"查探 NPC"UI;"情报头目"角色/任命机制(目前后端接口已就绪,
-  accuracy 入参待接真实头目能力)。
+- **阶段二待做**:前端情报页接入「查探 NPC」UI(调用 `InvestigateNpc`)+ 拨款界面(调用 `SetIntelFunding` 选档位)。
+  情报机构供养后端已完成(`IntelAgency` / `SetIntelFunding` / 月度续付 / `InvestigateNpc`,见 §5.4),前端只需接 UI。
 
 ### 10.3 ⏳ 野心(`Ambition`)系统(后期专门处理)
 

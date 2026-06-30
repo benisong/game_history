@@ -377,6 +377,14 @@ public partial class GameEngine
         // 按 Year/Month 实时推导年号（光和→184年底改元中平），取代旧的 ReignYear++ 逐年递增
         _state.RefreshReignEra();
 
+        // 月初(上旬)结算情报机构月度供养:从私库扣月供。私库不足以支付所选档位则
+        // 自动降为"未供养"(暗探涣散,热情归0)。这是已确认拨款档位的自动续付，
+        // 改档位由 SetIntelFunding(皇帝确认)完成。
+        if (_state.Xun == 1)
+        {
+            SettleIntelFundingMonthly();
+        }
+
         _state.AddToChronicle($"【时间更迭】大汉历纪：{_state.Year}年{_state.Month}月 {(_state.Xun == 1 ? "上旬" : _state.Xun == 2 ? "中旬" : "下旬")}。");
 
         // 异步后台演进官员想法与天灾日常

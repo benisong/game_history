@@ -77,6 +77,12 @@ public class GameState
     public ArmyState WestGardenArmy { get; set; } = new(); // 西园八校尉新军
     public System.Collections.Generic.Dictionary<string, Province> Provinces { get; set; } = new();
 
+    // === 情报机构(黄门暗探)供养 ===
+    // 每月由天子从【私库】拨款维持。拨款档位决定暗探"工作热情"(Zeal)，
+    // 热情经平衡公式换算为情报查探准确率。给钱需皇帝主动确认(见 GameEngine.SetIntelFunding)；
+    // 私库不足以支付所选档位则视同不给(热情归0)。
+    public IntelFundingTier IntelFunding { get; set; } = IntelFundingTier.None;
+
     public List<string> Chronicle { get; set; } = new();
 
     // 纪元时间系统（旬：1-3，每旬十天，三旬为一月）
