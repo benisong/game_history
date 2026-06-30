@@ -108,4 +108,48 @@ public class IntelAgencyTests
         var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
         Assert.Null(engine.InvestigateNpc("not_exist"));
     }
+
+    [Fact]
+    public void SetIntelFundingDetailed_UpgradeShowsMoreZealStory()
+    {
+        var state = new GameState();
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        engine.SetIntelFunding(IntelFundingTier.Half);            // 先克扣
+        var r = engine.SetIntelFundingDetailed(IntelFundingTier.Lavish); // 升档到打赏
+
+        Assert.True(r.Success);
+        Assert.Equal(IntelFundingTier.Half, r.PreviousTier);
+        Assert.Equal(IntelFundingTier.Lavish, r.NewTier);
+        Assert.Equal(95, r.Accuracy);
+        Assert.Contains("更为卖力", r.StoryText);   // 升档对比提示
+        Assert.Contains("叩首谢恩", r.StoryText);   // 打赏反应
+    }
+
+    [Fact]
+    public void SetIntelFundingDetailed_DowngradeShowsSlackStory()
+    {
+        var state = new GameState();
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        engine.SetIntelFunding(IntelFundingTier.Lavish);          // 先打赏
+        var r = engine.SetIntelFundingDetailed(IntelFundingTier.Half); // 降档到克扣
+
+        Assert.True(r.Success);
+        Assert.Contains("用度缩减", r.StoryText);   // 降档对比提示
+    }
+
+    [Fact]
+    public void SetIntelFundingDetailed_Broke_ShowsFailureStory()
+    {
+        var state = new GameState();
+        state.PrivateTreasury = 30;
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        var r = engine.SetIntelFundingDetailed(IntelFundingTier.Normal);
+
+        Assert.False(r.Success);
+        Assert.Equal(IntelFundingTier.None, r.NewTier);
+        Assert.Contains("私库已空", r.StoryText);
+    }
 }
