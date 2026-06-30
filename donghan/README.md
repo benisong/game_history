@@ -442,8 +442,15 @@ dotnet build DonghanFrontend.csproj -v minimal
 - 新增/改动:`TraitVocabulary.cs`(词组库+五色枚举)、`TraitDeriver.cs`(派生+风评+情报)、
   `NpcTraitEvaluator.cs`(纯数值驱动重写)、`NpcState.Integrity`、71人+4硬编码补 Integrity、
   漂没改单一廉洁驱动、`TraitVocabularyTests.cs`(9 个专项测试)。
-- **阶段二待做**:前端情报页接入「查探 NPC」UI(调用 `InvestigateNpc`)+ 拨款界面(调用 `SetIntelFunding` 选档位)。
-  情报机构供养后端已完成(`IntelAgency` / `SetIntelFunding` / 月度续付 / `InvestigateNpc`,见 §5.4),前端只需接 UI。
+- **阶段二待做(前端 Godot UI)**:后端机制已就绪,以下为前端表现层待办:
+  1. **朝堂/名册展示**:用 `TraitDeriver.GetGlimpse(npc)` 渲染主词组(按 `ColorHex` 五色着色)+ 模糊风评。
+  2. **情报页「查探 NPC」**:选 NPC → 调 `InvestigateNpc` → 显示带颜色的逐维词组评价 + 当前准确率提示。
+  3. **拨款界面**:三档供养按钮 → 调 `SetIntelFunding(tier)` 选档位。
+  4. ⏳ **拨款后过渡动画/动态图片(未做)**:皇帝确认拨付金额后,需要一段过渡演出 ——
+     如"黄门令叩首谢恩、暗探倾巢而出"的过渡图片/动态图(或动画),并配文字提示体现
+     情报组长卖力程度变化(例:打赏→『暗探闻赏而动,较先前更卖力了』;克扣→『弟兄们怕要懈怠』)。
+     需要的"卖力程度变化"对比文案可由后端按升/降档生成(目前 `SetIntelFunding` 仅写一行编年史,
+     待扩展为返回 `StoryText` 供前端弹窗);视觉过渡(渐显/动态图/动画)在 Godot 实现。
 
 ### 10.3 ⏳ 野心(`Ambition`)系统(后期专门处理)
 
