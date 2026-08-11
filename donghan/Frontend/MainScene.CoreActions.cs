@@ -877,7 +877,7 @@ public partial class MainScene : Control
         {
             PopupSkin.Court => "御览毕 · 收起回奏",
             PopupSkin.Intel => "封存密札",
-            PopupSkin.WestGarden => "归档军簿",
+            PopupSkin.WestGarden => "归档军簿并返回御案",
             PopupSkin.Document => "合上折匣",
             PopupSkin.Travel => "收起导驾奏报",
             PopupSkin.Warning => "朕已知晓",

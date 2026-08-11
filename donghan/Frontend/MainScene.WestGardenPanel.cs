@@ -43,6 +43,18 @@ public partial class MainScene : Control
 
         BuildWestGardenHeader(root);
         BuildWestGardenBody(root);
+
+        // 关闭入口固定在弹窗底部，不放进左侧动态官员列表，避免列表内容增长后把它挤出可视区域。
+        var closeButton = new Button
+        {
+            Text = "合上军簿",
+            CustomMinimumSize = new Vector2(0, 42),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        StyleSceneActionButton(closeButton, ActionButtonSkin.WestGarden);
+        closeButton.Pressed += _windowManager.PopWindow;
+        root.AddChild(closeButton);
+
         AddChild(_westGardenPopup);
     }
 
@@ -71,12 +83,6 @@ public partial class MainScene : Control
         _westGardenOfficersVBox.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         _westGardenOfficersVBox.AddThemeConstantOverride("separation", 8);
         armyColumn.AddChild(_westGardenOfficersVBox);
-
-        var closeButton = new Button();
-        closeButton.Text = "合上军簿";
-        StyleSceneActionButton(closeButton, ActionButtonSkin.WestGarden);
-        closeButton.Pressed += _windowManager.PopWindow;
-        armyColumn.AddChild(closeButton);
 
         var detailsColumn = CreateWestGardenColumn(body, "校场与私库", 500, expand: true);
         _westGardenDetailsLabel = new RichTextLabel();
