@@ -73,12 +73,61 @@ public partial class MainSceneV2 : Control
         var actions = new HBoxContainer();
         actions.AddThemeConstantOverride("separation", 12);
         _content.AddChild(actions);
-        AddButton(actions, "起驾西园", TravelWestGarden);
+        AddButton(actions, "起驾巡幸", ShowTravel);
         AddButton(actions, "进入西园军务", OpenWestGarden);
         AddButton(actions, "推进一旬", AdvanceXun);
         AddButton(actions, "朝会占位测试", CourtNotReady);
         _status.Text = "V2 Runtime 已组装：UI 只依赖 Contracts 接口。Legacy 链路未修改。";
         RefreshSnapshot();
+    }
+
+    private void ShowTravel()
+    {
+        ClearContent();
+        AddSectionTitle("龙辇巡幸 · 驻跸择所");
+        _content.AddChild(new Label
+        {
+            Text = "请陛下定夺今日驻跸之所。目的地确认后，V2 将通过 ITravelService 执行并返回 ActionResult。",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var destinations = new HBoxContainer
+        {
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        destinations.AddThemeConstantOverride("separation", 12);
+        _content.AddChild(destinations);
+
+        AddTravelCard(destinations, "宣政殿", "玉阶临朝", "临朝听政，批阅奏折，召见百官。", () => TravelTo("宣政殿"));
+        AddTravelCard(destinations, "后宫", "温德炉烟", "暂离外朝，调养龙体，恢复精神。", () => TravelTo("后宫"));
+        AddTravelCard(destinations, "西园", "西园秘营", "亲阅私库与新军，处理军务。", () => TravelTo("西园"));
+
+        AddButton(_content, "龙辇免起 · 返回御案", ShowHome);
+        RefreshSnapshot();
+    }
+
+    private void AddTravelCard(Container parent, string destination, string heading, string description, Action travel)
+    {
+        var card = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        card.AddThemeConstantOverride("separation", 10);
+        parent.AddChild(card);
+        card.AddChild(new Label
+        {
+            Text = $"{heading}\n【{destination}】",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+        card.AddChild(new Label
+        {
+            Text = description,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+        AddButton(card, $"起驾{destination}", travel);
     }
 
     private void ShowWestGarden()
@@ -157,9 +206,15 @@ public partial class MainSceneV2 : Control
 
     private void TravelWestGarden()
     {
-        var result = _runtime.Travel.Travel(new TravelCommand("西园"));
+        TravelTo("西园");
+    }
+
+    private void TravelTo(string destination)
+    {
+        var result = _runtime.Travel.Travel(new TravelCommand(destination));
         ShowResult(result);
-        if (result.Success) ShowWestGarden();
+        if (result.Success && destination == "西园") ShowWestGarden();
+        else if (result.Success) ShowHome();
     }
 
     private void OpenWestGarden()
