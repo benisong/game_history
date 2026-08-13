@@ -11,17 +11,58 @@ public sealed class GameEngineCourtService : ICourtService
 
     public GameEngineCourtService(GameEngine engine) => _engine = engine;
 
-    public Task<ActionResult> ExecuteDecisionAsync(CourtDecisionCommand command)
+    public Task<string> StartSessionAsync()
+    {
+        return Task.FromResult(StartSession());
+    }
+
+    public string StartSession()
     {
         try
         {
-            // V2 首阶段只提供统一契约边界；具体朝会命令映射在 Court 纵向切片中接入。
-            // 不把未知 decisionId 静默映射为普通玩家输入，避免误执行。
-            throw new NotSupportedException($"朝会决策尚未接入 V2 适配器：{command.DecisionId}");
+            return _engine.StartGrandCourtSync();
         }
         catch (Exception ex)
         {
-            return Task.FromResult(ActionResult.Failure("朝议未成", ex.Message, ReportKind.Warning, ex.GetType().Name));
+            return $"【朝会未开】{ex.Message}";
         }
+    }
+
+    public async Task<ActionResult> ExecuteDecisionAsync(CourtDecisionCommand command)
+    {
+        try
+        {
+            string input = ResolveDecisionInput(command);
+            if (!string.IsNullOrWhiteSpace(command.ActiveOfficerId))
+                _engine.ActiveOfficerId = command.ActiveOfficerId;
+
+            var result = await _engine.ProcessPlayerTurnAsync(input);
+            return new ActionResult(
+                true,
+                "朝议圣裁回奏",
+                result.StoryText,
+                ReportKind.Court,
+                Array.Empty<StateChange>());
+        }
+        catch (Exception ex)
+        {
+            return ActionResult.Failure("朝议未成", ex.Message, ReportKind.Warning, ex.GetType().Name);
+        }
+    }
+
+    private static string ResolveDecisionInput(CourtDecisionCommand command)
+    {
+        return command.DecisionId switch
+        {
+            "military_garden" => "命曹操整西园军",
+            "military_north" => "准何进整北军",
+            "military_funds" => "命张让核查军费",
+            "treasury_eunuch" => "命张让筹措国帑",
+            "eunuch_reprimand" => "训诫张让",
+            "eunuch_reassure" => "重赏张让",
+            "talent_cao" => "召见曹操",
+            "talent_jian" => "召见蹇硕",
+            _ => throw new ArgumentException($"未知朝会决策：{command.DecisionId}", nameof(command))
+        };
     }
 }

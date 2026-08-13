@@ -91,7 +91,7 @@ public sealed record ProvinceActionCommand(
     int Troops = 0,
     int ReliefGold = 0,
     string? Strategy = null);
-public sealed record CourtDecisionCommand(string TopicId, string DecisionId);
+public sealed record CourtDecisionCommand(string TopicId, string DecisionId, string? ActiveOfficerId = null);
 public sealed record FastForwardCommand(int XunCount);
 
 public sealed record ProvinceIntelResult(

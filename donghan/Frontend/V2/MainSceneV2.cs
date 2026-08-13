@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Godot;
 using DonghanFrontend.V2.Adapters;
 using DonghanFrontend.V2.Contracts;
@@ -51,19 +53,19 @@ public partial class MainSceneV2 : Control
         _snapshot.AddThemeFontSizeOverride("font_size", 17);
         root.AddChild(_snapshot);
 
-        _content = new VBoxContainer();
-        _content.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
-        _content.AddThemeConstantOverride("separation", 12);
-        root.AddChild(_content);
-
         _status = new Label
         {
             Text = "V2 Runtime 已组装：UI 只依赖 Contracts 接口。",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
-        _status.CustomMinimumSize = new Vector2(0, 70);
+        _status.CustomMinimumSize = new Vector2(0, 54);
         _status.AddThemeColorOverride("font_color", new Color(0.72f, 0.68f, 0.56f, 1f));
         root.AddChild(_status);
+
+        _content = new VBoxContainer();
+        _content.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        _content.AddThemeConstantOverride("separation", 12);
+        root.AddChild(_content);
     }
 
     private void ShowHome()
@@ -77,7 +79,7 @@ public partial class MainSceneV2 : Control
         AddButton(actions, "进入黄门密札", ShowIntel);
         AddButton(actions, "进入西园军务", OpenWestGarden);
         AddButton(actions, "推进一旬", AdvanceXun);
-        AddButton(actions, "朝会占位测试", CourtNotReady);
+        AddButton(actions, "进入宣政殿朝会", ShowCourt);
         _status.Text = "V2 Runtime 已组装：UI 只依赖 Contracts 接口。Legacy 链路未修改。";
         RefreshSnapshot();
     }
@@ -243,6 +245,99 @@ public partial class MainSceneV2 : Control
             children[i].QueueFree();
     }
 
+    private async void ShowCourt()
+    {
+        ClearContent();
+        AddSectionTitle("宣政殿 · V2 大朝会");
+        _content.AddChild(new Label
+        {
+            Text = "朝会状态、议题与裁断通过 ICourtService 管理；V2 不直接访问 GameEngine。",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var opening = await _runtime.Court.StartSessionAsync();
+        _content.AddChild(new Label
+        {
+            Text = opening,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var hostRow = new HBoxContainer();
+        hostRow.AddThemeConstantOverride("separation", 8);
+        _content.AddChild(hostRow);
+        hostRow.AddChild(new Label { Text = "主持人：" });
+        var host = new OptionButton();
+        host.AddItem("何进");
+        host.SetItemMetadata(0, "he_jin");
+        host.AddItem("曹操");
+        host.SetItemMetadata(1, "cao_cao");
+        host.AddItem("张让");
+        host.SetItemMetadata(2, "zhang_rang");
+        host.AddItem("蹇硕");
+        host.SetItemMetadata(3, "jian_shuo");
+        hostRow.AddChild(host);
+
+        var topics = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        topics.AddThemeConstantOverride("separation", 8);
+        _content.AddChild(topics);
+        AddCourtTopic(topics, "整军备寇", "军务", "military_readiness", new[]
+        {
+            ("准何进整北军", "military_north", "扩整北军，强化外戚军务"),
+            ("命曹操整西园军", "military_garden", "将西园军务交给曹操"),
+            ("令张让核军费", "military_funds", "先核军费，再定军务")
+        }, host);
+        AddCourtTopic(topics, "国帑筹措", "财计", "treasury", new[]
+        {
+            ("令张让筹措内帑", "treasury_eunuch", "让中官介入财计")
+        }, host);
+        AddCourtTopic(topics, "整饬宦官", "党争", "eunuchs", new[]
+        {
+            ("训诫张让", "eunuch_reprimand", "公开训诫中官"),
+            ("安抚张让", "eunuch_reassure", "以圣眷稳定内廷")
+        }, host);
+        AddButton(_content, "退朝 · 返回御案", ShowHome);
+        RefreshSnapshot();
+    }
+
+    private void AddCourtTopic(
+        VBoxContainer parent,
+        string title,
+        string category,
+        string topicId,
+        (string Label, string Id, string Hint)[] decisions,
+        OptionButton host)
+    {
+        var panel = new VBoxContainer();
+        panel.AddThemeConstantOverride("separation", 5);
+        parent.AddChild(panel);
+        panel.AddChild(new Label { Text = $"【{category}】{title}" });
+        foreach (var decision in decisions)
+        {
+            AddButton(panel, decision.Label, () => ExecuteCourtDecisionAsync(topicId, decision.Id, decision.Hint, host));
+        }
+    }
+
+    private async void ExecuteCourtDecisionAsync(string topicId, string decisionId, string hint, OptionButton host)
+    {
+        _status.Text = $"正在处理：{hint}";
+        try
+        {
+            var command = new CourtDecisionCommand(topicId, decisionId, host.GetSelectedMetadata().AsString());
+            var task = _runtime.Court.ExecuteDecisionAsync(command);
+            var completed = await Task.WhenAny(task, Task.Delay(15000));
+            if (completed != task)
+            {
+                _status.Text = "朝议处理超时：规则服务未在 15 秒内返回。";
+                return;
+            }
+            ShowResult(await task);
+        }
+        catch (Exception ex)
+        {
+            _status.Text = $"朝议处理异常：{ex.Message}";
+        }
+    }
+
     private void ShowWestGarden()
     {
         ClearContent();
@@ -356,10 +451,16 @@ public partial class MainSceneV2 : Control
 
     private void ShowResult(ActionResult result)
     {
+        string story = StripBbCode(result.StoryText);
         _status.Text = result.Success
-            ? $"{result.Title}\n{result.StoryText}"
-            : $"{result.Title}：{result.StoryText}";
+            ? $"{result.Title}\n{story}"
+            : $"{result.Title}：{story}";
         RefreshSnapshot();
+    }
+
+    private static string StripBbCode(string text)
+    {
+        return Regex.Replace(text ?? string.Empty, @"\[/?(?:color(?:=[^\]]+)?|b|i|u)\]", string.Empty);
     }
 
     private void AddSectionTitle(string text)

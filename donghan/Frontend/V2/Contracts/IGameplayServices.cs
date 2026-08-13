@@ -30,6 +30,7 @@ public interface IIntelService
 
 public interface ICourtService
 {
+    Task<string> StartSessionAsync();
     Task<ActionResult> ExecuteDecisionAsync(CourtDecisionCommand command);
 }
 
