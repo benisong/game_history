@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using DonghanEngine.Core;
 using DonghanFrontend.V2.Contracts;
@@ -20,8 +21,9 @@ public sealed class GameEngineTurnService : ITurnService
     {
         try
         {
+            var before = _engine.GetState().Chronicle.Count;
             await _engine.NextXunAsync();
-            return new TurnAdvanceResult(true, _state.GetSnapshot(), Array.Empty<string>());
+            return new TurnAdvanceResult(true, _state.GetSnapshot(), ReadNewEvents(before));
         }
         catch (Exception ex)
         {
@@ -37,6 +39,7 @@ public sealed class GameEngineTurnService : ITurnService
         }
 
         int advanced = 0;
+        int eventStart = _engine.GetState().Chronicle.Count;
         try
         {
             for (; advanced < command.XunCount; advanced++)
@@ -44,15 +47,22 @@ public sealed class GameEngineTurnService : ITurnService
                 await _engine.NextXunAsync();
                 if (_engine.GetState().Outcome != GameOutcome.Playing)
                 {
-                    return new FastForwardResult(true, command.XunCount, advanced + 1, _state.GetSnapshot(), Array.Empty<string>(), true, "游戏结局已确定。");
+                    return new FastForwardResult(true, command.XunCount, advanced + 1, _state.GetSnapshot(), ReadNewEvents(eventStart), true, "游戏结局已确定。");
                 }
             }
 
-            return new FastForwardResult(true, command.XunCount, advanced, _state.GetSnapshot(), Array.Empty<string>(), false);
+            return new FastForwardResult(true, command.XunCount, advanced, _state.GetSnapshot(), ReadNewEvents(eventStart), false);
         }
         catch (Exception ex)
         {
-            return new FastForwardResult(false, command.XunCount, advanced, _state.GetSnapshot(), Array.Empty<string>(), true, ex.Message, ex.GetType().Name);
+            return new FastForwardResult(false, command.XunCount, advanced, _state.GetSnapshot(), ReadNewEvents(eventStart), true, ex.Message, ex.GetType().Name);
         }
+    }
+
+    private IReadOnlyList<string> ReadNewEvents(int beforeCount)
+    {
+        var chronicle = _engine.GetState().Chronicle;
+        if (beforeCount >= chronicle.Count) return Array.Empty<string>();
+        return chronicle.GetRange(beforeCount, chronicle.Count - beforeCount);
     }
 }

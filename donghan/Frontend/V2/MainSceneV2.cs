@@ -380,7 +380,7 @@ public partial class MainSceneV2 : Control
         _status.Text = "正在推进一旬：等待 ITurnService 完成旬结算……";
         var result = await _runtime.Turns.AdvanceXunAsync();
         _status.Text = result.Success
-            ? "旬结算完成：时间、事件与结局判定已由 ITurnService 处理。"
+            ? $"旬结算完成：时间、事件与结局判定已由 ITurnService 处理。新增事件：{FormatEvents(result.Events)}"
             : $"旬推进失败：{result.ErrorMessage}";
         ShowTurnControl();
     }
@@ -390,11 +390,17 @@ public partial class MainSceneV2 : Control
         _status.Text = $"正在快进 {count} 旬：每旬逐步执行，不跳过规则结算……";
         var result = await _runtime.Turns.FastForwardAsync(new FastForwardCommand(count));
         _status.Text = result.Success
-            ? $"快进完成：请求 {result.RequestedXun} 旬，实际推进 {result.AdvancedXun} 旬。"
+            ? $"快进完成：请求 {result.RequestedXun} 旬，实际推进 {result.AdvancedXun} 旬。新增事件：{FormatEvents(result.Events)}"
             : $"快进失败：已推进 {result.AdvancedXun} 旬；{result.InterruptReason ?? "规则服务未返回原因。"}";
         if (result.Interrupted)
             _status.Text += " 游戏结局或临界状态已触发，快进已停止。";
         ShowTurnControl();
+    }
+
+    private static string FormatEvents(IReadOnlyList<string> events)
+    {
+        if (events.Count == 0) return "无";
+        return string.Join("；", events.Count > 3 ? events.Skip(events.Count - 3) : events);
     }
 
     private void RenderTurnSummary(Label target)
