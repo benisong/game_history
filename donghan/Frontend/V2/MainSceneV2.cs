@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Godot;
@@ -78,7 +79,7 @@ public partial class MainSceneV2 : Control
         AddButton(actions, "起驾巡幸", ShowTravel);
         AddButton(actions, "进入黄门密札", ShowIntel);
         AddButton(actions, "进入西园军务", OpenWestGarden);
-        AddButton(actions, "推进一旬", AdvanceXun);
+        AddButton(actions, "推进一旬", ShowTurnControl);
         AddButton(actions, "进入宣政殿朝会", ShowCourt);
         _status.Text = "V2 Runtime 已组装：UI 只依赖 Contracts 接口。Legacy 链路未修改。";
         RefreshSnapshot();
@@ -336,6 +337,73 @@ public partial class MainSceneV2 : Control
         {
             _status.Text = $"朝议处理异常：{ex.Message}";
         }
+    }
+
+    private void ShowTurnControl()
+    {
+        ClearContent();
+        AddSectionTitle("时序推演 · 旬日流转");
+        _content.AddChild(new Label
+        {
+            Text = "旬推进由 ITurnService 统一调度。每一旬可能触发奏折过期、州郡叛乱、历史事件或结局判定。",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var controls = new HBoxContainer();
+        controls.AddThemeConstantOverride("separation", 10);
+        _content.AddChild(controls);
+        AddButton(controls, "推进一旬", AdvanceOneXun);
+        var count = new SpinBox
+        {
+            MinValue = 1,
+            MaxValue = 30,
+            Step = 1,
+            Value = 3,
+            CustomMinimumSize = new Vector2(160, 42)
+        };
+        controls.AddChild(count);
+        AddButton(controls, "快进指定旬数", () => FastForwardXun((int)count.Value));
+
+        var latest = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        _content.AddChild(latest);
+        RenderTurnSummary(latest);
+        AddButton(_content, "停止推演 · 返回御案", ShowHome);
+        RefreshSnapshot();
+    }
+
+    private async void AdvanceOneXun()
+    {
+        _status.Text = "正在推进一旬：等待 ITurnService 完成旬结算……";
+        var result = await _runtime.Turns.AdvanceXunAsync();
+        _status.Text = result.Success
+            ? "旬结算完成：时间、事件与结局判定已由 ITurnService 处理。"
+            : $"旬推进失败：{result.ErrorMessage}";
+        ShowTurnControl();
+    }
+
+    private async void FastForwardXun(int count)
+    {
+        _status.Text = $"正在快进 {count} 旬：每旬逐步执行，不跳过规则结算……";
+        var result = await _runtime.Turns.FastForwardAsync(new FastForwardCommand(count));
+        _status.Text = result.Success
+            ? $"快进完成：请求 {result.RequestedXun} 旬，实际推进 {result.AdvancedXun} 旬。"
+            : $"快进失败：已推进 {result.AdvancedXun} 旬；{result.InterruptReason ?? "规则服务未返回原因。"}";
+        if (result.Interrupted)
+            _status.Text += " 游戏结局或临界状态已触发，快进已停止。";
+        ShowTurnControl();
+    }
+
+    private void RenderTurnSummary(Label target)
+    {
+        var state = _runtime.State.GetSnapshot();
+        string recent = state.Chronicle.Count == 0
+            ? "暂无旬日记录。"
+            : string.Join("\n", state.Chronicle.Skip(Math.Max(0, state.Chronicle.Count - 8)));
+        target.Text = $"当前结局：{state.Outcome}\n\n最近旬日记录：\n{recent}";
     }
 
     private void ShowWestGarden()
