@@ -5,6 +5,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="V2.Tests/**/*.cs" />
+    <None Include="V2.Tests/**/*.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Backend\DonghanEngine.Core\DonghanEngine.Core.csproj" />
   </ItemGroup>
 </Project>
