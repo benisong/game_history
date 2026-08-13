@@ -74,6 +74,7 @@ public partial class MainSceneV2 : Control
         actions.AddThemeConstantOverride("separation", 12);
         _content.AddChild(actions);
         AddButton(actions, "起驾巡幸", ShowTravel);
+        AddButton(actions, "进入黄门密札", ShowIntel);
         AddButton(actions, "进入西园军务", OpenWestGarden);
         AddButton(actions, "推进一旬", AdvanceXun);
         AddButton(actions, "朝会占位测试", CourtNotReady);
@@ -128,6 +129,118 @@ public partial class MainSceneV2 : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
         AddButton(card, $"起驾{destination}", travel);
+    }
+
+    private void ShowIntel()
+    {
+        ClearContent();
+        AddSectionTitle("黄门密札 · 天下情报台");
+        _content.AddChild(new Label
+        {
+            Text = "州郡情报由 IGameStateReader 提供；处置命令统一提交给 IIntelService。",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var body = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        body.AddThemeConstantOverride("separation", 14);
+        _content.AddChild(body);
+
+        var provinces = new ItemList
+        {
+            CustomMinimumSize = new Vector2(300, 0),
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        body.AddChild(provinces);
+        var provinceList = new List<ProvinceSnapshot>();
+        foreach (var province in GetProvinceList())
+        {
+            provinceList.Add(province);
+            provinces.AddItem($"{(province.IsRebelling ? "⚡" : "○")} {province.Name}\n民心{province.LocalSupport}｜守军{province.Garrison}｜{province.GovernorName switch { "" => "无太守", _ => province.GovernorName }}");
+        }
+
+        var detail = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        detail.AddThemeConstantOverride("separation", 8);
+        body.AddChild(detail);
+        var detailLabel = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        detailLabel.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        detail.AddChild(detailLabel);
+
+        var actionBox = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        actionBox.AddThemeConstantOverride("separation", 8);
+        body.AddChild(actionBox);
+        actionBox.AddChild(new Label { Text = "可行处置" });
+        var actionHint = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        actionBox.AddChild(actionHint);
+
+        void SelectProvince(long index)
+        {
+            if (index < 0 || index >= provinceList.Count) return;
+            var province = provinceList[(int)index];
+            var intel = _runtime.Intel.InspectProvince(new InspectProvinceCommand(province.Id));
+            if (!intel.Success || intel.Province == null)
+            {
+                detailLabel.Text = intel.ErrorMessage ?? "州郡情报读取失败。";
+                actionHint.Text = "暂无可用处置。";
+                return;
+            }
+            RenderProvinceDetail(detailLabel, intel.Province);
+            RenderIntelActions(actionBox, actionHint, intel.Province);
+        }
+
+        provinces.ItemSelected += SelectProvince;
+        if (provinceList.Count > 0) SelectProvince(0);
+        AddButton(_content, "收起密札 · 返回御案", ShowHome);
+        RefreshSnapshot();
+    }
+
+    private IReadOnlyList<ProvinceSnapshot> GetProvinceList()
+    {
+        var result = new List<ProvinceSnapshot>();
+        foreach (var candidate in new[] { "sili", "jizhou", "bingzhou", "yanzhou", "yuzhou", "jingzhou" })
+        {
+            if (_runtime.Intel.InspectProvince(new InspectProvinceCommand(candidate)).Province is { } snapshot)
+                result.Add(snapshot);
+        }
+        return result;
+    }
+
+    private static void RenderProvinceDetail(Label target, ProvinceSnapshot province)
+    {
+        string rebellion = province.IsRebelling
+            ? $"⚡ {province.RebelFaction}叛乱，已持续 {province.RebellionMonths} 个月"
+            : "○ 安定无事";
+        target.Text =
+            $"【{province.Name}】\n\n当前局势：{rebellion}\n" +
+            $"地方太守：{(string.IsNullOrEmpty(province.GovernorName) ? "暂无" : province.GovernorName)}\n" +
+            $"地方民心：{province.LocalSupport}/100\n郡中守军：{province.Garrison} 人\n" +
+            $"财富：{province.Wealth} 万\n防务等级：{province.DefenseLevel}/100\n距京：{province.Distance}";
+    }
+
+    private void RenderIntelActions(VBoxContainer actionBox, Label hint, ProvinceSnapshot province)
+    {
+        ClearChildrenAfter(actionBox, 2);
+        hint.Text = province.IsRebelling ? "该州正在叛乱，可选择平叛或招安。" : "可进行太守任免。";
+        AddButton(actionBox, "任命曹操为太守", () => ExecuteIntelAction(new ProvinceActionCommand(province.Id, ProvinceActionKind.AssignGovernor, "cao_cao")));
+        if (!string.IsNullOrEmpty(province.GovernorId))
+            AddButton(actionBox, "召还现任太守", () => ExecuteIntelAction(new ProvinceActionCommand(province.Id, ProvinceActionKind.RecallGovernor)));
+        if (province.IsRebelling)
+        {
+            AddButton(actionBox, "出兵平叛（3000人）", () => ExecuteIntelAction(new ProvinceActionCommand(province.Id, ProvinceActionKind.SuppressRebellion, "cao_cao", 3000)));
+            AddButton(actionBox, "遣使招安（说服）", () => ExecuteIntelAction(new ProvinceActionCommand(province.Id, ProvinceActionKind.PacifyRebellion, "cao_cao", Strategy: "说服")));
+        }
+    }
+
+    private void ExecuteIntelAction(ProvinceActionCommand command)
+    {
+        ShowResult(_runtime.Intel.ExecuteProvinceAction(command));
+        ShowIntel();
+    }
+
+    private static void ClearChildrenAfter(Container container, int keepCount)
+    {
+        var children = container.GetChildren();
+        for (int i = keepCount; i < children.Count; i++)
+            children[i].QueueFree();
     }
 
     private void ShowWestGarden()
