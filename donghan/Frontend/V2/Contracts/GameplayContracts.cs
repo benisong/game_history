@@ -93,6 +93,7 @@ public sealed record ProvinceActionCommand(
     string? Strategy = null);
 public sealed record CourtDecisionCommand(string TopicId, string DecisionId, string? ActiveOfficerId = null);
 public sealed record FreeEdictCommand(string PlayerInput, string ActiveOfficerId);
+public sealed record SpecialActionCommand(string ActionId, int Amount = 0, string OfficerId = "", string TargetNpcId = "", string Destination = "");
 public sealed record FastForwardCommand(int XunCount);
 public sealed record EdictOptionSnapshot(string Description, string ConsequencePreview);
 public sealed record EdictSnapshot(string Id, string Title, string Type, string NarrativeContent, int ExpiryXun, IReadOnlyList<EdictOptionSnapshot> Options);

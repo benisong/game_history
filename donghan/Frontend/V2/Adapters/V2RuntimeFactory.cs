@@ -27,6 +27,7 @@ public static class V2RuntimeFactory
             new GameEngineIntelService(engine, stateReader),
             new GameEngineCourtService(engine),
             new GameEngineTurnService(engine, stateReader),
-            new GameEngineEdictService(engine));
+            new GameEngineEdictService(engine),
+            new GameEngineSpecialActionService(engine));
     }
 }

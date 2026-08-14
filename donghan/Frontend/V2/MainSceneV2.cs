@@ -83,6 +83,9 @@ public partial class MainSceneV2 : Control
         AddButton(actions, "进入西园军务", OpenWestGarden);
         AddButton(actions, "推进一旬", ShowTurnControl);
         AddButton(actions, "进入宣政殿朝会", ShowCourt);
+        var location = _runtime.State.GetSnapshot().CurrentLocation;
+        if (location == "后宫")
+            AddButton(actions, "后宫休养", () => ExecuteSpecialAction(new SpecialActionCommand("harem_rest")));
         _status.Text = "V2 Runtime 已组装：UI 只依赖 Contracts 接口。Legacy 链路未修改。";
         RefreshSnapshot();
     }
@@ -392,6 +395,11 @@ public partial class MainSceneV2 : Control
             children[i].QueueFree();
     }
 
+    private void ExecuteSpecialAction(SpecialActionCommand command)
+    {
+        ShowResult(_runtime.SpecialActions.Execute(command));
+    }
+
     private async void ShowCourt()
     {
         ClearContent();
@@ -453,6 +461,8 @@ public partial class MainSceneV2 : Control
             ("训诫张让", "eunuch_reprimand", "公开训诫中官"),
             ("安抚张让", "eunuch_reassure", "以圣眷稳定内廷")
         }, host);
+        AddButton(_content, "开仓赈灾（曹操经办）", () => ExecuteSpecialAction(new SpecialActionCommand("disaster_relief", 1000, "cao_cao")));
+        AddButton(_content, "抄家籍没张让", () => ExecuteSpecialAction(new SpecialActionCommand("confiscation", TargetNpcId: "zhang_rang", Destination: "西园")));
         AddButton(_content, "退朝 · 返回御案", ShowHome);
         RefreshSnapshot();
     }
@@ -609,6 +619,7 @@ public partial class MainSceneV2 : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
         AddButton(overview, "刷新军簿", RefreshWestGarden);
+        AddButton(overview, "鬻官纳钱", () => ExecuteSpecialAction(new SpecialActionCommand("sell_office")));
 
         var actions = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         actions.AddThemeConstantOverride("separation", 8);

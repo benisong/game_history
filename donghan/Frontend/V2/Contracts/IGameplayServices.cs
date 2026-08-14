@@ -47,6 +47,11 @@ public interface IEdictService
     ActionResult Resolve(ResolveEdictCommand command);
 }
 
+public interface ISpecialActionService
+{
+    ActionResult Execute(SpecialActionCommand command);
+}
+
 public interface IReportPresenter
 {
     void Show(ActionResult result);
