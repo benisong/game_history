@@ -1122,7 +1122,7 @@ public class EngineTests
         var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
         await engine.NextXunAsync(); // → 189/8/3 触发何进之死
         Assert.False(state.Npcs["he_jin"].IsActive);
-        Assert.True(state.Chronicle.Any(e => e.Contains("外戚崩殂")));
+        Assert.Contains(state.Chronicle, e => e.Contains("外戚崩殂"));
 
         int heJinChronicleCount = state.Chronicle.Count(e => e.Contains("外戚崩殂"));
 

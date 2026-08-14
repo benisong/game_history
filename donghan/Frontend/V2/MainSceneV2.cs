@@ -689,10 +689,6 @@ public partial class MainSceneV2 : Control
         RefreshSnapshot();
     }
 
-    private void CourtNotReady()
-    {
-        _status.Text = "朝会 V2 尚未接入，已明确返回失败，不会静默执行旧链路。";
-    }
 
     private void ShowResult(ActionResult result)
     {
