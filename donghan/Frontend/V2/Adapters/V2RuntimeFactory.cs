@@ -5,16 +5,19 @@ namespace DonghanFrontend.V2.Adapters;
 
 public static class V2RuntimeFactory
 {
-    public static V2Runtime CreateDefault() => CreateDefault(new GameState());
+    public static V2Runtime CreateDefault() => CreateDefault(new GameState(), null);
 
-    public static V2Runtime CreateDefault(GameState state)
+    public static V2Runtime CreateDefault(GameState state) => CreateDefault(state, null);
+
+    public static V2Runtime CreateDefault(GameState state, System.Random? rng)
     {
         var engine = new GameEngine(
             state,
             new MockScheduler(),
             new MockOracle(),
             new MockMinisterAgent(),
-            new MockNarrator());
+            new MockNarrator(),
+            rng);
 
         var stateReader = new GameEngineStateReader(engine);
         return new V2Runtime(
