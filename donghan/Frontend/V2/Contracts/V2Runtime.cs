@@ -8,7 +8,8 @@ public sealed class V2Runtime
         IWestGardenService westGarden,
         IIntelService intel,
         ICourtService court,
-        ITurnService turns)
+        ITurnService turns,
+        IEdictService edicts)
     {
         State = state;
         Travel = travel;
@@ -16,6 +17,7 @@ public sealed class V2Runtime
         Intel = intel;
         Court = court;
         Turns = turns;
+        Edicts = edicts;
     }
 
     public IGameStateReader State { get; }
@@ -24,4 +26,5 @@ public sealed class V2Runtime
     public IIntelService Intel { get; }
     public ICourtService Court { get; }
     public ITurnService Turns { get; }
+    public IEdictService Edicts { get; }
 }

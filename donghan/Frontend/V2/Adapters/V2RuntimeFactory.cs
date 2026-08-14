@@ -22,6 +22,7 @@ public static class V2RuntimeFactory
             new GameEngineWestGardenService(engine),
             new GameEngineIntelService(engine, stateReader),
             new GameEngineCourtService(engine),
-            new GameEngineTurnService(engine, stateReader));
+            new GameEngineTurnService(engine, stateReader),
+            new GameEngineEdictService(engine));
     }
 }

@@ -40,6 +40,12 @@ public interface ITurnService
     Task<FastForwardResult> FastForwardAsync(FastForwardCommand command);
 }
 
+public interface IEdictService
+{
+    IReadOnlyList<EdictSnapshot> GetPendingEdicts();
+    ActionResult Resolve(ResolveEdictCommand command);
+}
+
 public interface IReportPresenter
 {
     void Show(ActionResult result);

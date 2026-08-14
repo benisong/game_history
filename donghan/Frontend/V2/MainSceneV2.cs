@@ -78,6 +78,7 @@ public partial class MainSceneV2 : Control
         _content.AddChild(actions);
         AddButton(actions, "起驾巡幸", ShowTravel);
         AddButton(actions, "进入黄门密札", ShowIntel);
+        AddButton(actions, "打开御案折匣", ShowEdicts);
         AddButton(actions, "进入西园军务", OpenWestGarden);
         AddButton(actions, "推进一旬", ShowTurnControl);
         AddButton(actions, "进入宣政殿朝会", ShowCourt);
@@ -132,6 +133,65 @@ public partial class MainSceneV2 : Control
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
         AddButton(card, $"起驾{destination}", travel);
+    }
+
+    private void ShowEdicts()
+    {
+        ClearContent();
+        AddSectionTitle("御案折匣 · 尚书台卷宗");
+        _content.AddChild(new Label
+        {
+            Text = "待批奏折通过 IEdictService 读取；朱批以 ResolveEdictCommand 提交。",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var body = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        body.AddThemeConstantOverride("separation", 14);
+        _content.AddChild(body);
+        var list = new ItemList
+        {
+            CustomMinimumSize = new Vector2(360, 0),
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        body.AddChild(list);
+        var detail = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        detail.AddThemeConstantOverride("separation", 8);
+        body.AddChild(detail);
+        var content = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart };
+        content.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        detail.AddChild(content);
+        var options = new VBoxContainer();
+        options.AddThemeConstantOverride("separation", 8);
+        detail.AddChild(options);
+
+        var edicts = _runtime.Edicts.GetPendingEdicts();
+        for (int i = 0; i < edicts.Count; i++)
+            list.AddItem($"【{edicts[i].Type}】{edicts[i].Title} · 剩余{edicts[i].ExpiryXun}旬");
+
+        void RenderEdict(long index)
+        {
+            if (index < 0 || index >= edicts.Count) return;
+            var edict = edicts[(int)index];
+            content.Text = $"【{edict.Title}】\n\n{edict.NarrativeContent}\n\n保质期：剩余 {edict.ExpiryXun} 旬";
+            ClearChildrenAfter(options, 0);
+            for (int optionIndex = 0; optionIndex < edict.Options.Count; optionIndex++)
+            {
+                int capturedIndex = optionIndex;
+                var option = edict.Options[optionIndex];
+                AddButton(options, $"朱批：{option.Description}", () =>
+                {
+                    var result = _runtime.Edicts.Resolve(new ResolveEdictCommand(edict.Id, capturedIndex));
+                    ShowResult(result);
+                    ShowEdicts();
+                });
+            }
+        }
+
+        list.ItemSelected += RenderEdict;
+        if (edicts.Count > 0) RenderEdict(0);
+        else content.Text = "当前没有待批奏折。推进旬日后，旬务调度可能生成新的奏折。";
+        AddButton(_content, "合上卷宗 · 返回御案", ShowHome);
+        RefreshSnapshot();
     }
 
     private void ShowIntel()

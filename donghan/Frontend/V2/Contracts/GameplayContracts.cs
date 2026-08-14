@@ -93,6 +93,9 @@ public sealed record ProvinceActionCommand(
     string? Strategy = null);
 public sealed record CourtDecisionCommand(string TopicId, string DecisionId, string? ActiveOfficerId = null);
 public sealed record FastForwardCommand(int XunCount);
+public sealed record EdictOptionSnapshot(string Description, string ConsequencePreview);
+public sealed record EdictSnapshot(string Id, string Title, string Type, string NarrativeContent, int ExpiryXun, IReadOnlyList<EdictOptionSnapshot> Options);
+public sealed record ResolveEdictCommand(string EdictId, int OptionIndex);
 
 public sealed record ProvinceIntelResult(
     bool Success,
