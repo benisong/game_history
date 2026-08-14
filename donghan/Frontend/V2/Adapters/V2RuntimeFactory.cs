@@ -5,9 +5,10 @@ namespace DonghanFrontend.V2.Adapters;
 
 public static class V2RuntimeFactory
 {
-    public static V2Runtime CreateDefault()
+    public static V2Runtime CreateDefault() => CreateDefault(new GameState());
+
+    public static V2Runtime CreateDefault(GameState state)
     {
-        var state = new GameState();
         var engine = new GameEngine(
             state,
             new MockScheduler(),
