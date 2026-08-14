@@ -32,6 +32,7 @@ public interface ICourtService
 {
     Task<string> StartSessionAsync();
     Task<ActionResult> ExecuteDecisionAsync(CourtDecisionCommand command);
+    Task<ActionResult> ExecuteFreeEdictAsync(FreeEdictCommand command);
 }
 
 public interface ITurnService

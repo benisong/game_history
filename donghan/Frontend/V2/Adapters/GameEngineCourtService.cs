@@ -50,6 +50,21 @@ public sealed class GameEngineCourtService : ICourtService
         }
     }
 
+    public async Task<ActionResult> ExecuteFreeEdictAsync(FreeEdictCommand command)
+    {
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(command.ActiveOfficerId))
+                _engine.ActiveOfficerId = command.ActiveOfficerId;
+            var result = await _engine.ProcessPlayerTurnAsync(command.PlayerInput);
+            return new ActionResult(true, "亲拟圣旨回奏", result.StoryText, ReportKind.Court, Array.Empty<StateChange>());
+        }
+        catch (Exception ex)
+        {
+            return ActionResult.Failure("亲拟圣旨未成", ex.Message, ReportKind.Warning, ex.GetType().Name);
+        }
+    }
+
     private static string ResolveDecisionInput(CourtDecisionCommand command)
     {
         return command.DecisionId switch

@@ -73,7 +73,7 @@ public partial class MainSceneV2 : Control
     {
         ClearContent();
         AddSectionTitle("御案四入口 · V2 平行链路");
-        var actions = new HBoxContainer();
+        var actions = new FlowContainer();
         actions.AddThemeConstantOverride("separation", 12);
         _content.AddChild(actions);
         AddButton(actions, "起驾巡幸", ShowTravel);
@@ -424,6 +424,17 @@ public partial class MainSceneV2 : Control
         host.SetItemMetadata(3, "jian_shuo");
         hostRow.AddChild(host);
 
+        var freeRow = new HBoxContainer();
+        freeRow.AddThemeConstantOverride("separation", 8);
+        _content.AddChild(freeRow);
+        var freeInput = new LineEdit
+        {
+            PlaceholderText = "亲拟圣旨，例如：命曹操整饬西园军务",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        freeRow.AddChild(freeInput);
+        AddButton(freeRow, "宣旨", () => ExecuteFreeEdictAsync(freeInput, host));
+
         var topics = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
         topics.AddThemeConstantOverride("separation", 8);
         _content.AddChild(topics);
@@ -462,6 +473,20 @@ public partial class MainSceneV2 : Control
         {
             AddButton(panel, decision.Label, () => ExecuteCourtDecisionAsync(topicId, decision.Id, decision.Hint, host));
         }
+    }
+
+    private async void ExecuteFreeEdictAsync(LineEdit input, OptionButton host)
+    {
+        if (string.IsNullOrWhiteSpace(input.Text))
+        {
+            _status.Text = "亲拟圣旨未成：诏令内容不能为空。";
+            return;
+        }
+        _status.Text = "正在传旨：等待朝会回奏……";
+        var result = await _runtime.Court.ExecuteFreeEdictAsync(
+            new FreeEdictCommand(input.Text.Trim(), host.GetSelectedMetadata().AsString()));
+        ShowResult(result);
+        if (result.Success) input.Clear();
     }
 
     private async void ExecuteCourtDecisionAsync(string topicId, string decisionId, string hint, OptionButton host)
