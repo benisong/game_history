@@ -588,10 +588,17 @@ public partial class MainSceneV2 : Control
         ClearContent();
         AddSectionTitle("西园别苑 · 天子亲军密署");
 
+        var scroll = new ScrollContainer
+        {
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        _content.AddChild(scroll);
+
         var body = new HBoxContainer();
-        body.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        body.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         body.AddThemeConstantOverride("separation", 16);
-        _content.AddChild(body);
+        scroll.AddChild(body);
 
         var overview = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         overview.AddThemeConstantOverride("separation", 10);
