@@ -79,6 +79,7 @@ public partial class MainSceneV2 : Control
         AddButton(actions, "起驾巡幸", ShowTravel);
         AddButton(actions, "进入黄门密札", ShowIntel);
         AddButton(actions, "打开御案折匣", ShowEdicts);
+        AddButton(actions, "查看朝臣名册", ShowMinisters);
         AddButton(actions, "进入西园军务", OpenWestGarden);
         AddButton(actions, "推进一旬", ShowTurnControl);
         AddButton(actions, "进入宣政殿朝会", ShowCourt);
@@ -193,6 +194,91 @@ public partial class MainSceneV2 : Control
         AddButton(_content, "合上卷宗 · 返回御案", ShowHome);
         RefreshSnapshot();
     }
+
+    private void ShowMinisters()
+    {
+        ClearContent();
+        AddSectionTitle("百官名册 · 朝臣状态");
+        _content.AddChild(new Label
+        {
+            Text = "名册使用 MinisterSnapshot 只读切片；数值以品阶显示，不暴露 NPC 内部五维。",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var body = new HBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        body.AddThemeConstantOverride("separation", 14);
+        _content.AddChild(body);
+        var list = new ItemList
+        {
+            CustomMinimumSize = new Vector2(390, 0),
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        body.AddChild(list);
+        var detail = new Label
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        };
+        body.AddChild(detail);
+
+        var ministers = _runtime.State.GetMinisters()
+            .Where(minister => minister.IsActive)
+            .OrderByDescending(minister => minister.Power)
+            .ThenBy(minister => minister.Name)
+            .ToList();
+        for (int i = 0; i < ministers.Count; i++)
+        {
+            var minister = ministers[i];
+            string status = minister.IsHostile ? "敌对" : "在朝";
+            list.AddItem($"{minister.Name} · {minister.Title} · {status}");
+        }
+
+        list.ItemSelected += index => RenderMinister(index);
+        void RenderMinister(long index)
+        {
+            if (index < 0 || index >= ministers.Count) return;
+            var minister = ministers[(int)index];
+            detail.Text = $"【{minister.Name}】\n\n" +
+                $"官职：{minister.Title}\n" +
+                $"派系：{minister.Faction}\n" +
+                $"状态：{(minister.IsHostile ? "敌对" : minister.IsActive ? "在朝" : "下野")}\n\n" +
+                $"圣眷：{FavorabilityGrade(minister.Favorability)}\n" +
+                $"朝堂影响：{InfluenceGrade(minister.Power)}\n" +
+                $"操守：{IntegrityGrade(minister.Corruption)}";
+        }
+        if (ministers.Count > 0)
+        {
+            list.Select(0, true);
+            RenderMinister(0);
+        }
+        AddButton(_content, "合上名册 · 返回御案", ShowHome);
+        RefreshSnapshot();
+    }
+
+    private static string FavorabilityGrade(int value) => value switch
+    {
+        < 25 => "疏冷",
+        < 50 => "中立",
+        < 75 => "亲近",
+        _ => "倚重"
+    };
+
+    private static string InfluenceGrade(int value) => value switch
+    {
+        < 25 => "微弱",
+        < 50 => "有限",
+        < 75 => "显著",
+        _ => "权重"
+    };
+
+    private static string IntegrityGrade(int value) => value switch
+    {
+        >= 75 => "浑浊",
+        >= 50 => "有瑕",
+        >= 25 => "清正",
+        _ => "廉直"
+    };
 
     private void ShowIntel()
     {
