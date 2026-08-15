@@ -378,7 +378,45 @@ public partial class MainSceneV2 : Control
         if (province.IsRebelling)
         {
             AddButton(actionBox, "出兵平叛（3000人）", () => ExecuteIntelAction(new ProvinceActionCommand(province.Id, ProvinceActionKind.SuppressRebellion, "cao_cao", 3000)));
-            AddButton(actionBox, "遣使招安（说服）", () => ExecuteIntelAction(new ProvinceActionCommand(province.Id, ProvinceActionKind.PacifyRebellion, "cao_cao", Strategy: "说服")));
+
+            actionBox.AddChild(new Label { Text = "遣使招安策略（可多选）" });
+            var sowDiscord = new CheckBox { Text = "离间计" };
+            var persuade = new CheckBox { Text = "说服", ButtonPressed = true };
+            var disasterRelief = new CheckBox { Text = "赈灾" };
+            var punish = new CheckBox { Text = "惩治" };
+            actionBox.AddChild(sowDiscord);
+            actionBox.AddChild(persuade);
+            actionBox.AddChild(disasterRelief);
+            actionBox.AddChild(punish);
+
+            var reliefSpin = new SpinBox
+            {
+                MinValue = 500,
+                MaxValue = 10000,
+                Step = 500,
+                Value = 500,
+                Prefix = "赈银：",
+                Suffix = " 万钱",
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+            };
+            actionBox.AddChild(reliefSpin);
+            AddButton(actionBox, "遣使招安", () =>
+            {
+                var strategies = string.Join(",", new[]
+                {
+                    sowDiscord.ButtonPressed ? "离间" : "",
+                    persuade.ButtonPressed ? "说服" : "",
+                    disasterRelief.ButtonPressed ? "赈灾" : "",
+                    punish.ButtonPressed ? "惩治" : ""
+                }.Where(value => !string.IsNullOrEmpty(value)));
+                var relief = disasterRelief.ButtonPressed ? (int)reliefSpin.Value : 0;
+                ExecuteIntelAction(new ProvinceActionCommand(
+                    province.Id,
+                    ProvinceActionKind.PacifyRebellion,
+                    "cao_cao",
+                    Strategy: strategies,
+                    ReliefGold: relief));
+            });
         }
     }
 

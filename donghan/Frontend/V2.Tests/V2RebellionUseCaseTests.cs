@@ -42,6 +42,26 @@ public sealed class V2RebellionUseCaseTests
     }
 
     [Fact]
+    public void Pacify_rebellion_supports_combined_strategy_and_relief_amount()
+    {
+        var state = new GameState { Treasury = 5000 };
+        state.Provinces["yuzhou"].IsRebelling = true;
+        state.Provinces["yuzhou"].RebelFaction = "民变";
+        var runtime = V2RuntimeFactory.CreateDefault(state, new Random(42));
+
+        var result = runtime.Intel.ExecuteProvinceAction(
+            new ProvinceActionCommand(
+                "yuzhou",
+                ProvinceActionKind.PacifyRebellion,
+                "cao_cao",
+                Strategy: "说服,赈灾",
+                ReliefGold: 500));
+
+        Assert.True(result.Success);
+        Assert.Equal(4500, runtime.State.GetSnapshot().Treasury);
+    }
+
+    [Fact]
     public void Rebellion_action_on_peaceful_province_returns_failure()
     {
         var runtime = V2RuntimeFactory.CreateDefault();
