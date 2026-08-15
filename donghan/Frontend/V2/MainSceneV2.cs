@@ -443,9 +443,19 @@ public partial class MainSceneV2 : Control
         freeRow.AddChild(freeInput);
         AddButton(freeRow, "宣旨", () => ExecuteFreeEdictAsync(freeInput, host));
 
-        var topics = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
+        var courtScroll = new ScrollContainer
+        {
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        _content.AddChild(courtScroll);
+        var topics = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            CustomMinimumSize = new Vector2(0, 900)
+        };
         topics.AddThemeConstantOverride("separation", 8);
-        _content.AddChild(topics);
+        courtScroll.AddChild(topics);
         AddCourtTopic(topics, "整军备寇", "军务", "military_readiness", new[]
         {
             ("准何进整北军", "military_north", "扩整北军，强化外戚军务"),
@@ -460,6 +470,12 @@ public partial class MainSceneV2 : Control
         {
             ("训诫张让", "eunuch_reprimand", "公开训诫中官"),
             ("安抚张让", "eunuch_reassure", "以圣眷稳定内廷")
+        }, host);
+        AddCourtTopic(topics, "举荐将才", "用人", "talent", new[]
+        {
+            ("召见曹操", "talent_cao", "查看曹操任事意见"),
+            ("召见蹇硕", "talent_jian", "查看蹇硕任事意见"),
+            ("转黄门密札任官", "intel", "转往州郡情报处理地方任免")
         }, host);
         AddButton(_content, "开仓赈灾（曹操经办）", () => ExecuteSpecialAction(new SpecialActionCommand("disaster_relief", 1000, "cao_cao")));
         AddButton(_content, "抄家籍没张让", () => ExecuteSpecialAction(new SpecialActionCommand("confiscation", TargetNpcId: "zhang_rang", Destination: "西园")));
@@ -481,7 +497,32 @@ public partial class MainSceneV2 : Control
         panel.AddChild(new Label { Text = $"【{category}】{title}" });
         foreach (var decision in decisions)
         {
-            AddButton(panel, decision.Label, () => ExecuteCourtDecisionAsync(topicId, decision.Id, decision.Hint, host));
+            AddButton(panel, decision.Label, () =>
+            {
+                switch (decision.Id)
+                {
+                    case "intel":
+                        ShowIntel();
+                        break;
+                    case "show_cao":
+                    case "talent_cao":
+                        ShowMinisters();
+                        break;
+                    case "show_jian":
+                    case "talent_jian":
+                        ShowMinisters();
+                        break;
+                    case "travel_garden":
+                        TravelTo("西园");
+                        break;
+                    case "back_topics":
+                        ShowCourt();
+                        break;
+                    default:
+                        ExecuteCourtDecisionAsync(topicId, decision.Id, decision.Hint, host);
+                        break;
+                }
+            });
         }
     }
 
