@@ -443,6 +443,7 @@ public partial class MainSceneV2 : Control
         freeRow.AddChild(freeInput);
         AddButton(freeRow, "宣旨", () => ExecuteFreeEdictAsync(freeInput, host));
 
+        AddButton(_content, "举荐将才 · 打开专议", ShowTalentCourtTopic);
         var courtScroll = new ScrollContainer
         {
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
@@ -480,6 +481,30 @@ public partial class MainSceneV2 : Control
         AddButton(_content, "开仓赈灾（曹操经办）", () => ExecuteSpecialAction(new SpecialActionCommand("disaster_relief", 1000, "cao_cao")));
         AddButton(_content, "抄家籍没张让", () => ExecuteSpecialAction(new SpecialActionCommand("confiscation", TargetNpcId: "zhang_rang", Destination: "西园")));
         AddButton(_content, "退朝 · 返回御案", ShowHome);
+        RefreshSnapshot();
+    }
+
+    private void ShowTalentCourtTopic()
+    {
+        ClearContent();
+        AddSectionTitle("宣政殿 · 举荐将才");
+        _content.AddChild(new Label
+        {
+            Text = "乱世将起，朝廷需择可用之才。请陛下选择召见对象，或转入黄门密札处理地方任官。",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var host = new OptionButton();
+        foreach (var pair in new[] { ("何进", "he_jin"), ("曹操", "cao_cao"), ("张让", "zhang_rang"), ("蹇硕", "jian_shuo") })
+        {
+            host.AddItem(pair.Item1);
+            host.SetItemMetadata(host.ItemCount - 1, pair.Item2);
+        }
+        _content.AddChild(host);
+        AddButton(_content, "召见曹操", () => ExecuteCourtDecisionAsync("talent", "talent_cao", "查看曹操任事意见", host));
+        AddButton(_content, "召见蹇硕", () => ExecuteCourtDecisionAsync("talent", "talent_jian", "查看蹇硕任事意见", host));
+        AddButton(_content, "转黄门密札任官", ShowIntel);
+        AddButton(_content, "返回朝会议题", ShowCourt);
         RefreshSnapshot();
     }
 
