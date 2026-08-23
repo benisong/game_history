@@ -373,6 +373,17 @@ public partial class MainSceneV2 : Control
         ClearChildrenAfter(actionBox, 2);
         hint.Text = province.IsRebelling ? "该州正在叛乱，可选择平叛或招安。" : "可进行太守任免。";
         AddButton(actionBox, "任命曹操为太守", () => ExecuteIntelAction(new ProvinceActionCommand(province.Id, ProvinceActionKind.AssignGovernor, "cao_cao")));
+        var governorSelector = new OptionButton();
+        foreach (var candidate in new[] { ("曹操", "cao_cao"), ("何进", "he_jin"), ("张让", "zhang_rang"), ("蹇硕", "jian_shuo") })
+        {
+            governorSelector.AddItem(candidate.Item1);
+            governorSelector.SetItemMetadata(governorSelector.ItemCount - 1, candidate.Item2);
+        }
+        actionBox.AddChild(governorSelector);
+        AddButton(actionBox, "任命所选朝臣", () => ExecuteIntelAction(new ProvinceActionCommand(
+            province.Id,
+            ProvinceActionKind.AssignGovernor,
+            governorSelector.GetSelectedMetadata().AsString())));
         if (!string.IsNullOrEmpty(province.GovernorId))
             AddButton(actionBox, "召还现任太守", () => ExecuteIntelAction(new ProvinceActionCommand(province.Id, ProvinceActionKind.RecallGovernor)));
         if (province.IsRebelling)
