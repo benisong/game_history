@@ -83,8 +83,13 @@ public class ProvinceRebellionTests
     [Fact]
     public void Test_CombatPower_CalculatesCorrectly()
     {
-        var cao = new NpcState { Martial = 72, Leadership = 90, Corruption = 5 };
-        cao.Traits.AddRange(new[] { "经天纬地", "老谋深算" }); // These don't affect combat
+        var cao = new NpcState
+        {
+            Martial = 72,
+            Leadership = 90,
+            Corruption = 5,
+            Traits = new List<string> { "经天纬地", "老谋深算" } // These don't affect combat
+        };
 
         double power = NpcTraitEvaluator.GetCombatPower(cao);
         // base = 72*0.4 + 90*0.6 = 28.8 + 54 = 82.8
@@ -96,8 +101,13 @@ public class ProvinceRebellionTests
     [Fact]
     public void Test_CombatPower_WithCombatTraits()
     {
-        var huangfu = new NpcState { Martial = 75, Leadership = 92, Corruption = 10 };
-        huangfu.Traits.AddRange(new[] { "治军严整", "爱兵如子" });
+        var huangfu = new NpcState
+        {
+            Martial = 75,
+            Leadership = 92,
+            Corruption = 10,
+            Traits = new List<string> { "治军严整", "爱兵如子" }
+        };
 
         double power = NpcTraitEvaluator.GetCombatPower(huangfu);
         // base = 75*0.4 + 92*0.6 = 30 + 55.2 = 85.2
@@ -110,8 +120,13 @@ public class ProvinceRebellionTests
     [Fact]
     public void Test_PoliticalSkill_CalculatesCorrectly()
     {
-        var xunyu = new NpcState { Politics = 95, Charisma = 85, Corruption = 5 };
-        xunyu.Traits.AddRange(new[] { "经天纬地", "擅长民政" });
+        var xunyu = new NpcState
+        {
+            Politics = 95,
+            Charisma = 85,
+            Corruption = 5,
+            Traits = new List<string> { "经天纬地", "擅长民政" }
+        };
 
         double skill = NpcTraitEvaluator.GetPoliticalSkill(xunyu);
         // base = 95*0.6 + 85*0.4 = 57 + 34 = 91

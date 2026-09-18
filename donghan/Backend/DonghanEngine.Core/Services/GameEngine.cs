@@ -225,7 +225,7 @@ public partial class GameEngine : IGameEngine
     public TurnResult ResolveEdictAction(string edictId, int optionIndex)
     {
         var result = new TurnResult();
-        var edict = _state.ActiveEdicts.Find(e => e.Id == edictId);
+        var edict = _state.ActiveEdicts.FirstOrDefault(e => e.Id == edictId);
         if (edict == null) throw new ArgumentException("无此奏折！");
         if (optionIndex < 0 || optionIndex >= edict.Options.Count) throw new ArgumentException("无效的御批选项！");
 
@@ -264,7 +264,7 @@ public partial class GameEngine : IGameEngine
             }
         }
 
-        _state.ActiveEdicts.Remove(edict);
+        _state.RemoveActiveEdict(edict);
         _state.AddToChronicle($"【御批】天子批阅《{edict.Title}》，决断：{option.Description}{(promotionRelationText.Length > 0 ? "，牵动朝中关系网" : "")}");
         
         result.StoryText = $"【政务决断】\n\n陛下朱批已下。\n{promoBacklashText}{promotionRelationText}";
@@ -401,7 +401,7 @@ public partial class GameEngine : IGameEngine
 
         foreach (var expired in expiredEdicts)
         {
-            _state.ActiveEdicts.Remove(expired);
+            _state.RemoveActiveEdict(expired);
             // 流产惩罚：如果是急报，民心暴跌
             if (expired.Type == EdictType.UrgentCrisis)
             {
@@ -732,7 +732,7 @@ public partial class GameEngine : IGameEngine
             {
                 if (HistoricalNpcPresets.All.Find(n => n.Id == "dong_zhuo") is { } preset)
                 {
-                    _state.Npcs["dong_zhuo"] = HistoricalNpcPresets.Clone(preset);
+                    _state.RegisterNpc(HistoricalNpcPresets.Clone(preset));
                 }
             }
         }
@@ -741,7 +741,7 @@ public partial class GameEngine : IGameEngine
             if (HistoricalNpcPresets.All.Find(n => n.Id == "dong_zhuo") is { } preset)
             {
                 dong = HistoricalNpcPresets.Clone(preset);
-                _state.Npcs["dong_zhuo"] = dong;
+                _state.RegisterNpc(dong);
             }
             else
             {

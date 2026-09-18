@@ -31,11 +31,12 @@ public class EdictOption
 public class ImperialEdict
 {
     private int _expiryXun = 3;
+    private List<EdictOption> _options = new();
 
     public string Id { get; set; } = Guid.NewGuid().ToString();
     public string Title { get; set; } = string.Empty;
     public EdictType Type { get; set; }
-    public string SubmittingNpcId { get; set; } = string.Empty; 
+    public string SubmittingNpcId { get; set; } = string.Empty;
     public string TargetNpcId { get; set; } = string.Empty; // 受益/受罚的主要对象
     public string NarrativeContent { get; set; } = string.Empty;
     
@@ -44,6 +45,22 @@ public class ImperialEdict
         get => _expiryXun;
         set => _expiryXun = Math.Max(0, value);
     }
-    
-    public List<EdictOption> Options { get; set; } = new();
+
+    public IReadOnlyList<EdictOption> Options
+    {
+        get => _options;
+        init => _options = value != null ? new List<EdictOption>(value) : new List<EdictOption>();
+    }
+
+    public void AddOption(EdictOption option)
+    {
+        if (option != null) _options.Add(option);
+    }
+
+    public void DecrementExpiry()
+    {
+        if (_expiryXun > 0) _expiryXun--;
+    }
+
+    public bool IsExpired => _expiryXun <= 0;
 }

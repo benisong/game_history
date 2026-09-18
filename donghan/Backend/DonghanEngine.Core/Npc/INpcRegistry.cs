@@ -15,7 +15,7 @@ public class NpcRegistry : INpcRegistry
     {
         if (string.IsNullOrWhiteSpace(npc.Id)) return;
         npc.IsActive = true;
-        state.Npcs[npc.Id] = npc;
+        state.RegisterNpc(npc);
         state.AddToChronicle($"【登庸】朝廷引纳新臣【{npc.Name}】，授【{npc.Title}】。");
     }
 
@@ -26,7 +26,7 @@ public class NpcRegistry : INpcRegistry
             npc.IsActive = false;
             npc.DeathReason = reason;
             state.AddToChronicle($"【致仕/退场】大臣【{npc.Name}】由于“{reason}”，自此告退朝堂。");
-            state.Npcs.Remove(npcId);
+            state.RemoveNpc(npcId);
         }
     }
 }

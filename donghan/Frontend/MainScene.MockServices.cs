@@ -76,7 +76,7 @@ public class MockScheduler : IAIScheduler
         // 赈灾急报折：民心跌破 50 且尚无在途赈灾折时生成
         if (state.PopularSupport < 50 && !state.ActiveEdicts.Any(e => e.Title.Contains("赈灾")))
         {
-            state.ActiveEdicts.Add(new ImperialEdict
+            state.AddActiveEdict(new ImperialEdict
             {
                 Title = "冀州旱灾急折",
                 Type = EdictType.UrgentCrisis,
@@ -96,7 +96,7 @@ public class MockScheduler : IAIScheduler
         // 十常侍邀功折：张让在朝且尚无其在途奏折时生成
         if (state.Npcs.ContainsKey("zhang_rang") && !state.ActiveEdicts.Any(e => e.SubmittingNpcId == "zhang_rang"))
         {
-            state.ActiveEdicts.Add(new ImperialEdict
+            state.AddActiveEdict(new ImperialEdict
             {
                 Title = "十常侍邀功折",
                 Type = EdictType.Merit,
@@ -132,7 +132,8 @@ public class MockScheduler : IAIScheduler
             }
         }
         if (toRemove.Count == 0) return;
-        result.Speeches.RemoveAll(s => toRemove.Contains(s.MinisterId));
+        var filtered = result.Speeches.Where(s => !toRemove.Contains(s.MinisterId)).ToList();
+        result.Speeches = filtered;
         foreach (var id in toRemove) _spokenThisXun.Remove(id);
     }
 
@@ -142,13 +143,15 @@ public class MockScheduler : IAIScheduler
         if (result.Speeches.Count == 0) return;
         var existing = result.Speeches.FirstOrDefault(s => s.MinisterId == activeOfficerId);
         if (existing == null) return;
-        result.Speeches.Remove(existing);
-        result.Speeches.Insert(0, existing);
+        var list = new List<CourtSpeech>(result.Speeches);
+        list.Remove(existing);
+        list.Insert(0, existing);
+        result.Speeches = list;
     }
 
     private void Emit(AIOrchestrationResult result, string id, string name, string stance, int favDelta, int powDelta, string text)
     {
-        result.Speeches.Add(new CourtSpeech
+        result.AddSpeech(new CourtSpeech
         {
             MinisterId = id,
             MinisterName = name,

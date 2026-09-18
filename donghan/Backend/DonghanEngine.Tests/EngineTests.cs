@@ -21,7 +21,7 @@ public class MockScheduler : IAIScheduler
             NarrativeResponse = "天子震怒，群臣辩驳。"
         };
 
-        result.Speeches.Add(new CourtSpeech
+        result.AddSpeech(new CourtSpeech
         {
             MinisterId = "zhang_rang",
             MinisterName = "张让",
@@ -31,7 +31,7 @@ public class MockScheduler : IAIScheduler
             ExpectedPowerChange = 0
         });
 
-        result.Speeches.Add(new CourtSpeech
+        result.AddSpeech(new CourtSpeech
         {
             MinisterId = "cao_cao",
             MinisterName = "曹操",
@@ -46,11 +46,14 @@ public class MockScheduler : IAIScheduler
 
     public Task OrchestrateXunUpdateAsync(GameState state)
     {
-        state.IntelReports.Add("【群臣密录】：大将军何进正暗中调兵，意图夺取洛阳西园防权。");
-        if (ShouldAddEdicts)
+        state.AddIntelReport("【群臣密录】：大将军何进正暗中调兵，意图夺取洛阳西园防权。");
+        if (state.ActiveEdicts.Count == 0)
         {
-            state.ActiveEdicts.Add(new ImperialEdict {
-                Title = "冀州急折", Type = EdictType.UrgentCrisis, NarrativeContent = "冀州干旱，求赐赈米。"
+            state.AddActiveEdict(new ImperialEdict {
+                Title = "冀州急折",
+                Type = EdictType.UrgentCrisis,
+                NarrativeContent = "冀州黄巾作乱，请发兵平乱",
+                ExpiryXun = 3
             });
         }
         return Task.CompletedTask;
@@ -539,7 +542,7 @@ public class EngineTests
         var liuBei = new NpcState
         {
             Id = "liu_bei", Name = "刘备", Title = "平原相",
-            BirthYear = 161, BaseLongevity = 62, Traits = new() { TraitNames.JingTianWeiDi },
+            BirthYear = 161, BaseLongevity = 62, Traits = new List<string> { TraitNames.JingTianWeiDi },
             Corruption = 0, Power = 10, Favorability = 90
         };
         registry.RegisterNpc(liuBei, state);
@@ -561,11 +564,13 @@ public class EngineTests
         state.Npcs["cao_cao"].Favorability = 90;
         int initialPower = state.ImperialPower;
         engine.ExecuteConfiscationAction("zhang_rang", "国库");
+        // 基础反噬 15 皇权，老谋深算减免 30% -> 10 点，
+        // 加上十常侍关系网反噬 6 点 = 16 点
         Assert.Equal(initialPower - 16, state.ImperialPower);
 
         // 5. 验证 Traits 累乘共存：刘备同时拥有 [经天纬地] 1.20x 与 [爱民如子] 1.15x
         // 累计系数：1.20 * 1.15 = 1.38x
-        liuBei.Traits.Add(TraitNames.AiMinRuZi);
+        liuBei.AddTrait(TraitNames.AiMinRuZi);
         int secondarySupport = state.PopularSupport;
         // 再次赈灾 1000万，基础 supportDelta = 12 * (1000 / 1000) = 12点
         // 复合提振：12 * 1.38 = 16.56 -> 16 点提振
@@ -621,7 +626,7 @@ public class EngineTests
         };
 
         // 选项 A：赏千金（无晋升）
-        edict.Options.Add(new EdictOption
+        edict.AddOption(new EdictOption
         {
             Description = "赏千金",
             TreasuryDelta = -100,
@@ -629,7 +634,7 @@ public class EngineTests
         });
 
         // 选项 B：跨级超升（跨 2 级，直接封为九卿 3 级）
-        edict.Options.Add(new EdictOption
+        edict.AddOption(new EdictOption
         {
             Description = "拜为九卿（九卿为3级，曹操初始为1级，跃升2级）",
             GrantedTitleTierDelta = 2,
@@ -637,7 +642,7 @@ public class EngineTests
             TargetNpcFavorabilityDelta = 30
         });
 
-        state.ActiveEdicts.Add(edict);
+        state.AddActiveEdict(edict);
 
         // Act & Assert 1: 选择 B，触发跨级提拔皇权反噬
         int initialImperialPower = state.ImperialPower;
@@ -682,7 +687,7 @@ public class EngineTests
             NarrativeContent = "并州胡兵叛乱，十万火急！",
             ExpiryXun = 3
         };
-        state.ActiveEdicts.Add(edict);
+        state.AddActiveEdict(edict);
 
         int initialSupport = state.PopularSupport;
 
@@ -742,7 +747,7 @@ public class EngineTests
         var state = new GameState();
         state.CurrentLocation = "后宫";
         // 给张让加上谄媚专权 trait
-        state.Npcs["zhang_rang"].Traits.Add(TraitNames.ChanMeiZhuanQuan);
+        state.Npcs["zhang_rang"].AddTrait(TraitNames.ChanMeiZhuanQuan);
         var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
 
         int initialHealth = state.Health; // 35
@@ -770,26 +775,31 @@ public class EngineTests
             npc.IsActive = false;
         }
 
-        state.Npcs["flatterer"] = new NpcState
+        var bootlicker = new NpcState
         {
-            Id = "flatterer", Name = "佞臣", Traits = new() { TraitNames.ChanMeiZhuanQuan }, Favorability = 40, Power = 20
+            Id = "bootlicker", Name = "近侍", Traits = new List<string> { TraitNames.HuiPaiMaPi }, Favorability = 40, Power = 20
         };
-        state.Npcs["bootlicker"] = new NpcState
+        var physician = new NpcState
         {
-            Id = "bootlicker", Name = "近侍", Traits = new() { TraitNames.HuiPaiMaPi }, Favorability = 40, Power = 20
+            Id = "physician", Name = "医官", Traits = new List<string> { TraitNames.YiShuGaoMing }
         };
-        state.Npcs["physician"] = new NpcState
+        var assistantPhysician = new NpcState
         {
-            Id = "physician", Name = "医官", Traits = new() { TraitNames.YiShuGaoMing }
+            Id = "assistant_physician", Name = "医佐", Traits = new List<string> { TraitNames.DongDianYiLi }
         };
-        state.Npcs["assistant_physician"] = new NpcState
+        var talker = new NpcState
         {
-            Id = "assistant_physician", Name = "医佐", Traits = new() { TraitNames.DongDianYiLi }
+            Id = "talker", Name = "清谈客", Traits = new List<string> { TraitNames.XiHaoQingTan }
         };
-        state.Npcs["talker"] = new NpcState
+
+        state.RegisterNpc(new NpcState
         {
-            Id = "talker", Name = "清谈客", Traits = new() { TraitNames.XiHaoQingTan }
-        };
+            Id = "flatterer", Name = "佞臣", Traits = new List<string> { TraitNames.ChanMeiZhuanQuan }, Favorability = 40, Power = 20
+        });
+        state.RegisterNpc(bootlicker);
+        state.RegisterNpc(physician);
+        state.RegisterNpc(assistantPhysician);
+        state.RegisterNpc(talker);
 
         var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
         int initialHealth = state.Health;
@@ -838,13 +848,13 @@ public class EngineTests
     }
 
     [Fact]
-    public void Test_TraitEvaluator_ConflictingTraits_CompoundingMultiplier()
+    public void Test_TraitEvaluator_Compounding_MultipleModifiers()
     {
         // 验证正负 traits 共存时的累乘行为
         var officer = new NpcState
         {
             Id = "test", Name = "测试官",
-            Traits = new() { TraitNames.JingTianWeiDi, TraitNames.HaoSheWuDu } // 1.20 * 0.75 = 0.90
+            Traits = new List<string> { TraitNames.JingTianWeiDi, TraitNames.HaoSheWuDu } // 1.20 * 0.75 = 0.90
         };
 
         double multiplier = NpcTraitEvaluator.GetDisasterReliefSupportMultiplier(officer);
@@ -854,8 +864,8 @@ public class EngineTests
     [Fact]
     public void Test_TraitEvaluator_Embezzlement_CleanVsCorrupt()
     {
-        var cleanOfficer = new NpcState { Id = "c", Name = "清官", Traits = new() { TraitNames.QingZhengLianJie } };
-        var greedyOfficer = new NpcState { Id = "g", Name = "贪官", Traits = new() { TraitNames.TanDeWuYan } };
+        var cleanOfficer = new NpcState { Id = "c", Name = "清官", Traits = new List<string> { TraitNames.QingZhengLianJie } };
+        var greedyOfficer = new NpcState { Id = "g", Name = "贪官", Traits = new List<string> { TraitNames.TanDeWuYan } };
 
         int siphon = 100;
 
@@ -918,7 +928,7 @@ public class EngineTests
         // 但至少 Historical trigger 没在 184/5/1 重放）
         // 我们不严格断言 IsRebelling=false（因为 CheckRebellions 可能已随机起事），
         // 只断言 Chroncile 里没有"黄巾起事"硬 trigger 文案
-        bool hasHardTriggerLog = state.Chronicle.Exists(c => c.Contains("太平道蜂起响应"));
+        bool hasHardTriggerLog = state.Chronicle.Any(c => c.Contains("太平道蜂起响应"));
         Assert.False(hasHardTriggerLog, "硬 trigger 只在 184/4/2 触发，不应在 184/5/1 重放");
     }
 
@@ -1148,8 +1158,8 @@ public class EngineTests
         await engine.NextXunAsync();
 
         Assert.Equal(powerAfterFirstEntry, state.ImperialPower);
-        Assert.DoesNotContain(state.Chronicle.GetRange(chronicleLenAfterFirst, state.Chronicle.Count - chronicleLenAfterFirst),
-            e => e.Contains("董卓入京"));
+        Assert.DoesNotContain(state.Chronicle.Skip(chronicleLenAfterFirst),
+            e => e.Contains("何进") && e.Contains("伏诛"));
     }
 
     // === P1-A3 NPC 寿终下野 ===
@@ -1426,8 +1436,7 @@ public class EngineTests
         var state = new GameState
         {
             Year = 184, Month = 4, Xun = 1,  // 当前在 4/1，下一旬进入 4/2
-            DisableHistoricalTriggers = true,  // 关掉 trigger 硬逻辑，只测叙事层
-            Npcs = new System.Collections.Generic.Dictionary<string, NpcState>()
+            DisableHistoricalTriggers = true  // 关掉 trigger 硬逻辑，只测叙事层
         };
         var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
         await engine.NextXunAsync();  // 4/1 → 4/2，触发黄巾叙事
@@ -1441,8 +1450,7 @@ public class EngineTests
         var state = new GameState
         {
             Year = 184, Month = 4, Xun = 1,
-            DisableHistoricalTriggers = true,
-            Npcs = new System.Collections.Generic.Dictionary<string, NpcState>()
+            DisableHistoricalTriggers = true
         };
         var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
         await engine.NextXunAsync();

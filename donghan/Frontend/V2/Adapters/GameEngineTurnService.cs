@@ -68,6 +68,6 @@ public sealed class GameEngineTurnService : ITurnService
     {
         var chronicle = _stateProvider.GetState().Chronicle;
         if (beforeCount >= chronicle.Count) return Array.Empty<string>();
-        return chronicle.GetRange(beforeCount, chronicle.Count - beforeCount);
+        return chronicle.Skip(beforeCount).ToList();
     }
 }
