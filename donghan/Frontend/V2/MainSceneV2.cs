@@ -217,13 +217,25 @@ public partial class MainSceneV2 : Control
             SizeFlagsVertical = Control.SizeFlags.ExpandFill
         };
         body.AddChild(list);
-        var detail = new Label
+        var detail = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        detail.AddThemeConstantOverride("separation", 10);
+        body.AddChild(detail);
+
+        var detailText = new Label
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
-        body.AddChild(detail);
+        detail.AddChild(detailText);
+
+        var actionBox = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        actionBox.AddThemeConstantOverride("separation", 8);
+        detail.AddChild(actionBox);
 
         var ministers = _runtime.State.GetMinisters()
             .Where(minister => minister.IsActive)
@@ -242,13 +254,40 @@ public partial class MainSceneV2 : Control
         {
             if (index < 0 || index >= ministers.Count) return;
             var minister = ministers[(int)index];
-            detail.Text = $"【{minister.Name}】\n\n" +
+            detailText.Text = $"【{minister.Name}】\n\n" +
                 $"官职：{minister.Title}\n" +
                 $"派系：{minister.Faction}\n" +
                 $"状态：{(minister.IsHostile ? "敌对" : minister.IsActive ? "在朝" : "下野")}\n\n" +
                 $"圣眷：{FavorabilityGrade(minister.Favorability)}\n" +
                 $"朝堂影响：{InfluenceGrade(minister.Power)}\n" +
                 $"操守：{IntegrityGrade(minister.Corruption)}";
+
+            foreach (var child in actionBox.GetChildren())
+            {
+                child.QueueFree();
+            }
+
+            var btnBox = new HBoxContainer();
+            btnBox.AddThemeConstantOverride("separation", 10);
+            actionBox.AddChild(btnBox);
+
+            AddButton(btnBox, $"抄没家产（归国库）", () =>
+            {
+                ExecuteSpecialAction(new SpecialActionCommand("confiscation", TargetNpcId: minister.Id, Destination: "国库"));
+                ShowMinisters();
+            });
+
+            AddButton(btnBox, $"抄没家产（归西园）", () =>
+            {
+                ExecuteSpecialAction(new SpecialActionCommand("confiscation", TargetNpcId: minister.Id, Destination: "西园"));
+                ShowMinisters();
+            });
+
+            AddButton(btnBox, $"命其经办赈灾（1000万）", () =>
+            {
+                ExecuteSpecialAction(new SpecialActionCommand("disaster_relief", 1000, minister.Id));
+                ShowMinisters();
+            });
         }
         if (ministers.Count > 0)
         {
@@ -763,6 +802,12 @@ public partial class MainSceneV2 : Control
         {
             string officerId = officer.GetSelectedMetadata().AsString();
             ShowResult(_runtime.WestGarden.PayArmy(new ArmyPayCommand((int)paySpin.Value, officerId)));
+        });
+
+        AddButton(actions, "校场大阅（大治军演）", () =>
+        {
+            string officerId = officer.GetSelectedMetadata().AsString();
+            ShowResult(_runtime.WestGarden.DrillArmy(new ArmyDrillCommand((int)paySpin.Value, officerId)));
         });
 
         var recruitSpin = new SpinBox

@@ -56,4 +56,16 @@ public sealed class V2WestGardenFailureTests
         Assert.False(result.Success);
         Assert.Equal(nameof(ArgumentException), result.ErrorCode);
     }
+
+    [Fact]
+    public void Drill_army_with_officer_succeeds_when_funds_available()
+    {
+        var state = new GameState { CurrentLocation = "西园", PrivateTreasury = 2000 };
+        var runtime = V2RuntimeFactory.CreateDefault(state);
+
+        var result = runtime.WestGarden.DrillArmy(new ArmyDrillCommand(1000, "cao_cao"));
+
+        Assert.True(result.Success);
+        Assert.Equal(ReportKind.WestGarden, result.Kind);
+    }
 }
