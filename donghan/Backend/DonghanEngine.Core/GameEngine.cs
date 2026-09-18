@@ -362,16 +362,22 @@ public partial class GameEngine
 
     public async Task NextXunAsync()
     {
-        _state.Xun++;
-        if (_state.Xun > 3)
+        if (_state.Xun >= 3)
         {
             _state.Xun = 1;
-            _state.Month++;
-            if (_state.Month > 12)
+            if (_state.Month >= 12)
             {
                 _state.Month = 1;
                 _state.Year++;
             }
+            else
+            {
+                _state.Month++;
+            }
+        }
+        else
+        {
+            _state.Xun++;
         }
 
         // 按 Year/Month 实时推导年号（光和→184年底改元中平），取代旧的 ReignYear++ 逐年递增
@@ -718,12 +724,29 @@ public partial class GameEngine
         // 部署董卓入京（敌对派系）
         if (!_state.Npcs.ContainsKey("dong_zhuo"))
         {
-            _scheduler?.NpcManager?.DeployNpcToCourt("dong_zhuo", _state);
+            if (_scheduler?.NpcManager != null)
+            {
+                _scheduler.NpcManager.DeployNpcToCourt("dong_zhuo", _state);
+            }
+            else
+            {
+                if (HistoricalNpcPresets.All.Find(n => n.Id == "dong_zhuo") is { } preset)
+                {
+                    _state.Npcs["dong_zhuo"] = HistoricalNpcPresets.Clone(preset);
+                }
+            }
         }
         if (!_state.Npcs.TryGetValue("dong_zhuo", out var dong))
         {
-            // 部署失败（NPC manager 为 null 等）— 不标记完成，留给下次重试
-            return;
+            if (HistoricalNpcPresets.All.Find(n => n.Id == "dong_zhuo") is { } preset)
+            {
+                dong = HistoricalNpcPresets.Clone(preset);
+                _state.Npcs["dong_zhuo"] = dong;
+            }
+            else
+            {
+                return;
+            }
         }
 
         dong.IsActive = true;

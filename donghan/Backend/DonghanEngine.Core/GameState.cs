@@ -5,15 +5,53 @@ namespace DonghanEngine.Core;
 
 public class NpcState
 {
+    private int _favorability = 50;
+    private int _power = 15;
+    private int _corruption = 20;
+    private int _health = 100;
+    private int _martial = 40;
+    private int _leadership = 40;
+    private int _politics = 40;
+    private int _charisma = 40;
+    private int _ambition = 40;
+    private int _stashedWealth = 50;
+    private int _titleTier = 0;
+
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;    // 初始官职 (如：大将军、十常侍、议郎)
-    public int TitleTier { get; set; } = 0;              // 0-4级官阶
+    
+    public int TitleTier
+    {
+        get => _titleTier;
+        set => _titleTier = Math.Clamp(value, 0, 4);
+    }
+    
     public int BirthYear { get; set; } = 150;            // 出生年份
-    public int StashedWealth { get; set; } = 50;         // 私蓄赃款 (万钱)
-    public int Favorability { get; set; } = 50;          // 对天子好感 (0-100)
-    public int Power { get; set; } = 15;                 // 朝堂政治权势 (0-100)
-    public int Corruption { get; set; } = 20;            // 贪腐度 (0-100)
+    
+    public int StashedWealth
+    {
+        get => _stashedWealth;
+        set => _stashedWealth = Math.Max(0, value);
+    }
+    
+    public int Favorability
+    {
+        get => _favorability;
+        set => _favorability = Math.Clamp(value, 0, 100);
+    }
+    
+    public int Power
+    {
+        get => _power;
+        set => _power = Math.Clamp(value, 0, 100);
+    }
+    
+    public int Corruption
+    {
+        get => _corruption;
+        set => _corruption = Math.Clamp(value, 0, 100);
+    }
 
     // “藏锋于词” 专属文学词汇特征
     public System.Collections.Generic.List<string> Traits { get; set; } = new(); // 经天纬地、孔武有力、老谋深算、贪得无厌
@@ -22,17 +60,46 @@ public class NpcState
     public string Faction { get; set; } = FactionCatalog.PureStream;       // 派系归属 (清流派/外戚派/阉党派/西园亲军/割据军阀/反叛势力)
 
     // 生存与生命周期控制
-    public int Health { get; set; } = 100;               // 健康值 (0-100)，归 0 则病逝
+    public int Health
+    {
+        get => _health;
+        set => _health = Math.Clamp(value, 0, 100);
+    }
+    
     public int BaseLongevity { get; set; } = 65;         // 期望寿命上限
     public bool IsActive { get; set; } = true;            // 是否活跃于朝堂
     public string DeathReason { get; set; } = string.Empty; // 死亡/退场因由
 
     // === 五维基本属性 (0-100) ===
-    public int Martial    { get; set; } = 40;  // 武力
-    public int Leadership { get; set; } = 40;  // 统帅
-    public int Politics   { get; set; } = 40;  // 政治
-    public int Charisma   { get; set; } = 40;  // 魅力
-    public int Ambition   { get; set; } = 40;  // 野心
+    public int Martial
+    {
+        get => _martial;
+        set => _martial = Math.Clamp(value, 0, 100);
+    }
+    
+    public int Leadership
+    {
+        get => _leadership;
+        set => _leadership = Math.Clamp(value, 0, 100);
+    }
+    
+    public int Politics
+    {
+        get => _politics;
+        set => _politics = Math.Clamp(value, 0, 100);
+    }
+    
+    public int Charisma
+    {
+        get => _charisma;
+        set => _charisma = Math.Clamp(value, 0, 100);
+    }
+    
+    public int Ambition
+    {
+        get => _ambition;
+        set => _ambition = Math.Clamp(value, 0, 100);
+    }
 
     // === 地方治理 ===
     public string? GovernedProvinceId { get; set; } = null; // 正在治理的郡 ID
@@ -48,21 +115,84 @@ public class NpcState
 
 public class ArmyState
 {
-    public int Size { get; set; } = 8000;         // 西园军人数
-    public int BasePayPerTurn { get; set; } = 120; // 单回合基础军饷 (万钱)
-    public int Morale { get; set; } = 55;          // 士气 (0-100)
-    public int Loyalty { get; set; } = 50;         // 对天子的绝对忠诚度 (0-100)
+    private int _size = 8000;
+    private int _basePayPerTurn = 120;
+    private int _morale = 55;
+    private int _loyalty = 50;
+
+    public int Size
+    {
+        get => _size;
+        set => _size = Math.Max(0, value);
+    }
+    
+    public int BasePayPerTurn
+    {
+        get => _basePayPerTurn;
+        set => _basePayPerTurn = Math.Max(0, value);
+    }
+    
+    public int Morale
+    {
+        get => _morale;
+        set => _morale = Math.Clamp(value, 0, 100);
+    }
+    
+    public int Loyalty
+    {
+        get => _loyalty;
+        set => _loyalty = Math.Clamp(value, 0, 100);
+    }
 }
 
 public class GameState
 {
-    public int ImperialPower { get; set; } = 25; // 皇权 (0-100) - 初始极弱，政令不出宫门
-    public int Treasury { get; set; } = 8000;    // 朝廷国库 (万钱) - 初始开支窘迫
-    public int PrivateTreasury { get; set; } = 1200; // 西园天子私库 (万钱) - 内库告急
-    public int PopularSupport { get; set; } = 28;  // 天下民心 (0-100) - 跌破活命红线，黄巾蠢动
-    public int Health { get; set; } = 35;        // 皇帝健康 (0-100) - 龙体极其虚弱，沉迷享乐濒危
+    private int _imperialPower = 25;
+    private int _treasury = 8000;
+    private int _privateTreasury = 1200;
+    private int _popularSupport = 28;
+    private int _health = 35;
+    private int _reignYear = 7;
+    private int _year = 184;
+    private int _month = 4;
+    private int _xun = 1;
+
+    public int ImperialPower
+    {
+        get => _imperialPower;
+        set => _imperialPower = Math.Clamp(value, 0, 100);
+    }
+    
+    public int Treasury
+    {
+        get => _treasury;
+        set => _treasury = Math.Max(0, value);
+    }
+    
+    public int PrivateTreasury
+    {
+        get => _privateTreasury;
+        set => _privateTreasury = Math.Max(0, value);
+    }
+    
+    public int PopularSupport
+    {
+        get => _popularSupport;
+        set => _popularSupport = Math.Clamp(value, 0, 100);
+    }
+    
+    public int Health
+    {
+        get => _health;
+        set => _health = Math.Clamp(value, 0, 100);
+    }
+    
     public string ReignTitle { get; set; } = "光和"; // 年号
-    public int ReignYear { get; set; } = 7;       // 年份
+    public int ReignYear
+    {
+        get => _reignYear;
+        set => _reignYear = Math.Max(1, value);
+    }
 
     public string CurrentLocation { get; set; } = "宣政殿";
 
@@ -74,9 +204,23 @@ public class GameState
     public List<string> Chronicle { get; set; } = new();
 
     // 纪元时间系统（旬：1-3，每旬十天，三旬为一月）
-    public int Year { get; set; } = 184; // 中平元年
-    public int Month { get; set; } = 4;  // 孟夏（四月）
-    public int Xun { get; set; } = 1;    // 1: 上旬, 2: 中旬, 3: 下旬
+    public int Year
+    {
+        get => _year;
+        set => _year = value;
+    }
+    
+    public int Month
+    {
+        get => _month;
+        set => _month = Math.Clamp(value, 1, 12);
+    }
+    
+    public int Xun
+    {
+        get => _xun;
+        set => _xun = Math.Clamp(value, 1, 3);
+    }
 
     // 记录上一次进行 NPC 衰老病退物理结算的时间戳 (格式：Year * 1000 + Month * 10 + Xun)
     // 用于防御在同一旬内，调度师指令频繁触发或者开发回溯导致的 NPC 年龄暴涨等边界问题
@@ -268,20 +412,63 @@ public class RitualStageInfo
 
 public class Province
 {
+    private int _localSupport = 30;
+    private int _wealth = 2000;
+    private int _garrison = 2000;
+    private int _defenseLevel = 30;
+    private int _distance = 2;
+    private int _rebellionMonths = 0;
+    private int _lowSupportStreakMonths = 0;
+
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? GovernorId { get; set; } = null;
-    public int Distance { get; set; } = 2;
+    
+    public int Distance
+    {
+        get => _distance;
+        set => _distance = Math.Max(0, value);
+    }
+    
     public List<string> Neighbors { get; set; } = new();
 
     public bool IsRebelling { get; set; } = false;
-    public int RebellionMonths { get; set; } = 0;
+    
+    public int RebellionMonths
+    {
+        get => _rebellionMonths;
+        set => _rebellionMonths = Math.Max(0, value);
+    }
+    
     public string RebelFaction { get; set; } = string.Empty;
 
-    public int LocalSupport { get; set; } = 30;
-    public int Wealth { get; set; } = 2000;
-    public int Garrison { get; set; } = 2000;
-    public int DefenseLevel { get; set; } = 30;
+    public int LocalSupport
+    {
+        get => _localSupport;
+        set => _localSupport = Math.Clamp(value, 0, 100);
+    }
+    
+    public int Wealth
+    {
+        get => _wealth;
+        set => _wealth = Math.Max(0, value);
+    }
+    
+    public int Garrison
+    {
+        get => _garrison;
+        set => _garrison = Math.Max(0, value);
+    }
+    
+    public int DefenseLevel
+    {
+        get => _defenseLevel;
+        set => _defenseLevel = Math.Clamp(value, 0, 100);
+    }
 
-    public int LowSupportStreakMonths { get; set; } = 0;
+    public int LowSupportStreakMonths
+    {
+        get => _lowSupportStreakMonths;
+        set => _lowSupportStreakMonths = Math.Max(0, value);
+    }
 }

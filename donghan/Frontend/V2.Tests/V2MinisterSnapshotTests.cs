@@ -14,7 +14,14 @@ public sealed class V2MinisterSnapshotTests
         var ministers = runtime.State.GetMinisters();
 
         Assert.NotEmpty(ministers);
-        Assert.Contains(ministers, minister => minister.Name == "曹操");
+        var cao = ministers.FirstOrDefault(minister => minister.Name == "曹操");
+        Assert.NotNull(cao);
+        Assert.Equal(72, cao.Martial);
+        Assert.Equal(90, cao.Leadership);
+        Assert.Equal(85, cao.Politics);
+        Assert.NotNull(cao.Traits);
+        Assert.Contains("经天纬地", cao.Traits);
+
         Assert.All(ministers, minister =>
         {
             Assert.False(string.IsNullOrWhiteSpace(minister.Faction));

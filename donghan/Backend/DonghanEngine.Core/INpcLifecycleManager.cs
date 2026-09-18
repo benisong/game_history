@@ -50,13 +50,9 @@ public class NpcLifecycleManager : INpcLifecycleManager
                 }
             }
         }
-        catch (IOException ex)
+        catch (Exception ex)
         {
-            Console.Error.WriteLine($"[NpcLifecycleManager] A轨 JSON 文件读取失败（IO错误），降级至 B轨硬编码冷备：{ex.Message}");
-        }
-        catch (JsonException ex)
-        {
-            Console.Error.WriteLine($"[NpcLifecycleManager] A轨 JSON 格式损坏，降级至 B轨硬编码冷备：{ex.Message}");
+            Console.Error.WriteLine($"[NpcLifecycleManager] A轨 JSON 读取/解析失败，降级至 B轨硬编码冷备：{ex.Message}");
         }
 
         _cachedPresets = GetHardcodedFallbackList();

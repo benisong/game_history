@@ -46,7 +46,9 @@ public sealed class GameEngineStateReader : IGameStateReader
 
     private static MinisterSnapshot Snapshot(NpcState npc) => new(
         npc.Id, npc.Name, npc.Title, npc.Faction, npc.Favorability, npc.Power,
-        npc.Corruption, npc.IsActive, npc.IsHostile);
+        npc.Corruption, npc.IsActive, npc.IsHostile,
+        npc.Martial, npc.Leadership, npc.Politics, npc.Charisma, npc.Ambition,
+        npc.Personality, npc.Style, npc.Traits.ToList());
 
     private static ProvinceSnapshot Snapshot(GameState state, Province province)
     {

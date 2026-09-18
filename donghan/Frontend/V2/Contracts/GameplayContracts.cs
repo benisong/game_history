@@ -77,7 +77,15 @@ public sealed record MinisterSnapshot(
     int Power,
     int Corruption,
     bool IsActive,
-    bool IsHostile);
+    bool IsHostile,
+    int Martial = 40,
+    int Leadership = 40,
+    int Politics = 40,
+    int Charisma = 40,
+    int Ambition = 40,
+    string Personality = "中庸",
+    string Style = "明哲保身",
+    IReadOnlyList<string>? Traits = null);
 
 public sealed record TravelCommand(string Destination);
 public sealed record ArmyPayCommand(int Amount, string OfficerId);

@@ -30,12 +30,20 @@ public class EdictOption
 
 public class ImperialEdict
 {
+    private int _expiryXun = 3;
+
     public string Id { get; set; } = Guid.NewGuid().ToString();
     public string Title { get; set; } = string.Empty;
     public EdictType Type { get; set; }
     public string SubmittingNpcId { get; set; } = string.Empty; 
     public string TargetNpcId { get; set; } = string.Empty; // 受益/受罚的主要对象
     public string NarrativeContent { get; set; } = string.Empty;
-    public int ExpiryXun { get; set; } = 3; // 剩余保质期
+    
+    public int ExpiryXun
+    {
+        get => _expiryXun;
+        set => _expiryXun = Math.Max(0, value);
+    }
+    
     public List<EdictOption> Options { get; set; } = new();
 }

@@ -254,13 +254,17 @@ public partial class MainSceneV2 : Control
         {
             if (index < 0 || index >= ministers.Count) return;
             var minister = ministers[(int)index];
+            string traitsText = minister.Traits != null && minister.Traits.Count > 0
+                ? string.Join(" · ", minister.Traits)
+                : "无";
+
             detailText.Text = $"【{minister.Name}】\n\n" +
                 $"官职：{minister.Title}\n" +
-                $"派系：{minister.Faction}\n" +
+                $"派系：{minister.Faction} ｜ 性格：{minister.Personality} ｜ 风格：{minister.Style}\n" +
                 $"状态：{(minister.IsHostile ? "敌对" : minister.IsActive ? "在朝" : "下野")}\n\n" +
-                $"圣眷：{FavorabilityGrade(minister.Favorability)}\n" +
-                $"朝堂影响：{InfluenceGrade(minister.Power)}\n" +
-                $"操守：{IntegrityGrade(minister.Corruption)}";
+                $"五维：武力 {minister.Martial} ｜ 统帅 {minister.Leadership} ｜ 政治 {minister.Politics} ｜ 魅力 {minister.Charisma} ｜ 野心 {minister.Ambition}\n" +
+                $"特质：{traitsText}\n\n" +
+                $"圣眷：{FavorabilityGrade(minister.Favorability)} ｜ 朝堂影响：{InfluenceGrade(minister.Power)} ｜ 操守：{IntegrityGrade(minister.Corruption)}";
 
             foreach (var child in actionBox.GetChildren())
             {
