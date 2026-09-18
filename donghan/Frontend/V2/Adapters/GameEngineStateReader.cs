@@ -22,6 +22,12 @@ public sealed class GameEngineStateReader : IGameStateReader
             : null;
     }
 
+    public IReadOnlyList<ProvinceSnapshot> GetAllProvinces()
+    {
+        var state = _stateProvider.GetState();
+        return state.Provinces.Values.Select(p => Snapshot(state, p)).ToList();
+    }
+
     public IReadOnlyList<MinisterSnapshot> GetMinisters() =>
         _stateProvider.GetState().Npcs.Values.Select(Snapshot).ToList();
 

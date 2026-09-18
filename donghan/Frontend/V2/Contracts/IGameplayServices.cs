@@ -15,6 +15,7 @@ public interface IGameStateSnapshotReader
 public interface IProvinceSnapshotReader
 {
     ProvinceSnapshot? GetProvince(string provinceId);
+    IReadOnlyList<ProvinceSnapshot> GetAllProvinces();
 }
 
 public interface IMinisterSnapshotReader

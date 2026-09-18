@@ -212,14 +212,11 @@ public class GameState
             }
         }
 
-        // 桥玄（太尉/清流）治冀州  ｜ 卢植（北中郎将/清流）治豫州  ｜ 黄甫嵩（左中郎将/清流）治并州
-        // 司隶/兖州/荆州 留空，留给玩家调度的决策空间
-        RegisterProvince(new Province { Id = "sili",   Name = "司隶", Distance = 0, LocalSupport = 50, Garrison = 5000, Wealth = 5000, DefenseLevel = 80, Neighbors = new List<string> { "jizhou", "yanzhou", "yuzhou" } });
-        RegisterProvince(new Province { Id = "jizhou",  Name = "冀州", Distance = 3, LocalSupport = 28, Garrison = 2000, Wealth = 3000, DefenseLevel = 30, Neighbors = new List<string> { "sili", "yanzhou", "bingzhou" } }); // +10 from 18 → 28 (桥玄任太守加成)
-        RegisterProvince(new Province { Id = "bingzhou",Name = "并州", Distance = 4, LocalSupport = 40, Garrison = 3000, Wealth = 2500, DefenseLevel = 40, Neighbors = new List<string> { "jizhou", "yanzhou" } }); // +10 from 30 → 40
-        RegisterProvince(new Province { Id = "yanzhou", Name = "兖州", Distance = 2, LocalSupport = 35, Garrison = 2500, Wealth = 3500, DefenseLevel = 35, Neighbors = new List<string> { "sili", "jizhou", "yuzhou" } });
-        RegisterProvince(new Province { Id = "yuzhou",  Name = "豫州", Distance = 1, LocalSupport = 55, Garrison = 2000, Wealth = 4000, DefenseLevel = 40, Neighbors = new List<string> { "sili", "yanzhou" } }); // +10 from 45 → 55
-        RegisterProvince(new Province { Id = "jingzhou",Name = "荆州", Distance = 5, LocalSupport = 50, Garrison = 3000, Wealth = 6000, DefenseLevel = 50, Neighbors = new List<string> { "yuzhou" } });
+        // === 大汉十三州（完整 13 州郡开局）===
+        foreach (var p in ProvinceCatalog.CreateInitialProvinces())
+        {
+            RegisterProvince(p);
+        }
 
         // 预派太守（与 AssignGovernor 等价的字段直设，不走 -5 权势 / 不写编年史，让"开局即有太守"成为历史事实而非朝会决定）
         AssignInitialGovernor("jizhou", "qiao_xuan");

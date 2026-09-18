@@ -388,16 +388,7 @@ public partial class MainSceneV2 : Control
         RefreshSnapshot();
     }
 
-    private IReadOnlyList<ProvinceSnapshot> GetProvinceList()
-    {
-        var result = new List<ProvinceSnapshot>();
-        foreach (var candidate in new[] { "sili", "jizhou", "bingzhou", "yanzhou", "yuzhou", "jingzhou" })
-        {
-            if (_runtime.Intel.InspectProvince(new InspectProvinceCommand(candidate)).Province is { } snapshot)
-                result.Add(snapshot);
-        }
-        return result;
-    }
+    private IReadOnlyList<ProvinceSnapshot> GetProvinceList() => _runtime.State.GetAllProvinces();
 
     private static void RenderProvinceDetail(Label target, ProvinceSnapshot province)
     {

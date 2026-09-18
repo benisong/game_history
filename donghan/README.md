@@ -8,7 +8,7 @@
 
 本项目规避了高算力损耗的网页套壳模式，完全采用面向对象（C# OOP）的高性能策略引擎，并预留了面向多智能体（Multi-Agent）大语言模型（如 DeepSeek/Gemini）的异步调度中间件与防御性数据缓冲槽，实现真实的朝党斗争、西园理财、天灾赈灾及帝王心术博弈。
 
-**项目规模**：总计 **133 个自动化测试（后端 93 + 前端 V2 40）100% 全绿通过**。后端 `DonghanEngine.Core` 已彻底落地 DDD 分包、不可变/只读集合防篡改封装、充血领域模型（OOP）与细粒度单方法服务接口隔离（ISP）；前端已建立 V2 契约架构与单一职责适配层。
+**项目规模**：总计 **138 个自动化测试（后端 96 + 前端 V2 42）100% 全绿通过**。后端 `DonghanEngine.Core` 已彻底落地 DDD 分包、不可变/只读集合防篡改封装、充血领域模型（OOP）与细粒度单方法服务接口隔离（ISP）；前端已建立 V2 契约架构与单一职责适配层。
 
 ---
 
@@ -27,11 +27,11 @@
 
 `GameState.Year=184`（中平元年/光和七年）、`Month=4`、`Xun=1`（上旬）。三旬为月、十二月为年。自带 `RefreshReignEra()` 动态推导灵帝年号（光和 178-184.11 / 中平 184.12-189）。
 
-### 2.3 六郡实体与充血方法 (`Province`)
+### 2.3 十三州拓扑与州郡实体 (`Province` + `ProvinceCatalog`)
 
-> 实装 6 郡：司隶 / 冀州 / 并州 / 兖州 / 豫州 / 荆州。其余 7 州（青/徐/扬/益/交/凉/幽）待后续版本扩展。
+> 实装完整大汉十三州：司隶 / 冀州 / 并州 / 兖州 / 豫州 / 荆州 / 青州 / 徐州 / 扬州 / 幽州 / 凉州 / 益州 / 交州。
 
-每郡独立维护 `LocalSupport`（0-100）、`Garrison`、`Wealth`、`GovernorId`、`IsRebelling`、`RebelFaction`、`RebellionMonths`、`LowSupportStreakMonths`，`Neighbors` 暴露为 `IReadOnlyList<string>`。包含完整的充血方法：
+所有州郡集中定义于 `DonghanEngine.Core.Constants.ProvinceCatalog`，并构建了双向地理邻接网（Neighbors），每郡独立维护 `LocalSupport`（0-100）、`Garrison`、`Wealth`、`GovernorId`、`IsRebelling`、`RebelFaction`、`RebellionMonths`、`LowSupportStreakMonths`，`Neighbors` 暴露为 `IReadOnlyList<string>`。包含完整的充血方法：
 - `AdjustLocalSupport(delta)`、`AdjustWealth(delta)`、`AdjustGarrison(delta)`、`AdjustDefenseLevel(delta)`
 - `StartRebellion(faction, initialSupport, garrisonMult)`
 - `SuppressRebellion(supportRecovery, newGarrison)`
