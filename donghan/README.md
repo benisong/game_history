@@ -8,84 +8,72 @@
 
 本项目规避了高算力损耗的网页套壳模式，完全采用面向对象（C# OOP）的高性能策略引擎，并预留了面向多智能体（Multi-Agent）大语言模型（如 DeepSeek/Gemini）的异步调度中间件与防御性数据缓冲槽，实现真实的朝党斗争、西园理财、天灾赈灾及帝王心术博弈。
 
-**项目规模**：C# 源码 **9208 行**（Backend 2665 + Tests 1365 + Frontend 5178），3 个 xUnit 测试文件 60 个测试方法 100% 通过。
+**项目规模**：总计 **133 个自动化测试（后端 93 + 前端 V2 40）100% 全绿通过**。后端 `DonghanEngine.Core` 已彻底落地 DDD 分包、不可变/只读集合防篡改封装、充血领域模型（OOP）与细粒度单方法服务接口隔离（ISP）；前端已建立 V2 契约架构与单一职责适配层。
 
 ---
 
-## 2. 核心数据模型 (`DonghanEngine.Core`)
+## 2. 核心数据模型与封装约束 (`DonghanEngine.Core.Models`)
 
-### 2.1 五大天子物理属性 (`GameState`)
+### 2.1 五大天子物理属性与防御性保护 (`GameState`)
 
-- **皇权 (ImperialPower)** `[0-100]`：代表天子号令天下的权威度。初始值极弱 **`25`**（政令不出宫门）。过低将导致抄家无官出列响应，甚至引发党羽联合弹劾与逼宫兵变。
-- **国库 (Treasury)** `[单位: 万钱]`：大汉朝廷公款，初始窘迫 **`8000`** 万钱，用于大朝会赈济。
+- **皇权 (ImperialPower)** `[0-100]`：代表天子号令天下的权威度。初始值极弱 **`25`**（政令不出宫门）。属性设置器自带 `Math.Clamp(0, 100)` 保护。过低将导致抄家无官出列响应，甚至引发党羽联合弹劾与逼宫兵变。
+- **国库 (Treasury)** `[单位: 万钱]`：大汉朝廷公款，初始窘迫 **`8000`** 万钱，设置器自带非负保护，用于大朝会赈济。
 - **私库 (PrivateTreasury)** `[单位: 万钱]`：西园天子内库，初始告急 **`1200`** 万钱，用于犒军、阅兵。
-- **民心 (PopularSupport)** `[0-100]`：天下百姓对汉廷的拥戴值。初始濒危 **`28`**（低于活命线）。低于 30 将直接触发特大地方饥荒或黄巾暴乱预警。
-- **健康 (Health)** `[0-100]`：天子龙体状态，因临幸后宫、饮酒纵乐而增损。初始危重 **`35`**，归零则汉灵帝崩殂。
+- **民心 (PopularSupport)** `[0-100]`：天下百姓对汉廷的拥戴值。初始濒危 **`28`**（低于活命线，自带 `Math.Clamp(0, 100)`）。低于 30 将直接触发特大地方饥荒或黄巾暴乱预警。
+- **健康 (Health)** `[0-100]`：天子龙体状态，因临幸后宫、饮酒纵乐而增损。初始危重 **`35`**（自带 `Math.Clamp(0, 100)`），归零则汉灵帝崩殂。
+- **集合完全只读封装（防外部篡改）**：`Npcs` 暴露为 `IReadOnlyDictionary<string, NpcState>`，`Provinces` 暴露为 `IReadOnlyDictionary<string, Province>`，`ActiveEdicts`、`NpcRelations`、`IntelReports`、`Chronicle` 全部暴露为 `IReadOnlyList<T>`。禁止外部直接通过索引器赋新值或裸 `Add()`，所有增删均由 `RegisterNpc`、`RemoveNpc`、`RegisterProvince`、`AddActiveEdict`、`RemoveActiveEdict`、`AddIntelReport`、`SetNpcRelations` 等领域方法安全受控执行。
 
-### 2.2 纪元时间戳
+### 2.2 纪元时间戳与年号系统
 
-`GameState.Year=184`（中平元年，光和七年）、`Month=4`、`Xun=1`（上旬）。三旬为月、十二月为年。
+`GameState.Year=184`（中平元年/光和七年）、`Month=4`、`Xun=1`（上旬）。三旬为月、十二月为年。自带 `RefreshReignEra()` 动态推导灵帝年号（光和 178-184.11 / 中平 184.12-189）。
 
-### 2.3 六郡 (`Province`)
+### 2.3 六郡实体与充血方法 (`Province`)
 
-> P1-B3 修复：README 此前写"十三州"但代码只实装 6 郡。改用"六郡"，并在叙事文案中保留"十三州"作历史氛围。
-> 实装 6 郡：司隶 / 冀州 / 并州 / 兖州 / 豫州 / 荆州。其余 7 州（青/徐/扬/益/交/凉/幽）待 P2+ 扩展。
+> 实装 6 郡：司隶 / 冀州 / 并州 / 兖州 / 豫州 / 荆州。其余 7 州（青/徐/扬/益/交/凉/幽）待后续版本扩展。
 
-每郡独立维护 `LocalSupport`（0-100）、`Garrison`、`Wealth`、`GovernorId`、`IsRebelling`、`RebelFaction`、`RebellionMonths`、`LowSupportStreakMonths`。叛乱规则在 `GameEngine.Province.cs` 中实现：
+每郡独立维护 `LocalSupport`（0-100）、`Garrison`、`Wealth`、`GovernorId`、`IsRebelling`、`RebelFaction`、`RebellionMonths`、`LowSupportStreakMonths`，`Neighbors` 暴露为 `IReadOnlyList<string>`。包含完整的充血方法：
+- `AdjustLocalSupport(delta)`、`AdjustWealth(delta)`、`AdjustGarrison(delta)`、`AdjustDefenseLevel(delta)`
+- `StartRebellion(faction, initialSupport, garrisonMult)`
+- `SuppressRebellion(supportRecovery, newGarrison)`
+- `PacifyRebellion(supportRecovery)`
+- `AppointGovernor(governorId, bonus)` / `RecallGovernor()`
 
-- **黄巾之乱触发**：连续 3 月 `LocalSupport<10` 自动触发。
-- **野心叛乱**：已派太守且 `LocalSupport ∈ [10,30]` 时按太守野心权重掷骰。
-- **平叛 / 招安**：玩家可"颁授虎符 · 出征"或"持节 · 招安"。
+### 2.4 NPC 五维与充血实体 (`NpcState`)
 
-### 2.4 NPC 五维与历史预设 (`NpcState`)
-
-- **五维属性 (0-100)**：武力 Martial、统帅 Leadership、政治 Politics、魅力 Charisma、野心 Ambition。
-- **派系 (Faction)**：清流派 / 外戚派 / 阉党派 / 割据军阀。
-- **官阶 (TitleTier)** 0-4：白身布衣 → 三公/大将军（曹操 1、蹇硕 2、张让 3、何进 4）。
-- **初始位置 (InitialLocation)**：洛阳朝堂 / 地方州郡 / 在野 / 边军 / 敌对势力。
-- **登场条件 (EntryCondition)**：开局 / 事件触发 / 年月触发 / 冷备。
-- **敌对首领 (IsHostile)**：不进入任官/平叛/招安候选（黄巾军与西凉叛军首领标 `IsHostile=true`）。
-- **史实卒年 (HistoricalDeathYear)** + **史料来源备注 (SourceNote)**：仅作参考。
+- **五维属性 (0-100)**：武力 Martial、统帅 Leadership、政治 Politics、魅力 Charisma、野心 Ambition（全部自带 `Math.Clamp(0, 100)` 保护）。
+- **特质集合只读化**：`Traits` 暴露为 `IReadOnlyList<string>`，提供 `AddTrait`、`RemoveTrait`、`ClearTraits` 受控操作。
+- **充血业务方法**：`AdjustFavorability(delta)`、`AdjustPower(delta)`、`AdjustCorruption(delta)`、`AdjustHealth(delta)`、`AdjustStashedWealth(delta)`、`AssignGovernor(provinceId)`、`RevokeGovernor()`、`MarkDeceased(reason)`。
+- **派系与官阶**：清流派 / 外戚派 / 阉党派 / 西园亲军 / 割据军阀 / 反叛势力；官阶 0-4（白身布衣 → 三公/大将军）。
+- **历史元数据**：`InitialLocation`、`EntryCondition`、`IsHostile`（敌对首领不进入任官候选）、`HistoricalDeathYear`、`SourceNote`。
 
 ### 2.5 派系关系网 (`NpcRelation` + `HistoricalNpcRelations`)
 
 `HistoricalNpcRelations.cs` 维护 **37 条历史关系**，类型枚举：
-
 - Kinship（血缘）、Patronage（提携）、FactionAlly（同派系）、TeacherStudent（师生）、SwornBond（结义）、Rivalry（路线之争）、Hostility（死敌）、Command（统属）、RegionalTie（地域）
-
-节选：
-
-| 来源 | 目标 | 类型 | 强度 | 标签 |
-|---|---|---|---|---|
-| 何进 | 张让 | Hostility | 88 | 诛宦死敌 |
-| 何进 | 袁绍 | FactionAlly | 68 | 诛宦暂盟 |
-| 张让 | 赵忠 | FactionAlly | 92 | 十常侍核心 |
-| 袁绍 | 袁术 | Rivalry | 72 | 宗族相竞 |
-| 卢植 | 刘备 | TeacherStudent | 86 | 师生 |
-| 卢植 | 公孙瓒 | TeacherStudent | 80 | 师生 |
-| 董卓 | 李傕 | Command | 86 | 董卓部曲 |
-| 丁原 | 吕布 | Command | 82 | 并州上下 |
 
 ### 2.6 西园新军 (`ArmyState`)
 
-`WestGardenArmy` 八校尉直属亲军：`Size`（默认 8000）、`BasePayPerTurn`（默认 120 万钱/旬）、`Morale`（0-100）、`Loyalty`（0-100）。
+`WestGardenArmy` 八校尉直属亲军：`Size`（默认 8000）、`BasePayPerTurn`（默认 120 万钱/旬）、`Morale`（0-100）、`Loyalty`（0-100）。具备 `AdjustMorale`、`AdjustLoyalty`、`AdjustSize`、`TakeCasualties` 充血方法。
 
-### 2.7 历史人物冷备 (`HistoricalNpcPresets`)
+### 2.7 奏折与选项实体 (`ImperialEdict`)
 
-冷备名单 **71 位** 真实历史人物，涵盖黄巾军（张角、张宝、张梁）、十常侍（赵忠、段珪、毕岚、夏恽、郭胜、宋典、韩悝）、清流名臣（王允、卢植、蔡邕、马日磾、袁隗、杨彪）、军政大将（皇甫嵩、朱儁、张温、崔烈）、边军与军阀（董卓、吕布、丁原、公孙瓒、刘表、刘焉、刘虞、韩馥、张扬、马腾）、士人谋士（荀爽、荀彧、荀攸、郭嘉、程煜、贾诩、田丰、桥玄、桥瑁）、武将（张辽、张绣、张济、张郃、于禁、太史慈、张飞、关羽、赵云、孔融、孔宙、蒯越、祢衡）、黄巾外围（张燕、张牛角、边章、北宫伯玉、韩遂）等。`IsHostile=true` 标记 7 人（黄巾与西凉叛军首领 + 张燕），不进入任官候选。
+`ActiveEdicts` 中的奏折对象，`Options` 暴露为 `IReadOnlyList<EdictOption>`，提供 `AddOption`、`DecrementExpiry` 与 `IsExpired` 充血行为。
 
-### 2.8 Trait 字符串常量 (`TraitNames`)
+### 2.8 历史人物冷备 (`HistoricalNpcPresets`)
 
-所有 **31 项** trait 字符串集中定义在 `TraitNames.cs` 常量类，杜绝硬编码拼写错误。详见 §5。
+冷备名单 **71 位** 真实历史人物，涵盖黄巾军、十常侍、清流名臣、军政大将、军阀、谋士与边将。
+
+### 2.9 Trait 字符串常量 (`TraitNames`)
+
+集中定义在 `DonghanEngine.Core.Constants.TraitNames` 常量类，杜绝硬编码拼写错误。详见 §5。
 
 ---
 
-## 3. 历史向"旬日"时间系统
+## 3. 历史向"旬日"时间系统与年号更迭
 
-游戏不使用通用的"Turn"，而采用东汉纪实 **"旬（每旬十天）"** 作为时间更迭单位：
-
+游戏采用东汉纪实 **"旬（每旬十天）"** 作为时间更迭单位：
 - 一月包含三旬（上旬、中旬、下旬），十二月为一年。
-- 每旬流逝时（通过 `NextXunAsync()`），系统自动扣除开支，并通过 AI 调度员生成最新的百官阴谋（`IntelReports`）与地方紧急奏折（`ActiveEdicts`）。
+- 每旬流逝时（通过 `NextXunAsync()`），系统自动结算奏折寿命并触发流产惩罚，并调用 AI 调度器生成百官密录（`IntelReports`）与地方紧急奏折（`ActiveEdicts`）。
 
 ---
 
@@ -101,11 +89,11 @@
 ### 4.2 双轨制生命周期管理器 (`INpcLifecycleManager`)
 
 - **A轨本地预置（Scheme A）**：优先搜寻本地运行目录下的 `donghan_preset_npcs.json`。
-- **B轨嵌入冷备（Scheme B Fallback）**：若本地 JSON 被玩家手动删除或格式损毁，系统将**自动且静默地无缝降级**采用 C# 硬编码冷备静态名单（71 位真实历史人物），**100% 确保游戏在任何恶劣环境下绝对不崩溃**。
+- **B轨嵌入冷备（Scheme B Fallback）**：若本地 JSON 缺失或格式损毁，系统**自动静默降级**采用 C# 硬编码冷备静态名单（71 位真实历史人物）。
 - **老病死启发式演进与惰性登台**：
-  - **惰性加载部署 (`DeployNpcToCourt`)**：开局仅 5 人（何进、张让、曹操、蹇硕、袁绍）上场。备用英贤（董卓、卢植、王允等）静态沉睡，由调度员按需部署上台，大幅节省内存。
+  - **惰性加载部署 (`DeployNpcToCourt`)**：开局洛阳核心朝臣上场。备用英贤静态沉睡，由调度员按需部署上台。
   - **老病死演进**：每逢 3 旬（1个月），所有大臣年龄增长 1 岁。若年龄超过其期望寿命（`BaseLongevity`），每旬会有 15% 的概率寿终寝于邸舍；同时每旬有千分之三的概率染上"洛阳伤寒温疫"，健康值暴跌 30 点。
-- **时间戳原子防颠簸锁（Timestamp Lock）**：内部实装 `LastNpcProcessedTimestamp` 原子时间戳锁。确保在一个游戏旬日之内，无论玩家网络颠簸或调度师多次调用生命 Process，生命周期都只会安全触发 **1 次**，彻底断绝"由于高频调用导致官员瞬间老死"的底层漏洞。
+- **时间戳原子防颠簸锁（Timestamp Lock）**：内部实装 `LastNpcProcessedTimestamp` 原子时间戳锁。确保在一个游戏旬日之内生命周期只会安全触发 **1 次**。
 
 ### 4.3 派系关系（节选）
 
@@ -305,86 +293,104 @@
 
 ---
 
-## 9. 目录结构与自动化测试验证
+## 9. 目录结构与分包架构
 
 ```
 game_history/
-├── art/                          # Pillow 合成素材与脚本
-│   ├── cards/                    # 主界面 4 张卡合成脚本
-│   ├── landscape/                # 横版参考图
-│   ├── portraits/                # 1024² 历史人物方图
-│   └── icon/                     # 应用图标
-├── docs/                         # 设计文档与协作记录
-└── donghan/                      # 主项目
-    ├── README.md                 # 本文件
+├── art/                                         # Pillow 合成素材与脚本
+├── docs/                                        # 设计文档与技术方案
+└── donghan/                                     # 主项目
+    ├── README.md                                # 本文件
     ├── Backend/
     │   ├── Backend.sln / Backend.slnx
-    │   ├── DonghanEngine.Core/                       # 核心后端逻辑类库（2665 行）
-    │   │   ├── GameState.cs                          # 五大属性 + 时间戳 + Province/Relation
-    │   │   ├── GameEngine.cs                         # 主流程编排 + 玩家输入解析 (511)
-    │   │   ├── GameEngine.ActionSettlements.cs       # 规则结算、Outcome 判定 (366)
-    │   │   ├── GameEngine.Narrative.cs               # 叙事文本、实录 RichText 反馈 (125)
-    │   │   ├── GameEngine.Province.cs                # 叛乱检测、黄巾触发、平叛招安 (624)
-    │   │   ├── ImperialEdict.cs                      # 5 大奏折、EdictOption 增量维度
-    │   │   ├── NpcState.cs / NpcRelation.cs          # NPC 五维 + 派系关系类型枚举
-    │   │   ├── HistoricalNpcPresets.cs               # 71 位真实历史人物冷备名单
-    │   │   ├── HistoricalNpcRelations.cs             # 37 条派系/血缘/师生关系网
-    │   │   ├── TraitNames.cs                         # 31 项 trait 字符串常量
-    │   │   ├── NpcTraitEvaluator.cs                  # 复合共存累乘评估引擎
-    │   │   ├── INpcRegistry.cs / NpcRegistry.cs      # 动态登庸与下野
-    │   │   ├── INpcLifecycleManager.cs               # A/B 轨冷备、寿命发病、按需部署
-    │   │   ├── IAIScheduler.cs / IEventOracle.cs     # AI 编排 + 随机事件
-    │   │   ├── IMinisterAgent.cs / INarrator.cs      # 单大臣对话 + 叙事渲染
+    │   ├── DonghanEngine.Core/                  # 核心后端逻辑类库（DDD 目录封包架构）
+    │   │   ├── Models/                          # 领域实体与不可变/只读集合值对象
+    │   │   │   ├── GameState.cs                 # 天子大局状态（只读集合私有化）
+    │   │   │   ├── NpcState.cs                  # 大臣/人物实体（五维 Clamp 与充血方法）
+    │   │   │   ├── Province.cs                  # 州郡实体（民心守军与平叛招安充血方法）
+    │   │   │   ├── ArmyState.cs                 # 禁军实体（士气忠诚与充血方法）
+    │   │   │   ├── ImperialEdict.cs             # 奏折与御批选项
+    │   │   │   ├── NpcRelation.cs               # 人物羁绊与关系边
+    │   │   │   └── CourtSpeech.cs               # 朝会辩论发言与阶段模型
+    │   │   ├── Constants/                       # 领域常量、文学 Trait 与派系枚举
+    │   │   │   ├── TraitNames.cs                # 31 项成语/通俗特征常量
+    │   │   │   ├── FactionCatalog.cs            # 六大派系常量
+    │   │   │   └── FactionStance.cs             # 派系朝堂博弈矩阵
+    │   │   ├── AI/                              # AI 调度与大臣交互
+    │   │   │   ├── IAIScheduler.cs              # AI 调度器契约
+    │   │   │   ├── AIOrchestrationResult.cs     # 编排结果模型
+    │   │   │   ├── IMinisterAgent.cs            # 大臣智能体契约
+    │   │   │   ├── IEventOracle.cs              # 随机天灾先知契约
+    │   │   │   ├── IntentClassifier.cs          # 玩家意图分类
+    │   │   │   └── FactionSpeechBank.cs         # 派系专属台词库
+    │   │   ├── Npc/                             # NPC 注册与生命周期
+    │   │   │   ├── INpcRegistry.cs              # 统一登庸/下野注册中心
+    │   │   │   ├── INpcLifecycleManager.cs      # A/B轨生命周期与发病机制
+    │   │   │   ├── HistoricalNpcPresets.cs      # 71 位史实人物冷备库
+    │   │   │   ├── HistoricalNpcRelations.cs    # 37 条史实羁绊关系
+    │   │   │   └── NpcTraitEvaluator.cs         # 纯函数能力评估器
+    │   │   ├── Events/                          # 历史大事件与叙事
+    │   │   │   ├── EventNarratives.cs           # 黄巾、何进、董卓大事件
+    │   │   │   └── INarrator.cs                 # 叙事输出器接口
+    │   │   ├── Services/                        # 细粒度领域服务接口与引擎主干
+    │   │   │   ├── IGameEngine.cs               # ISP 单一职责领域接口契约组合
+    │   │   │   ├── GameEngine.cs                # 引擎主干编排
+    │   │   │   ├── GameEngine.Province.cs       # 州郡治理与平叛
+    │   │   │   ├── GameEngine.ActionSettlements.cs # 动作数值结算与反噬
+    │   │   │   └── GameEngine.Narrative.cs      # 叙事与实录渲染
     │   │   └── DonghanEngine.Core.csproj
-    │   └── DonghanEngine.Tests/                      # xUnit 自动化测试（1365 行 / 60 个测试）
-    │       ├── EngineTests.cs                        # 28 个核心引擎测试
-    │       ├── HistoricalNpcPresetTests.cs           # 6 个冷备名单 + 关系网测试
-    │       ├── ProvinceRebellionTests.cs             # 26 个叛乱 / 黄巾 / 招安 / 平叛测试
+    │   └── DonghanEngine.Tests/                 # 核心引擎自动化测试套件（93 个测试）
+    │       ├── DomainEncapsulationTests.cs      # 领域模型 Clamp 与封装安全性测试
+    │       ├── EngineTests.cs                   # 核心引擎流程测试
+    │       ├── HistoricalNpcPresetTests.cs      # 冷备人物与关系网测试
+    │       ├── ProvinceRebellionTests.cs        # 叛乱/黄巾/平叛/招安测试
     │       └── DonghanEngine.Tests.csproj
-    ├── Console/                                       # Legacy 控制台原型（仅保留可执行 CLI 入口）
-    │   ├── Program.cs
-    │   └── Console.csproj
-    └── Frontend/                                       # Godot 4.6.3 (.NET) 游戏项目（5178 行）
-        ├── MainScene.cs                                # 主入口 + 御案卷轴 + 全屏恢复 (185)
-        ├── MainScene.CoreActions.cs                    # 弹窗栈 + PopupSkin 6 类 (777)
-        ├── MainScene.CourtAndOpening.cs                # 开场 + 起驾转场 (389)
-        ├── MainScene.CourtPanel.cs                     # 大朝会五段式转场 (810)
-        ├── MainScene.CourtTopics.cs                    # 五大常议议题 (137)
-        ├── MainScene.DeskAndAffairs.cs                 # 御案折匣 · 尚书台 (475)
-        ├── MainScene.IntelPanel.cs                     # 黄门密札 6 郡 (297)
-        ├── MainScene.IntelActions.cs                   # 情报决策 (411)
-        ├── MainScene.Ministers.cs                      # 群臣档案 + 籍没 (408)
-        ├── MainScene.WestGardenPanel.cs                # 西园犒赏/募兵/账目 (474)
-        ├── MainScene.MockServices.cs                   # 圣旨 → 样例回奏 (120)
-        ├── MainScene.Style.cs                          # 统一样式函数库 (597)
-        ├── WindowManager.cs                            # 栈式弹窗 + ModalBlocker (98)
-        ├── MainScene.tscn                              # 场景树
-        ├── project.godot                               # Godot 全屏配置
-        └── DonghanFrontend.csproj
+    ├── Frontend/                                # Godot 4.6.3 (.NET) 游戏前端
+    │   ├── V2/                                  # V2 细粒度接口优先架构
+    │   │   ├── Contracts/                       # 单方法服务接口与快照数据契约
+    │   │   │   ├── IGameplayServices.cs         # ISP 单一方法业务契约
+    │   │   │   ├── GameplayContracts.cs         # 只读快照模型（Minister/Province）
+    │   │   │   └── V2Runtime.cs                 # V2 运行时环境容器
+    │   │   ├── Adapters/                        # 领域服务适配器（每个类单一职责）
+    │   │   │   ├── GameEngineStateReader.cs     # 状态快照读取适配
+    │   │   │   ├── GameEngineCourtService.cs    # 大朝会适配
+    │   │   │   ├── GameEngineEdictService.cs    # 尚书台奏折批阅适配
+    │   │   │   ├── GameEngineIntelService.cs    # 密札与州郡治理适配
+    │   │   │   ├── GameEngineSpecialActionService.cs # 籍没/卖官/微服等特殊行动适配
+    │   │   │   ├── GameEngineTravelService.cs   # 宫廷移动巡幸适配
+    │   │   │   ├── GameEngineTurnService.cs     # 旬日更迭与快进适配
+    │   │   │   ├── GameEngineWestGardenService.cs # 西园禁军运维适配
+    │   │   │   └── V2RuntimeFactory.cs          # 契约工厂组装
+    │   │   └── MainSceneV2.cs                   # V2 纯契约驱动主场景交互控制
+    │   ├── V2.Tests/                            # 前端 V2 契约与适配层独立测试（40 个测试）
+    │   │   └── *.cs                             # 13 个测试文件覆盖所有 V2 服务契约
+    │   ├── MainScene.*.cs                       # 原始/并存 UI 面板与样式支持
+    │   ├── WindowManager.cs                     # 栈式弹窗与全屏模态阻断器
+    │   ├── MainScene.tscn                       # 主场景树
+    │   ├── project.godot                        # Godot 独占全屏与项目配置
+    │   └── DonghanFrontend.csproj
+    └── Console/                                 # 控制台原型 CLI
+        ├── Program.cs
+        └── Console.csproj
 ```
 
-### 9.1 测试覆盖（60/60 100% 通过）
+### 9.1 全量自动化测试保障（133/133 全绿通过）
 
-- **`EngineTests.cs`（28 个 Fact）**：验证 A/B 轨冷备降级（董卓）、刘备登庸与寿命变老、刘备「经天纬地」开仓提振、曹操「老谋深算」强抄张让反噬折减、以及「经天纬地」+「爱民如子」的 **Traits 共存复合累乘 ($1.20 \times 1.15 = 1.38x$)**。
-- **`HistoricalNpcPresetTests.cs`（6 个 Fact）**：验证冷备名单完整性、派系关系网引用合法、敌对首领排除。
-- **`ProvinceRebellionTests.cs`（26 个 Fact）**：验证黄巾之乱触发条件、野心叛乱、招安/平叛分支、远京距离惩罚。
+- **后端核心测试 (`DonghanEngine.Tests`)：** **93 个测试** 覆盖领域属性防御 Clamp、不可变/只读集合操作、Traits 复合加成、历史大事件时序、NPC 生老病死、地方叛乱与招安平叛。
+- **前端 V2 测试 (`DonghanFrontend.V2.Tests`)：** **40 个测试** 覆盖状态快照提取、百官名册五维与 Traits 展示、大朝会与自由诏书、奏折批阅与流产、西园操作、特殊行动与连续旬日快进。
 
 ### 9.2 构建与测试命令
 
 ```bash
-# 后端测试
-cd /opt/game_history/donghan/Backend
-dotnet test DonghanEngine.Tests/DonghanEngine.Tests.csproj
-# 期望：Passed!  - Failed: 0, Passed: 60, Skipped: 0, Total: 60
+# 1. 运行核心后端测试 (93/93 Passed)
+export PATH=$HOME/.dotnet:$PATH
+dotnet test Backend/DonghanEngine.Tests/DonghanEngine.Tests.csproj
 
-# 前端构建
-cd /opt/game_history/donghan/Frontend
-dotnet build DonghanFrontend.csproj -v minimal
-# 期望：Build succeeded. 0 Warning(s) 0 Error(s)
+# 2. 运行前端 V2 契约架构测试 (40/40 Passed)
+dotnet test Frontend/V2.Tests/DonghanFrontend.V2.Tests.csproj
 
-# Godot headless 验证（不打开 GUI）
-/opt/godot/Godot_v4.6.3-stable_mono_linux_x86_64/Godot_v4.6.3-stable_mono_linux.x86_64 \
-  --headless --path /opt/game_history/donghan/Frontend
+# 3. 前端工程构建验证
+dotnet build Frontend/DonghanFrontend.csproj -v minimal
 ```
 
 ### 9.3 Git 卫生
