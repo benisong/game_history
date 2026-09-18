@@ -22,12 +22,12 @@ public static class V2RuntimeFactory
         var stateReader = new GameEngineStateReader(engine);
         return new V2Runtime(
             stateReader,
-            new GameEngineTravelService(engine, stateReader),
-            new GameEngineWestGardenService(engine),
+            new GameEngineTravelService(engine, engine),
+            new GameEngineWestGardenService(engine, engine, engine),
             new GameEngineIntelService(engine, stateReader),
             new GameEngineCourtService(engine),
-            new GameEngineTurnService(engine, stateReader),
-            new GameEngineEdictService(engine),
-            new GameEngineSpecialActionService(engine));
+            new GameEngineTurnService(engine, engine, stateReader),
+            new GameEngineEdictService(engine, engine),
+            new GameEngineSpecialActionService(engine, engine, engine, engine));
     }
 }

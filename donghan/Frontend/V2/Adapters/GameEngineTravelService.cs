@@ -6,21 +6,21 @@ namespace DonghanFrontend.V2.Adapters;
 
 public sealed class GameEngineTravelService : ITravelService
 {
-    private readonly GameEngine _engine;
-    private readonly IGameStateReader _state;
+    private readonly ITravelDomainService _travelDomain;
+    private readonly IGameStateProvider _stateProvider;
 
-    public GameEngineTravelService(GameEngine engine, IGameStateReader state)
+    public GameEngineTravelService(ITravelDomainService travelDomain, IGameStateProvider stateProvider)
     {
-        _engine = engine;
-        _state = state;
+        _travelDomain = travelDomain;
+        _stateProvider = stateProvider;
     }
 
     public ActionResult Travel(TravelCommand command)
     {
         try
         {
-            string before = _engine.GetState().CurrentLocation;
-            _engine.TravelToLocation(command.Destination);
+            string before = _stateProvider.GetState().CurrentLocation;
+            _travelDomain.TravelToLocation(command.Destination);
             return new ActionResult(
                 true,
                 "起驾奏报",

@@ -6,15 +6,25 @@ namespace DonghanFrontend.V2.Adapters;
 
 public sealed class GameEngineWestGardenService : IWestGardenService
 {
-    private readonly GameEngine _engine;
+    private readonly IDrillArmyDomainService _drillDomain;
+    private readonly IRecruitArmyDomainService _recruitDomain;
+    private readonly IGameStateProvider _stateProvider;
 
-    public GameEngineWestGardenService(GameEngine engine) => _engine = engine;
+    public GameEngineWestGardenService(
+        IDrillArmyDomainService drillDomain,
+        IRecruitArmyDomainService recruitDomain,
+        IGameStateProvider stateProvider)
+    {
+        _drillDomain = drillDomain;
+        _recruitDomain = recruitDomain;
+        _stateProvider = stateProvider;
+    }
 
     public ActionResult PayArmy(ArmyPayCommand command)
     {
-        var beforePrivateTreasury = _engine.GetState().PrivateTreasury;
+        var beforePrivateTreasury = _stateProvider.GetState().PrivateTreasury;
         var result = Execute("发内帑犒军", ReportKind.WestGarden, () =>
-            _engine.ExecuteDrillArmyActionWithOfficer(command.Amount, command.OfficerId));
+            _drillDomain.ExecuteDrillArmyActionWithOfficer(command.Amount, command.OfficerId));
         if (result.Success && command.Amount > beforePrivateTreasury)
             return ActionResult.Failure("发内帑犒军", result.StoryText, ReportKind.WestGarden, "InsufficientPrivateTreasury");
         return result;
@@ -24,13 +34,13 @@ public sealed class GameEngineWestGardenService : IWestGardenService
 
     public ActionResult RecruitArmy(RecruitArmyCommand command)
     {
-        var state = _engine.GetState();
+        var state = _stateProvider.GetState();
         var capacity = 12000 - state.WestGardenArmy.Size;
         var actualTroops = Math.Min(command.Troops, Math.Max(0, capacity));
         var batches = actualTroops / 1000;
         var estimatedCost = batches * 300;
         var result = Execute("西园募兵回报", ReportKind.WestGarden, () =>
-            _engine.ExecuteRaiseWestGardenTroopsAction(command.Troops));
+            _recruitDomain.ExecuteRaiseWestGardenTroopsAction(command.Troops));
         if (result.Success && (capacity <= 0 || estimatedCost > state.Treasury))
             return ActionResult.Failure("西园募兵回报", result.StoryText, ReportKind.WestGarden,
                 capacity <= 0 ? "WestGardenArmyFull" : "InsufficientTreasury");

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace DonghanEngine.Core;
 
-public partial class GameEngine
+public partial class GameEngine : IGameEngine
 {
     private readonly GameState _state;
     private readonly IAIScheduler _scheduler;

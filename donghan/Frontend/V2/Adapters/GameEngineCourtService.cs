@@ -7,9 +7,9 @@ namespace DonghanFrontend.V2.Adapters;
 
 public sealed class GameEngineCourtService : ICourtService
 {
-    private readonly GameEngine _engine;
+    private readonly IGrandCourtDomainService _courtDomain;
 
-    public GameEngineCourtService(GameEngine engine) => _engine = engine;
+    public GameEngineCourtService(IGrandCourtDomainService courtDomain) => _courtDomain = courtDomain;
 
     public Task<string> StartSessionAsync()
     {
@@ -20,7 +20,7 @@ public sealed class GameEngineCourtService : ICourtService
     {
         try
         {
-            return _engine.StartGrandCourtSync();
+            return _courtDomain.StartGrandCourtSync();
         }
         catch (Exception ex)
         {
@@ -34,9 +34,9 @@ public sealed class GameEngineCourtService : ICourtService
         {
             string input = ResolveDecisionInput(command);
             if (!string.IsNullOrWhiteSpace(command.ActiveOfficerId))
-                _engine.ActiveOfficerId = command.ActiveOfficerId;
+                _courtDomain.ActiveOfficerId = command.ActiveOfficerId;
 
-            var result = await _engine.ProcessPlayerTurnAsync(input);
+            var result = await _courtDomain.ProcessPlayerTurnAsync(input);
             return new ActionResult(
                 true,
                 "朝议圣裁回奏",
@@ -55,8 +55,9 @@ public sealed class GameEngineCourtService : ICourtService
         try
         {
             if (!string.IsNullOrWhiteSpace(command.ActiveOfficerId))
-                _engine.ActiveOfficerId = command.ActiveOfficerId;
-            var result = await _engine.ProcessPlayerTurnAsync(command.PlayerInput);
+                _courtDomain.ActiveOfficerId = command.ActiveOfficerId;
+
+            var result = await _courtDomain.ProcessPlayerTurnAsync(command.PlayerInput);
             return new ActionResult(true, "亲拟圣旨回奏", result.StoryText, ReportKind.Court, Array.Empty<StateChange>());
         }
         catch (Exception ex)

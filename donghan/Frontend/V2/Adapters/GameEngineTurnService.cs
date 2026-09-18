@@ -8,12 +8,17 @@ namespace DonghanFrontend.V2.Adapters;
 
 public sealed class GameEngineTurnService : ITurnService
 {
-    private readonly GameEngine _engine;
+    private readonly ITurnAdvanceDomainService _turnDomain;
+    private readonly IGameStateProvider _stateProvider;
     private readonly IGameStateReader _state;
 
-    public GameEngineTurnService(GameEngine engine, IGameStateReader state)
+    public GameEngineTurnService(
+        ITurnAdvanceDomainService turnDomain,
+        IGameStateProvider stateProvider,
+        IGameStateReader state)
     {
-        _engine = engine;
+        _turnDomain = turnDomain;
+        _stateProvider = stateProvider;
         _state = state;
     }
 
@@ -21,8 +26,8 @@ public sealed class GameEngineTurnService : ITurnService
     {
         try
         {
-            var before = _engine.GetState().Chronicle.Count;
-            await _engine.NextXunAsync();
+            var before = _stateProvider.GetState().Chronicle.Count;
+            await _turnDomain.NextXunAsync();
             return new TurnAdvanceResult(true, _state.GetSnapshot(), ReadNewEvents(before));
         }
         catch (Exception ex)
@@ -39,13 +44,13 @@ public sealed class GameEngineTurnService : ITurnService
         }
 
         int advanced = 0;
-        int eventStart = _engine.GetState().Chronicle.Count;
+        int eventStart = _stateProvider.GetState().Chronicle.Count;
         try
         {
             for (; advanced < command.XunCount; advanced++)
             {
-                await _engine.NextXunAsync();
-                if (_engine.GetState().Outcome != GameOutcome.Playing)
+                await _turnDomain.NextXunAsync();
+                if (_stateProvider.GetState().Outcome != GameOutcome.Playing)
                 {
                     return new FastForwardResult(true, command.XunCount, advanced + 1, _state.GetSnapshot(), ReadNewEvents(eventStart), true, "游戏结局已确定。");
                 }
@@ -61,7 +66,7 @@ public sealed class GameEngineTurnService : ITurnService
 
     private IReadOnlyList<string> ReadNewEvents(int beforeCount)
     {
-        var chronicle = _engine.GetState().Chronicle;
+        var chronicle = _stateProvider.GetState().Chronicle;
         if (beforeCount >= chronicle.Count) return Array.Empty<string>();
         return chronicle.GetRange(beforeCount, chronicle.Count - beforeCount);
     }

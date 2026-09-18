@@ -8,22 +8,22 @@ namespace DonghanFrontend.V2.Adapters;
 
 public sealed class GameEngineStateReader : IGameStateReader
 {
-    private readonly GameEngine _engine;
+    private readonly IGameStateProvider _stateProvider;
 
-    public GameEngineStateReader(GameEngine engine) => _engine = engine;
+    public GameEngineStateReader(IGameStateProvider stateProvider) => _stateProvider = stateProvider;
 
-    public GameStateSnapshot GetSnapshot() => Snapshot(_engine.GetState());
+    public GameStateSnapshot GetSnapshot() => Snapshot(_stateProvider.GetState());
 
     public ProvinceSnapshot? GetProvince(string provinceId)
     {
-        var state = _engine.GetState();
+        var state = _stateProvider.GetState();
         return state.Provinces.TryGetValue(provinceId, out var province)
             ? Snapshot(state, province)
             : null;
     }
 
     public IReadOnlyList<MinisterSnapshot> GetMinisters() =>
-        _engine.GetState().Npcs.Values.Select(Snapshot).ToList();
+        _stateProvider.GetState().Npcs.Values.Select(Snapshot).ToList();
 
     internal static GameStateSnapshot Snapshot(GameState state) => new(
         state.ReignTitle,

@@ -8,13 +8,18 @@ namespace DonghanFrontend.V2.Adapters;
 
 public sealed class GameEngineEdictService : IEdictService
 {
-    private readonly GameEngine _engine;
+    private readonly IResolveEdictDomainService _resolveEdictDomain;
+    private readonly IGameStateProvider _stateProvider;
 
-    public GameEngineEdictService(GameEngine engine) => _engine = engine;
+    public GameEngineEdictService(IResolveEdictDomainService resolveEdictDomain, IGameStateProvider stateProvider)
+    {
+        _resolveEdictDomain = resolveEdictDomain;
+        _stateProvider = stateProvider;
+    }
 
     public IReadOnlyList<EdictSnapshot> GetPendingEdicts()
     {
-        return _engine.GetState().ActiveEdicts.Select(edict =>
+        return _stateProvider.GetState().ActiveEdicts.Select(edict =>
             new EdictSnapshot(
                 edict.Id,
                 edict.Title,
@@ -29,7 +34,7 @@ public sealed class GameEngineEdictService : IEdictService
     {
         try
         {
-            var result = _engine.ResolveEdictAction(command.EdictId, command.OptionIndex);
+            var result = _resolveEdictDomain.ResolveEdictAction(command.EdictId, command.OptionIndex);
             return new ActionResult(true, "尚书台朱批回奏", result.StoryText, ReportKind.Information, Array.Empty<StateChange>());
         }
         catch (Exception ex)

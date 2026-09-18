@@ -6,21 +6,34 @@ namespace DonghanFrontend.V2.Adapters;
 
 public sealed class GameEngineSpecialActionService : ISpecialActionService
 {
-    private readonly GameEngine _engine;
+    private readonly IQuickActionDomainService _quickActionDomain;
+    private readonly IDisasterReliefDomainService _reliefDomain;
+    private readonly IConfiscationDomainService _confiscationDomain;
+    private readonly IGameStateProvider _stateProvider;
 
-    public GameEngineSpecialActionService(GameEngine engine) => _engine = engine;
+    public GameEngineSpecialActionService(
+        IQuickActionDomainService quickActionDomain,
+        IDisasterReliefDomainService reliefDomain,
+        IConfiscationDomainService confiscationDomain,
+        IGameStateProvider stateProvider)
+    {
+        _quickActionDomain = quickActionDomain;
+        _reliefDomain = reliefDomain;
+        _confiscationDomain = confiscationDomain;
+        _stateProvider = stateProvider;
+    }
 
     public ActionResult Execute(SpecialActionCommand command)
     {
         try
         {
-            var state = _engine.GetState();
+            var state = _stateProvider.GetState();
             TurnResult result = command.ActionId switch
             {
-                "sell_office" => _engine.ExecuteQuickAction("sell_office"),
-                "harem_rest" => _engine.ExecuteQuickAction("harem_rest"),
-                "disaster_relief" => _engine.ExecuteDisasterReliefAction(command.Amount, command.OfficerId),
-                "confiscation" => _engine.ExecuteConfiscationAction(command.TargetNpcId, command.Destination),
+                "sell_office" => _quickActionDomain.ExecuteQuickAction("sell_office"),
+                "harem_rest" => _quickActionDomain.ExecuteQuickAction("harem_rest"),
+                "disaster_relief" => _reliefDomain.ExecuteDisasterReliefAction(command.Amount, command.OfficerId),
+                "confiscation" => _confiscationDomain.ExecuteConfiscationAction(command.TargetNpcId, command.Destination),
                 _ => throw new ArgumentOutOfRangeException(nameof(command.ActionId), command.ActionId, "未知特殊行动")
             };
 

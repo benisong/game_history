@@ -6,12 +6,12 @@ namespace DonghanFrontend.V2.Adapters;
 
 public sealed class GameEngineIntelService : IIntelService
 {
-    private readonly GameEngine _engine;
+    private readonly IProvinceGovernanceDomainService _governanceDomain;
     private readonly IGameStateReader _state;
 
-    public GameEngineIntelService(GameEngine engine, IGameStateReader state)
+    public GameEngineIntelService(IProvinceGovernanceDomainService governanceDomain, IGameStateReader state)
     {
-        _engine = engine;
+        _governanceDomain = governanceDomain;
         _state = state;
     }
 
@@ -29,10 +29,10 @@ public sealed class GameEngineIntelService : IIntelService
         {
             TurnResult result = command.Action switch
             {
-                ProvinceActionKind.RecallGovernor => _engine.RecallGovernor(command.ProvinceId),
-                ProvinceActionKind.AssignGovernor => _engine.AssignGovernor(command.ProvinceId, command.OfficerId ?? string.Empty),
-                ProvinceActionKind.SuppressRebellion => _engine.SuppressRebellion(command.ProvinceId, command.OfficerId ?? string.Empty, command.Troops),
-                ProvinceActionKind.PacifyRebellion => _engine.PacifyRebellion(
+                ProvinceActionKind.RecallGovernor => _governanceDomain.RecallGovernor(command.ProvinceId),
+                ProvinceActionKind.AssignGovernor => _governanceDomain.AssignGovernor(command.ProvinceId, command.OfficerId ?? string.Empty),
+                ProvinceActionKind.SuppressRebellion => _governanceDomain.SuppressRebellion(command.ProvinceId, command.OfficerId ?? string.Empty, command.Troops),
+                ProvinceActionKind.PacifyRebellion => _governanceDomain.PacifyRebellion(
                     command.ProvinceId,
                     command.OfficerId ?? string.Empty,
                     ParseStrategies(command.Strategy),
