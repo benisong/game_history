@@ -526,6 +526,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalGuandongTribute();
         }
 
+        // 190 年 6 月第 2 旬：关西军团整饬与董卓防务对峙因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 190 && _state.Month == 6 && _state.Xun == 2)
+        {
+            TriggerHistoricalGuanxiDefense();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -778,6 +785,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new GuandongTributeEvaluator();
         var executor = new GuandongTributeExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-13 关西军团整饬与董卓防务因果推演 ===
+    // 在 190/6/2 旬推演皇甫嵩关西锁钥 vs 董卓羁縻安抚 vs 边关生变
+    private void TriggerHistoricalGuanxiDefense()
+    {
+        var evaluator = new GuanxiDefenseEvaluator();
+        var executor = new GuanxiDefenseExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
