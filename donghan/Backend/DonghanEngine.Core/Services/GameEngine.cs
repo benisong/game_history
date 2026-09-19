@@ -561,6 +561,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalKuangtingBattle();
         }
 
+        // 193 年 9 月第 2 旬：曹操征徐州与陶谦三让徐州因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 193 && _state.Month == 9 && _state.Xun == 2)
+        {
+            TriggerHistoricalXuzhouSuccession();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -863,6 +870,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new KuangtingBattleEvaluator();
         var executor = new KuangtingBattleExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-18 曹操征徐州与陶谦三让徐州因果推演 ===
+    // 在 193/9/2 旬推演天子诏封刘皇叔领徐州 vs 曹操兼并徐州
+    private void TriggerHistoricalXuzhouSuccession()
+    {
+        var evaluator = new XuzhouSuccessionEvaluator();
+        var executor = new XuzhouSuccessionExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
