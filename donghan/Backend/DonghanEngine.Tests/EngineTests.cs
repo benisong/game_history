@@ -891,13 +891,9 @@ public class EngineTests
     [Fact]
     public async Task Test_P03_YellowTurban_HardTrigger_At184_4_2_FiresForThreeProvinces()
     {
-        // Arrange: 默认开局就是 184/4/1，跑 1 旬进入 184/4/2 → 触发硬 trigger
+        // Arrange: 默认开局就是 184/4/1，跑 1 旬进入 184/4/2 → 触发动态黄巾评估
+        // 默认开局下：冀州必反，兖州无太守反，豫州在史实波才冲击下反
         var state = new GameState();
-        // 把 3 郡的 LocalSupport 都拉满，验证硬 trigger 仍然能无视 LocalSupport
-        state.Provinces["jizhou"].LocalSupport = 100;
-        state.Provinces["yanzhou"].LocalSupport = 100;
-        state.Provinces["yuzhou"].LocalSupport = 100;
-
         var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
 
         // Act
@@ -907,9 +903,9 @@ public class EngineTests
         Assert.Equal(184, state.Year);
         Assert.Equal(4, state.Month);
         Assert.Equal(2, state.Xun);
-        Assert.True(state.Provinces["jizhou"].IsRebelling, "冀州必须被硬 trigger");
-        Assert.True(state.Provinces["yanzhou"].IsRebelling, "兖州必须被硬 trigger");
-        Assert.True(state.Provinces["yuzhou"].IsRebelling, "豫州必须被硬 trigger");
+        Assert.True(state.Provinces["jizhou"].IsRebelling, "冀州必须起事");
+        Assert.True(state.Provinces["yanzhou"].IsRebelling, "兖州必须起事");
+        Assert.True(state.Provinces["yuzhou"].IsRebelling, "豫州必须起事");
         Assert.Null(state.Provinces["jizhou"].GovernorId);  // 冀州太守桥玄必须被撤
         Assert.Null(state.Provinces["yuzhou"].GovernorId);   // 豫州太守卢植必须被撤
     }
@@ -928,14 +924,14 @@ public class EngineTests
         // 但至少 Historical trigger 没在 184/5/1 重放）
         // 我们不严格断言 IsRebelling=false（因为 CheckRebellions 可能已随机起事），
         // 只断言 Chroncile 里没有"黄巾起事"硬 trigger 文案
-        bool hasHardTriggerLog = state.Chronicle.Any(c => c.Contains("太平道蜂起响应"));
+        bool hasHardTriggerLog = state.Chronicle.Any(c => c.Contains("太平道蜂起响应") || c.Contains("张角"));
         Assert.False(hasHardTriggerLog, "硬 trigger 只在 184/4/2 触发，不应在 184/5/1 重放");
     }
 
     [Fact]
     public async Task Test_P03_YellowTurban_AlreadyRebelling_SkipsCleanly()
     {
-        // Arrange: 把冀州预设为已反，验证硬 trigger 不会重复跑 / 不会崩
+        // Arrange: 把冀州预设为已反，验证触发不会重复跑 / 不会崩
         var state = new GameState();
         state.Provinces["jizhou"].IsRebelling = true;
         state.Provinces["jizhou"].RebelFaction = "黄巾军";
@@ -944,7 +940,6 @@ public class EngineTests
         // Act & Assert: 不应抛
         await engine.NextXunAsync();
         Assert.True(state.Provinces["jizhou"].IsRebelling);
-        // 兖/豫仍应被硬 trigger
         Assert.True(state.Provinces["yanzhou"].IsRebelling);
         Assert.True(state.Provinces["yuzhou"].IsRebelling);
     }

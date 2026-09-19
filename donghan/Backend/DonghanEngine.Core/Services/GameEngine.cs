@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DonghanEngine.Core.Events;
 
 namespace DonghanEngine.Core;
 
@@ -570,30 +571,14 @@ public partial class GameEngine : IGameEngine
     // Defined in GameEngine.Rebellion.cs
     partial void CheckRebellions();
 
-    // === P0-3 黄巾起义历史硬 trigger ===
-    // 在 184/4/2 旬强制 冀/兖/豫 三郡同步起事，撤换其太守入京，触发 TriggerYellowTurban 流水线。
-    // 守护：已反则跳过；太守离职时清理 GovernedProvinceId 防止孤立状态。
+    // === P0-3 黄巾起义历史动态评估与触发 ===
+    // 在 184/4/2 旬评估天子政务治理成效（民心/太守任免），动态决定起义波及范围（全境溃决/中原三州/局部冀州）
     private void TriggerHistoricalYellowTurban()
     {
-        var targetProvinces = new[] { "jizhou", "yanzhou", "yuzhou" };
-        foreach (var pid in targetProvinces)
-        {
-            if (!_state.Provinces.TryGetValue(pid, out var p) || p == null) continue;
-            if (p.IsRebelling) continue;
-
-            // 撤换太守：黄巾既起，太守实际被架空或战死，先下放回野
-            if (!string.IsNullOrEmpty(p.GovernorId) &&
-                _state.Npcs.TryGetValue(p.GovernorId, out var gov))
-            {
-                gov.GovernedProvinceId = null;
-            }
-            p.GovernorId = null;
-
-            // 强制 trigger（不依赖 LocalSupport / ImperialPower / PopularSupport）
-            TriggerYellowTurban(p);
-
-            _state.AddToChronicle($"【黄巾起事】{p.Name}太平道蜂起响应，渠帅揭竿！州郡震动，太守败走。");
-        }
+        var evaluator = new YellowTurbanScopeEvaluator();
+        var executor = new YellowTurbanOutbreakExecutor();
+        var scope = evaluator.EvaluateScope(_state);
+        executor.ExecuteOutbreak(_state, scope);
     }
 
     // === P0-2 结局判定 ===

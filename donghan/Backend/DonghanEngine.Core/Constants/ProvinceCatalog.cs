@@ -38,16 +38,16 @@ public static class ProvinceCatalog
             new() { Id = Sili, Name = "司隶", Distance = 0, LocalSupport = 50, Garrison = 5000, Wealth = 5000, DefenseLevel = 80,
                 Neighbors = new List<string> { Jizhou, Yanzhou, Yuzhou, Bingzhou, Liangzhou } },
 
-            new() { Id = Jizhou, Name = "冀州", Distance = 3, LocalSupport = 28, Garrison = 2000, Wealth = 3000, DefenseLevel = 30,
+            new() { Id = Jizhou, Name = "冀州", Distance = 3, LocalSupport = 18, Garrison = 2000, Wealth = 3000, DefenseLevel = 30,
                 Neighbors = new List<string> { Sili, Yanzhou, Bingzhou, Youzhou, Qingzhou } }, // +10 from 18 → 28 (桥玄任太守加成)
 
-            new() { Id = Bingzhou, Name = "并州", Distance = 4, LocalSupport = 40, Garrison = 3000, Wealth = 2500, DefenseLevel = 40,
+            new() { Id = Bingzhou, Name = "并州", Distance = 4, LocalSupport = 30, Garrison = 3000, Wealth = 2500, DefenseLevel = 40,
                 Neighbors = new List<string> { Sili, Jizhou, Liangzhou, Youzhou } }, // +10 from 30 → 40 (黄甫嵩任太守加成)
 
             new() { Id = Yanzhou, Name = "兖州", Distance = 2, LocalSupport = 35, Garrison = 2500, Wealth = 3500, DefenseLevel = 35,
                 Neighbors = new List<string> { Sili, Jizhou, Yuzhou, Qingzhou, Xuzhou } },
 
-            new() { Id = Yuzhou, Name = "豫州", Distance = 1, LocalSupport = 55, Garrison = 2000, Wealth = 4000, DefenseLevel = 40,
+            new() { Id = Yuzhou, Name = "豫州", Distance = 1, LocalSupport = 45, Garrison = 2000, Wealth = 4000, DefenseLevel = 40,
                 Neighbors = new List<string> { Sili, Yanzhou, Jingzhou, Xuzhou, Yangzhou } }, // +10 from 45 → 55 (卢植任太守加成)
 
             new() { Id = Jingzhou, Name = "荆州", Distance = 5, LocalSupport = 50, Garrison = 3000, Wealth = 6000, DefenseLevel = 50,

@@ -219,9 +219,9 @@ public class GameState
         }
 
         // 预派太守（与 AssignGovernor 等价的字段直设，不走 -5 权势 / 不写编年史，让"开局即有太守"成为历史事实而非朝会决定）
-        AssignInitialGovernor("jizhou", "qiao_xuan");
-        AssignInitialGovernor("yuzhou", "lu_zhi");
-        AssignInitialGovernor("bingzhou", "huangfu_song");
+        AssignInitialGovernor("jizhou", "qiao_xuan", supportBonus: 10);
+        AssignInitialGovernor("yuzhou", "lu_zhi", supportBonus: 10);
+        AssignInitialGovernor("bingzhou", "huangfu_song", supportBonus: 10);
 
         RefreshReignEra();
     }
@@ -241,7 +241,7 @@ public class GameState
         }
     }
 
-    private void AssignInitialGovernor(string provinceId, string npcId)
+    private void AssignInitialGovernor(string provinceId, string npcId, int supportBonus = 0)
     {
         if (!Provinces.TryGetValue(provinceId, out var province)) return;
         if (!Npcs.TryGetValue(npcId, out var npc)) return;
@@ -250,6 +250,10 @@ public class GameState
         if (province.GovernorId != null) return;
         province.GovernorId = npcId;
         npc.GovernedProvinceId = provinceId;
+        if (supportBonus > 0)
+        {
+            province.AdjustLocalSupport(supportBonus);
+        }
     }
 
     public void ApplyNumericalDelta(int imperialPowerDelta, int treasuryDelta, int healthDelta)
