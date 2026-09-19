@@ -467,17 +467,18 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalEmperorSuccessionCrisis();
         }
 
-        // P1-A2 修复：189 年何进之死 + 董卓进京
-        if (!_state.DisableHistoricalTriggers)
+        // 189 年 8 月第 3 旬：中平政变与何进对决动态推演（天子坐镇动乱不发生 vs 史实血案）
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 189 && _state.Month == 8 && _state.Xun == 3)
         {
-            if (_state.Year == 189 && _state.Month == 8 && _state.Xun == 3)
-            {
-                TriggerHeJinDeath();
-            }
-            if (_state.Year == 189 && _state.Month == 9 && _state.Xun == 1)
-            {
-                TriggerDongZhuoEntry();
-            }
+            TriggerHistoricalAugustCrisis();
+        }
+
+        // 189 年 9 月第 1 旬：董卓进京因果推演（若天子坐镇严拒外兵则阻于关外）
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 189 && _state.Month == 9 && _state.Xun == 1)
+        {
+            TriggerHistoricalDongZhuoEntry();
         }
 
         // P0-2 结局判定：每旬结算一次
@@ -678,6 +679,52 @@ public partial class GameEngine : IGameEngine
         var executor = new EmperorSuccessionCrisisExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
+    }
+
+    // === P0-10 中平八月政变动态推演 ===
+    // 在 189/8/3 旬推演天子坐镇免乱 vs 史实何进伏诛嘉德殿
+    private void TriggerHistoricalAugustCrisis()
+    {
+        if (_heJinDeathTriggered) return;
+        var evaluator = new AugustCrisisEvaluator();
+        var executor = new AugustCrisisExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+        _heJinDeathTriggered = true;
+    }
+
+    // === P0-11 董卓进京因果推演 ===
+    // 在 189/9/1 旬推演天子坐镇阻兵关外 vs 史实董卓入京专政
+    private void TriggerHistoricalDongZhuoEntry()
+    {
+        if (_dongZhuoEntryTriggered) return;
+
+        // 若天子安康且皇权稳固，天子严诏拒外兵，董卓受阻关外不得入京
+        bool emperorAliveAndFirm = _state.Health > 0 && _state.Outcome == GameOutcome.Playing && _state.ImperialPower >= 35;
+        if (emperorAliveAndFirm)
+        {
+            _state.AddToChronicle("【天子诏令】天子敕命关西守军坚守函谷、右扶风，严禁外兵入京，董卓军团受阻于三辅！");
+            _dongZhuoEntryTriggered = true;
+            return;
+        }
+
+        // 史实路线：天子崩殂或无力制衡，董卓引西凉兵入洛阳
+        if (!_state.Npcs.ContainsKey("dong_zhuo"))
+        {
+            if (HistoricalNpcPresets.All.Find(n => n.Id == "dong_zhuo") is { } preset)
+            {
+                _state.RegisterNpc(HistoricalNpcPresets.Clone(preset));
+            }
+        }
+        if (_state.Npcs.TryGetValue("dong_zhuo", out var dong))
+        {
+            dong.Power = 95;
+            dong.Favorability = 10;
+        }
+        _state.ImperialPower = Math.Clamp(_state.ImperialPower - 30, 0, 100);
+        _state.PopularSupport = Math.Clamp(_state.PopularSupport - 15, 0, 100);
+        _state.AddToChronicle("【国贼入京】董卓率西凉铁骑入驻洛阳，擅行废立，独揽朝政，社稷倾危！");
+        _dongZhuoEntryTriggered = true;
     }
 
     // === P0-2 结局判定 ===
