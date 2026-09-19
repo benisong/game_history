@@ -547,6 +547,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalSunJianJingzhou();
         }
 
+        // 192 年 4 月第 1 旬：曹操入主兖州与青州兵归附因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 192 && _state.Month == 4 && _state.Xun == 1)
+        {
+            TriggerHistoricalCaoCaoYanzhou();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -829,6 +836,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new SunJianJingzhouEvaluator();
         var executor = new SunJianJingzhouExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-16 曹操入主兖州与青州兵归附因果推演 ===
+    // 在 192/4/1 旬推演恩威兼济抽调青州精锐 vs 顺水推舟封赏 vs 宗室监军
+    private void TriggerHistoricalCaoCaoYanzhou()
+    {
+        var evaluator = new CaoCaoYanzhouEvaluator();
+        var executor = new CaoCaoYanzhouExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
