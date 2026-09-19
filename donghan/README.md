@@ -8,7 +8,7 @@
 
 本项目规避了高算力损耗的网页套壳模式，完全采用面向对象（C# OOP）的高性能策略引擎，并预留了面向多智能体（Multi-Agent）大语言模型（如 DeepSeek/Gemini）的异步调度中间件与防御性数据缓冲槽，实现真实的朝党斗争、西园理财、天灾赈灾及帝王心术博弈。
 
-**项目规模**：总计 **188 个自动化测试（后端 146 + 前端 V2 42）100% 全绿通过**。后端 `DonghanEngine.Core` 已彻底落地 DDD 分包、不可变/只读集合防篡改封装、充血领域模型（OOP）与细粒度单方法服务接口隔离（ISP）；已实装地缘政治纯数学静态推演子包（`DonghanEngine.Core.Geopolitics`），包含诸侯势力充血实体（`WarlordFaction`）、在途战役（`MilitaryCampaign`）、多因子加权概率进攻计算（`WarlordAggressionFormula`）、综合战力攻防计算（`CombatPowerCalculator`）、三大诸侯行为策略（`AmbitiousWarlordStrategy`/`LoyalistBannerStrategy`/`CautiousAutonomistStrategy`）、地缘战后/求援/岁贡奏折生成工厂（`GeopoliticalMemorialFactory`）以及天子帝王四大杠杆执行器（`ImperialEdictExecutor`，支持官爵追认/密诏背刺/持节调停/嘉纳岁贡）；前端已建立 V2 契约架构与单一职责适配层。
+**项目规模**：总计 **191 个自动化测试（后端 149 + 前端 V2 42）100% 全绿通过**。后端 `DonghanEngine.Core` 已彻底落地 DDD 分包、不可变/只读集合防篡改封装、充血领域模型（OOP）与细粒度单方法服务接口隔离（ISP）；已实装地缘政治纯数学静态推演子包（`DonghanEngine.Core.Geopolitics`），包含诸侯势力充血实体（`WarlordFaction`）、在途战役（`MilitaryCampaign`）、历史七大预置诸侯档案库（`HistoricalFactionPresets`）、多因子加权概率进攻计算（`WarlordAggressionFormula`）、综合战力攻防计算（`CombatPowerCalculator`）、三大诸侯行为策略（`AmbitiousWarlordStrategy`/`LoyalistBannerStrategy`/`CautiousAutonomistStrategy`）、地缘战后/求援/岁贡奏折生成工厂（`GeopoliticalMemorialFactory`）、天子四大帝王杠杆执行器（`ImperialEdictExecutor`）以及地缘政治仿真调度引擎（`GeopoliticalSimulationEngine`）；前端已建立 V2 契约架构与单一职责适配层。
 
 ---
 
