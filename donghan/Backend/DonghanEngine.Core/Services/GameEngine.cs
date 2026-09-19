@@ -460,6 +460,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalWestGardenEstablishment();
         }
 
+        // 189 年 4 月第 1 旬：灵帝大病与鸩杀暗算危机推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 189 && _state.Month == 4 && _state.Xun == 1)
+        {
+            TriggerHistoricalEmperorSuccessionCrisis();
+        }
+
         // P1-A2 修复：189 年何进之死 + 董卓进京
         if (!_state.DisableHistoricalTriggers)
         {
@@ -659,6 +666,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new WestGardenEstablishmentEvaluator();
         var executor = new WestGardenEstablishmentExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-9 灵帝大病与鸩毒弑君因果推演 ===
+    // 在 189/4/1 旬推演外戚/中官好感野心与大病鸩杀危机（康泰延寿 vs 鸩杀暴毙 vs 查破逆谋）
+    private void TriggerHistoricalEmperorSuccessionCrisis()
+    {
+        var evaluator = new EmperorSuccessionCrisisEvaluator();
+        var executor = new EmperorSuccessionCrisisExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
