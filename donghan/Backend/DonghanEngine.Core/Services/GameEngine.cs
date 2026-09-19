@@ -519,6 +519,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalDongZhuoEntry();
         }
 
+        // 190 年 1 月第 1 旬：关东诸侯纳贡与朝堂辩论因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 190 && _state.Month == 1 && _state.Xun == 1)
+        {
+            TriggerHistoricalGuandongTribute();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -763,6 +770,16 @@ public partial class GameEngine : IGameEngine
         _state.PopularSupport = Math.Clamp(_state.PopularSupport - 15, 0, 100);
         _state.AddToChronicle("【国贼入京】董卓率西凉铁骑入驻洛阳，擅行废立，独揽朝政，社稷倾危！");
         _dongZhuoEntryTriggered = true;
+    }
+
+    // === P0-12 关东诸侯纳贡与朝堂辩论因果推演 ===
+    // 在 190/1/1 旬推演关东诸侯岁赋纳贡（群雄纳贡 vs 淮南违抗 vs 诸侯抗税）
+    private void TriggerHistoricalGuandongTribute()
+    {
+        var evaluator = new GuandongTributeEvaluator();
+        var executor = new GuandongTributeExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
     }
 
     // === P0-2 结局判定 ===
