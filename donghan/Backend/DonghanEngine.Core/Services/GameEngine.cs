@@ -418,14 +418,18 @@ public partial class GameEngine : IGameEngine
 
         CheckRebellions();
 
-        // P0-3 修复：黄巾起义历史硬 trigger。
-        // 史实：184 年 3 月初 5 日，唐周告密，张角被迫提前起事，冀兖豫三州旬月之间皆应。
-        // 游戏时间 184 年 4 月（开局当月），第 2 旬强制 3 郡起事，撤换其太守（桥玄/卢植），确保历史
-        // 走向不会因"开局皇权 25 / 民心 28 / 冀州支持度 35"被反推取消。
+        // 184 年 4 月第 2 旬：黄巾大起事动态评估
         if (!_state.DisableHistoricalTriggers &&
             _state.Year == 184 && _state.Month == 4 && _state.Xun == 2)
         {
             TriggerHistoricalYellowTurban();
+        }
+
+        // 184 年 10 月第 3 旬：广宗曲阳大捷与主将冤狱因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 184 && _state.Month == 10 && _state.Xun == 3)
+        {
+            TriggerHistoricalPacificationBattle();
         }
 
         // P1-A2 修复：189 年何进之死 + 董卓进京
@@ -579,6 +583,16 @@ public partial class GameEngine : IGameEngine
         var executor = new YellowTurbanOutbreakExecutor();
         var scope = evaluator.EvaluateScope(_state);
         executor.ExecuteOutbreak(_state, scope);
+    }
+
+    // === P0-4 广宗曲阳大捷与主将冤狱因果推演 ===
+    // 在 184/10/3 旬推演前线战事与主将命运（卢植大捷 / 卢植蒙冤下狱 / 皇甫嵩功成）
+    private void TriggerHistoricalPacificationBattle()
+    {
+        var evaluator = new PacificationBattleEvaluator();
+        var executor = new PacificationBattleExecutor();
+        var battle = evaluator.Evaluate(_state);
+        executor.Execute(_state, battle);
     }
 
     // === P0-2 结局判定 ===
