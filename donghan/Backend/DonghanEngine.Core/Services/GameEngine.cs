@@ -439,6 +439,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalLiangzhouRebellion();
         }
 
+        // 185 年 2 月第 1 旬：南宫大火与亩税十钱之争
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 185 && _state.Month == 2 && _state.Xun == 1)
+        {
+            TriggerHistoricalPalaceFire();
+        }
+
         // P1-A2 修复：189 年何进之死 + 董卓进京
         if (!_state.DisableHistoricalTriggers)
         {
@@ -610,6 +617,16 @@ public partial class GameEngine : IGameEngine
         var executor = new LiangzhouRebellionExecutor();
         var rebellion = evaluator.Evaluate(_state);
         executor.Execute(_state, rebellion);
+    }
+
+    // === P0-6 南宫大火与亩税十钱因果推演 ===
+    // 在 185/2/1 旬推演南宫大火工役与修宫钱博弈
+    private void TriggerHistoricalPalaceFire()
+    {
+        var evaluator = new PalaceFireEvaluator();
+        var executor = new PalaceFireExecutor();
+        var fireResult = evaluator.Evaluate(_state);
+        executor.Execute(_state, fireResult);
     }
 
     // === P0-2 结局判定 ===
