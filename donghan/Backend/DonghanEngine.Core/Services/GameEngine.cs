@@ -432,6 +432,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalPacificationBattle();
         }
 
+        // 184 年 11 月第 2 旬：凉州韩遂边章之叛与西凉边防推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 184 && _state.Month == 11 && _state.Xun == 2)
+        {
+            TriggerHistoricalLiangzhouRebellion();
+        }
+
         // P1-A2 修复：189 年何进之死 + 董卓进京
         if (!_state.DisableHistoricalTriggers)
         {
@@ -593,6 +600,16 @@ public partial class GameEngine : IGameEngine
         var executor = new PacificationBattleExecutor();
         var battle = evaluator.Evaluate(_state);
         executor.Execute(_state, battle);
+    }
+
+    // === P0-5 凉州韩遂边章之叛与西凉边防因果推演 ===
+    // 在 184/11/2 旬推演西北羌乱爆发与边将（董卓/马腾）入局
+    private void TriggerHistoricalLiangzhouRebellion()
+    {
+        var evaluator = new LiangzhouRebellionEvaluator();
+        var executor = new LiangzhouRebellionExecutor();
+        var rebellion = evaluator.Evaluate(_state);
+        executor.Execute(_state, rebellion);
     }
 
     // === P0-2 结局判定 ===
