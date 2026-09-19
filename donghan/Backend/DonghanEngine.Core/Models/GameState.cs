@@ -76,6 +76,7 @@ public class GameState
     private readonly List<string> _intelReports = new();
     private readonly List<ImperialEdict> _activeEdicts = new();
     private readonly Queue<CourtSpeech> _courtDebateQueue = new();
+    private readonly List<DonghanEngine.Core.Geopolitics.Contracts.GeopoliticalMemorial> _pendingGeopoliticalMemorials = new();
 
     public IReadOnlyDictionary<string, NpcState> Npcs => _npcs;
     public IReadOnlyList<NpcRelation> NpcRelations => _npcRelations;
@@ -85,6 +86,7 @@ public class GameState
     public IReadOnlyList<string> IntelReports => _intelReports;
     public IReadOnlyList<ImperialEdict> ActiveEdicts => _activeEdicts;
     public Queue<CourtSpeech> CourtDebateQueue => _courtDebateQueue;
+    public IReadOnlyList<DonghanEngine.Core.Geopolitics.Contracts.GeopoliticalMemorial> PendingGeopoliticalMemorials => _pendingGeopoliticalMemorials;
 
     // === 内部受控集合操作领域方法 ===
     public void RegisterNpc(NpcState npc)
@@ -114,6 +116,17 @@ public class GameState
     {
         if (!string.IsNullOrWhiteSpace(report))
             _intelReports.Add(report);
+    }
+
+    public void AddGeopoliticalMemorial(DonghanEngine.Core.Geopolitics.Contracts.GeopoliticalMemorial memorial)
+    {
+        if (memorial != null && !_pendingGeopoliticalMemorials.Contains(memorial))
+            _pendingGeopoliticalMemorials.Add(memorial);
+    }
+
+    public bool RemoveGeopoliticalMemorial(string memorialId)
+    {
+        return _pendingGeopoliticalMemorials.RemoveAll(m => m.MemorialId == memorialId) > 0;
     }
 
     public void SetNpcRelations(IEnumerable<NpcRelation> relations)

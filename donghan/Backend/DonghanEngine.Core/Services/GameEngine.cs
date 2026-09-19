@@ -13,7 +13,11 @@ public partial class GameEngine : IGameEngine
     private readonly IEventOracle _oracle;
     private readonly IMinisterAgent _ministerAgent;
     private readonly INarrator _narrator;
+    private readonly DonghanEngine.Core.Geopolitics.Contracts.IGeopoliticalSimulationEngine _geopoliticsEngine;
+    private readonly DonghanEngine.Core.Geopolitics.Contracts.IImperialEdictExecutor _edictExecutor;
     internal readonly Random _rng;
+
+    public DonghanEngine.Core.Geopolitics.Contracts.IGeopoliticalSimulationEngine GeopoliticsEngine => _geopoliticsEngine;
 
     public GameEngine(
         GameState state, 
@@ -21,7 +25,9 @@ public partial class GameEngine : IGameEngine
         IEventOracle oracle, 
         IMinisterAgent ministerAgent, 
         INarrator narrator,
-        Random? rng = null)
+        Random? rng = null,
+        DonghanEngine.Core.Geopolitics.Contracts.IGeopoliticalSimulationEngine? geopoliticsEngine = null,
+        DonghanEngine.Core.Geopolitics.Contracts.IImperialEdictExecutor? edictExecutor = null)
     {
         _state = state;
         _scheduler = scheduler;
@@ -29,6 +35,8 @@ public partial class GameEngine : IGameEngine
         _ministerAgent = ministerAgent;
         _narrator = narrator;
         _rng = rng ?? new Random();
+        _geopoliticsEngine = geopoliticsEngine ?? new DonghanEngine.Core.Geopolitics.GeopoliticalSimulationEngine();
+        _edictExecutor = edictExecutor ?? new DonghanEngine.Core.Geopolitics.Memorials.ImperialEdictExecutor();
     }
 
     public GameState GetState() => _state;
@@ -47,6 +55,26 @@ public partial class GameEngine : IGameEngine
         string oldLocation = _state.CurrentLocation;
         _state.CurrentLocation = newLocation;
         _state.AddToChronicle($"帝驾巡幸：龙辇起驾，由【{oldLocation}】移驾至【{newLocation}】。");
+    }
+
+    public DonghanEngine.Core.Geopolitics.Contracts.EdictExecutionResult ResolveGeopoliticalMemorial(string memorialId, string optionId)
+    {
+        var memorial = _state.PendingGeopoliticalMemorials.FirstOrDefault(m => m.MemorialId == memorialId);
+        if (memorial == null)
+            throw new ArgumentException("尚书台无此待决地缘奏折！", nameof(memorialId));
+
+        var option = memorial.Options.FirstOrDefault(o => o.OptionId == optionId);
+        if (option == null)
+            throw new ArgumentException("此奏折无此御批选项！", nameof(optionId));
+
+        var result = _edictExecutor.ExecuteEdict(
+            option.ResultingEdict,
+            _state,
+            _geopoliticsEngine.Factions,
+            _geopoliticsEngine.Relations);
+
+        _state.RemoveGeopoliticalMemorial(memorialId);
+        return result;
     }
 
     // 阅兵发饷
@@ -388,6 +416,16 @@ public partial class GameEngine : IGameEngine
 
         // 异步后台演进官员想法与天灾日常
         await _scheduler.OrchestrateXunUpdateAsync(_state);
+
+        // 189 年之后：开启天下诸侯宏观地缘推演（诸侯攻伐、战役步进与岁贡）
+        if (_state.Year >= 189)
+        {
+            var geoResult = _geopoliticsEngine.TickTurn(_state);
+            foreach (var memorial in geoResult.GeneratedMemorials)
+            {
+                _state.AddGeopoliticalMemorial(memorial);
+            }
+        }
 
         // 奏折过期与流产判定
         var expiredEdicts = new List<ImperialEdict>();

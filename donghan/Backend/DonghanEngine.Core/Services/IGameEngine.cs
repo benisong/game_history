@@ -71,11 +71,18 @@ public interface IGameStateProvider
     GameState GetState();
 }
 
+public interface IGeopoliticalDomainService
+{
+    DonghanEngine.Core.Geopolitics.Contracts.IGeopoliticalSimulationEngine GeopoliticsEngine { get; }
+    DonghanEngine.Core.Geopolitics.Contracts.EdictExecutionResult ResolveGeopoliticalMemorial(string memorialId, string optionId);
+}
+
 /// <summary>
 /// 聚合核心引擎接口：完全由单职责领域接口组合而成
 /// </summary>
 public interface IGameEngine :
     IGameStateProvider,
+    IGeopoliticalDomainService,
     ITravelDomainService,
     IDrillArmyDomainService,
     IRecruitArmyDomainService,
