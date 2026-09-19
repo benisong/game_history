@@ -446,6 +446,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalPalaceFire();
         }
 
+        // 188 年 3 月第 1 旬：刘焉废史立牧倡议与宗室分镇
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 188 && _state.Month == 3 && _state.Xun == 1)
+        {
+            TriggerHistoricalRegionalGovernor();
+        }
+
         // P1-A2 修复：189 年何进之死 + 董卓进京
         if (!_state.DisableHistoricalTriggers)
         {
@@ -627,6 +634,16 @@ public partial class GameEngine : IGameEngine
         var executor = new PalaceFireExecutor();
         var fireResult = evaluator.Evaluate(_state);
         executor.Execute(_state, fireResult);
+    }
+
+    // === P0-7 废史立牧与宗室分镇因果推演 ===
+    // 在 188/3/1 旬推演刘焉废史立牧倡议（准奏分陕 vs 驳回集权）
+    private void TriggerHistoricalRegionalGovernor()
+    {
+        var evaluator = new RegionalGovernorEvaluator();
+        var executor = new RegionalGovernorExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
     }
 
     // === P0-2 结局判定 ===
