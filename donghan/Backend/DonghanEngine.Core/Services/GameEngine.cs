@@ -554,6 +554,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalCaoCaoYanzhou();
         }
 
+        // 193 年 3 月第 1 旬：匡亭之战与袁术北犯因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 193 && _state.Month == 3 && _state.Xun == 1)
+        {
+            TriggerHistoricalKuangtingBattle();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -846,6 +853,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new CaoCaoYanzhouEvaluator();
         var executor = new CaoCaoYanzhouExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-17 匡亭之战因果推演 ===
+    // 在 193/3/1 旬推演奉诏讨逆匡亭大捷 vs 曹操自战破贼 vs 袁术祸乱中原
+    private void TriggerHistoricalKuangtingBattle()
+    {
+        var evaluator = new KuangtingBattleEvaluator();
+        var executor = new KuangtingBattleExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
