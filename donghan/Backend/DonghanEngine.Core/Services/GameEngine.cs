@@ -540,6 +540,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalYuanShaoJizhou();
         }
 
+        // 191 年 10 月第 2 旬：孙坚征荆州与襄阳岘山之战因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 191 && _state.Month == 10 && _state.Xun == 2)
+        {
+            TriggerHistoricalSunJianJingzhou();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -812,6 +819,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new YuanShaoJizhouEvaluator();
         var executor = new YuanShaoJizhouExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-15 孙坚征荆州与襄阳岘山之战因果推演 ===
+    // 在 191/10/2 旬推演天子持节调停罢兵 vs 史实孙坚岘山中伏身亡
+    private void TriggerHistoricalSunJianJingzhou()
+    {
+        var evaluator = new SunJianJingzhouEvaluator();
+        var executor = new SunJianJingzhouExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
