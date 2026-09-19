@@ -533,6 +533,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalGuanxiDefense();
         }
 
+        // 191 年 4 月第 1 旬：袁绍兼并冀州与韩馥让冀州因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 191 && _state.Month == 4 && _state.Xun == 1)
+        {
+            TriggerHistoricalYuanShaoJizhou();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -795,6 +802,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new GuanxiDefenseEvaluator();
         var executor = new GuanxiDefenseExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-14 袁绍兼并冀州与韩馥让冀州因果推演 ===
+    // 在 191/4/1 旬推演河北易主（明斥暗谋驱虎吞狼 vs 官爵追认收纳谢恩金）
+    private void TriggerHistoricalYuanShaoJizhou()
+    {
+        var evaluator = new YuanShaoJizhouEvaluator();
+        var executor = new YuanShaoJizhouExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }

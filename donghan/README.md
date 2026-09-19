@@ -8,7 +8,7 @@
 
 本项目规避了高算力损耗的网页套壳模式，完全采用面向对象（C# OOP）的高性能策略引擎，并预留了面向多智能体（Multi-Agent）大语言模型（如 DeepSeek/Gemini）的异步调度中间件与防御性数据缓冲槽，实现真实的朝党斗争、西园理财、天灾赈灾及帝王心术博弈。
 
-**项目规模**：总计 **203 个自动化测试（后端 161 + 前端 V2 42）100% 全绿通过**。后端 `DonghanEngine.Core` 已彻底落地 DDD 分包、不可变/只读集合防篡改封装、充血领域模型（OOP）与细粒度单方法服务接口隔离（ISP）；已实装地缘政治纯数学静态推演子包（`DonghanEngine.Core.Geopolitics`）、190年1月关东诸侯纳贡管线（`GuandongTributeEvaluator`）与 190年6月关西军团整饬/董卓防务对峙管线（`GuanxiDefenseEvaluator`）；打通与 `GameEngine` 每旬推进与尚书台御批（`ResolveGeopoliticalMemorial`）的双向闭环；前端已建立 V2 契约架构与单一职责适配层。
+**项目规模**：总计 **207 个自动化测试（后端 165 + 前端 V2 42）100% 全绿通过**。后端 `DonghanEngine.Core` 已彻底落地 DDD 分包、不可变/只读集合防篡改封装、充血领域模型（OOP）与细粒度单方法服务接口隔离（ISP）；已实装地缘政治纯数学静态推演子包（`DonghanEngine.Core.Geopolitics`）、190年1月关东诸侯纳贡管线（`GuandongTributeEvaluator`）、190年6月关西军团整饬管线（`GuanxiDefenseEvaluator`）与 191年4月袁绍兼并冀州/驱虎吞狼管线（`YuanShaoJizhouEvaluator`）；打通与 `GameEngine` 每旬推进与尚书台御批（`ResolveGeopoliticalMemorial`）的双向闭环；前端已建立 V2 契约架构与单一职责适配层。
 
 ---
 
