@@ -453,6 +453,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalRegionalGovernor();
         }
 
+        // 188 年 8 月第 2 旬：西园八校尉建军与平乐观大阅兵
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 188 && _state.Month == 8 && _state.Xun == 2)
+        {
+            TriggerHistoricalWestGardenEstablishment();
+        }
+
         // P1-A2 修复：189 年何进之死 + 董卓进京
         if (!_state.DisableHistoricalTriggers)
         {
@@ -642,6 +649,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new RegionalGovernorEvaluator();
         var executor = new RegionalGovernorExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-8 西园八校尉建军与平乐观大阅因果推演 ===
+    // 在 188/8/2 旬推演西园军成军（皇权大振 vs 外戚渗透 vs 帑匮受阻）
+    private void TriggerHistoricalWestGardenEstablishment()
+    {
+        var evaluator = new WestGardenEstablishmentEvaluator();
+        var executor = new WestGardenEstablishmentExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
