@@ -617,6 +617,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalGuanduPrelude();
         }
 
+        // 200 年 10 月第 2 旬：乌巢劫粮与官渡决胜因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 200 && _state.Month == 10 && _state.Xun == 2)
+        {
+            TriggerHistoricalGuanduVictory();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -999,6 +1006,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new GuanduPreludeEvaluator();
         var executor = new GuanduPreludeExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-26 乌巢劫粮与官渡决胜因果推演 ===
+    // 在 200/10/2 旬推演官渡大捷受献巨贡申饬监军 vs 曹操独霸 vs 袁曹相持
+    private void TriggerHistoricalGuanduVictory()
+    {
+        var evaluator = new GuanduVictoryEvaluator();
+        var executor = new GuanduVictoryExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
