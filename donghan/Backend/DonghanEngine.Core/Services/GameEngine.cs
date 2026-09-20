@@ -568,6 +568,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalXuzhouSuccession();
         }
 
+        // 194 年 5 月第 1 旬：吕布袭兖州与中原大蝗灾因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 194 && _state.Month == 5 && _state.Xun == 1)
+        {
+            TriggerHistoricalLvBuYanzhou();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -880,6 +887,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new XuzhouSuccessionEvaluator();
         var executor = new XuzhouSuccessionExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-19 吕布袭兖州与中原大蝗灾因果推演 ===
+    // 在 194/5/1 旬推演常平仓调粮赈济羁縻曹吕 vs 曹操苦战逐吕 vs 中原大饥人相食
+    private void TriggerHistoricalLvBuYanzhou()
+    {
+        var evaluator = new LvBuYanzhouEvaluator();
+        var executor = new LvBuYanzhouExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
