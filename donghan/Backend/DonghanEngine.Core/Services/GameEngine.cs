@@ -582,6 +582,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalSunCeJiangdong();
         }
 
+        // 196 年 8 月第 1 旬：洛阳太仓丰稔与屯田制因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 196 && _state.Month == 8 && _state.Xun == 1)
+        {
+            TriggerHistoricalTuntianSystem();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -914,6 +921,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new SunCeJiangdongEvaluator();
         var executor = new SunCeJiangdongExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-21 屯田制倡议与洛阳太仓丰稔因果推演 ===
+    // 在 196/8/1 旬推演国家级官屯民屯大成 vs 地方诸侯屯田 vs 农政滞碍
+    private void TriggerHistoricalTuntianSystem()
+    {
+        var evaluator = new TuntianSystemEvaluator();
+        var executor = new TuntianSystemExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
