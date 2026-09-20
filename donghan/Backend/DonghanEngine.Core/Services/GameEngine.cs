@@ -603,6 +603,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalBaimenlou();
         }
 
+        // 199 年 3 月第 1 旬：公孙瓒易京覆灭与袁绍一统河北因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 199 && _state.Month == 3 && _state.Xun == 1)
+        {
+            TriggerHistoricalYijingSiege();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -965,6 +972,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new BaimenlouEvaluator();
         var executor = new BaimenlouExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-24 公孙瓒易京覆灭与袁绍一统河北因果推演 ===
+    // 在 199/3/1 旬推演敕封袁绍大将军兼制曹操司空 vs 收白马义从充禁军 vs 袁绍雄视北方
+    private void TriggerHistoricalYijingSiege()
+    {
+        var evaluator = new YijingSiegeEvaluator();
+        var executor = new YijingSiegeExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
