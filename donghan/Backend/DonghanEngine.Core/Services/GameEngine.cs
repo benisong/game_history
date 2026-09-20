@@ -575,6 +575,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalLvBuYanzhou();
         }
 
+        // 195 年 2 月第 1 旬：孙策借兵平江东与玉玺真伪因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 195 && _state.Month == 2 && _state.Xun == 1)
+        {
+            TriggerHistoricalSunCeJiangdong();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -897,6 +904,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new LvBuYanzhouEvaluator();
         var executor = new LvBuYanzhouExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-20 孙策借兵平江东与玉玺真伪因果推演 ===
+    // 在 195/2/1 旬推演顺旨受封收盐铁税 vs 宗室羁縻 vs 江东自雄
+    private void TriggerHistoricalSunCeJiangdong()
+    {
+        var evaluator = new SunCeJiangdongEvaluator();
+        var executor = new SunCeJiangdongExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
