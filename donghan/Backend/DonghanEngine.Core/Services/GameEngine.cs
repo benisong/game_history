@@ -589,6 +589,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalTuntianSystem();
         }
 
+        // 197 年 1 月第 1 旬：袁术淮南建号仲氏与奉诏合讨因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 197 && _state.Month == 1 && _state.Xun == 1)
+        {
+            TriggerHistoricalYuanShuUsurpation();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -931,6 +938,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new TuntianSystemEvaluator();
         var executor = new TuntianSystemExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-22 袁术淮南僭号与四海奉诏合讨因果推演 ===
+    // 在 197/1/1 旬推演奉旨合围寿春诛灭袁术 vs 曹操独破 vs 诸侯观望
+    private void TriggerHistoricalYuanShuUsurpation()
+    {
+        var evaluator = new YuanShuUsurpationEvaluator();
+        var executor = new YuanShuUsurpationExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
