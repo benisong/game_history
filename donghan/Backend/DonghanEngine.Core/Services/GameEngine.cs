@@ -610,6 +610,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalYijingSiege();
         }
 
+        // 200 年 2 月第 1 旬：官渡之战前夕与天下诸侯表态因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 200 && _state.Month == 2 && _state.Xun == 1)
+        {
+            TriggerHistoricalGuanduPrelude();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -982,6 +989,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new YijingSiegeEvaluator();
         var executor = new YijingSiegeExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-25 官渡之战前夕与袁曹对峙因果推演 ===
+    // 在 200/2/1 旬推演天子居中制衡南北输贡 vs 密诏扶曹抗袁 vs 袁曹私战天下大乱
+    private void TriggerHistoricalGuanduPrelude()
+    {
+        var evaluator = new GuanduPreludeEvaluator();
+        var executor = new GuanduPreludeExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
