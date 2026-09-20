@@ -596,6 +596,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalYuanShuUsurpation();
         }
 
+        // 198 年 10 月第 2 旬：下邳白门楼之役与吕布处决因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 198 && _state.Month == 10 && _state.Xun == 2)
+        {
+            TriggerHistoricalBaimenlou();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -948,6 +955,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new YuanShuUsurpationEvaluator();
         var executor = new YuanShuUsurpationExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-23 下邳白门楼之役与吕布处决因果推演 ===
+    // 在 198/10/2 旬推演密诏缢杀吕布整肃纲纪 vs 赦免收为西园先锋 vs 突围北奔袁绍
+    private void TriggerHistoricalBaimenlou()
+    {
+        var evaluator = new BaimenlouEvaluator();
+        var executor = new BaimenlouExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
