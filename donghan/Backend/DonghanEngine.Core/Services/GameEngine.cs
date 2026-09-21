@@ -687,6 +687,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalXiangfanBattle();
         }
 
+        // 220 年 1 月第 1 旬：曹操病逝洛阳与曹丕嗣位因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 220 && _state.Month == 1 && _state.Xun == 1)
+        {
+            TriggerHistoricalCaoCaoSuccession();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -1169,6 +1176,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new XiangfanBattleEvaluator();
         var executor = new XiangfanBattleExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-36 曹操病逝洛阳与曹丕嗣位因果推演 ===
+    // 在 220/1/1 旬推演优诏追赠曹操申饬曹丕恪守臣节 vs 曹丕袭位权倾朝野 vs 曹丕居丧跋扈
+    private void TriggerHistoricalCaoCaoSuccession()
+    {
+        var evaluator = new CaoCaoSuccessionEvaluator();
+        var executor = new CaoCaoSuccessionExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
