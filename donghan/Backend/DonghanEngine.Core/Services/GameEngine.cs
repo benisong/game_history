@@ -624,6 +624,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalGuanduVictory();
         }
 
+        // 202 年 5 月第 1 旬：袁绍病亡与袁氏诸子争立因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 202 && _state.Month == 5 && _state.Xun == 1)
+        {
+            TriggerHistoricalYuanFamilyRift();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -1016,6 +1023,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new GuanduVictoryEvaluator();
         var executor = new GuanduVictoryExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-27 袁绍病亡与诸子争立因果推演 ===
+    // 在 202/5/1 旬推演天子大义分化二袁内耗 vs 曹操乘虚北伐 vs 二袁休战
+    private void TriggerHistoricalYuanFamilyRift()
+    {
+        var evaluator = new YuanFamilyRiftEvaluator();
+        var executor = new YuanFamilyRiftExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
