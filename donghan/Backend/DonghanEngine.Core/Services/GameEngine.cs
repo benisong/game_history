@@ -659,6 +659,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalTongguanBattle();
         }
 
+        // 214 年 5 月第 1 旬：刘备入蜀与刘璋降服因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 214 && _state.Month == 5 && _state.Xun == 1)
+        {
+            TriggerHistoricalLiuBeiYizhou();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -1101,6 +1108,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new TongguanBattleEvaluator();
         var executor = new TongguanBattleExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-32 刘备入蜀与刘璋献益州因果推演 ===
+    // 在 214/5/1 旬推演加封皇叔领益州收纳蜀锦贡金 vs 曹操窥蜀进兵汉中 vs 剑门关险自立
+    private void TriggerHistoricalLiuBeiYizhou()
+    {
+        var evaluator = new LiuBeiYizhouEvaluator();
+        var executor = new LiuBeiYizhouExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
