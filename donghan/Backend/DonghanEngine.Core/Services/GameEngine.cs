@@ -673,6 +673,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalHefeiBattle();
         }
 
+        // 219 年 5 月第 1 旬：汉中之战与刘备进位汉中王因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 219 && _state.Month == 5 && _state.Xun == 1)
+        {
+            TriggerHistoricalHanzhongBattle();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -1135,6 +1142,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new HefeiBattleEvaluator();
         var executor = new HefeiBattleExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-34 汉中之战与刘备进位汉中王因果推演 ===
+    // 在 219/5/1 旬推演册封皇叔汉中王收四千万贡金 vs 曹操退守关中 vs 刘备进逼三辅
+    private void TriggerHistoricalHanzhongBattle()
+    {
+        var evaluator = new HanzhongBattleEvaluator();
+        var executor = new HanzhongBattleExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
