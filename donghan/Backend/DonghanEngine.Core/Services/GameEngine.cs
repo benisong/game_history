@@ -652,6 +652,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalChibiBattle();
         }
 
+        // 211 年 3 月第 1 旬：曹操西征与潼关之战因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 211 && _state.Month == 3 && _state.Xun == 1)
+        {
+            TriggerHistoricalTongguanBattle();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -1084,6 +1091,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new ChibiBattleEvaluator();
         var executor = new ChibiBattleExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-31 曹操西征与潼关之战因果推演 ===
+    // 在 211/3/1 旬推演直辖三辅收复关中 vs 曹操尽并关陇 vs 西凉割据
+    private void TriggerHistoricalTongguanBattle()
+    {
+        var evaluator = new TongguanBattleEvaluator();
+        var executor = new TongguanBattleExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
