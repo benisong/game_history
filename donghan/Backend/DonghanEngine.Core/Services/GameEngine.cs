@@ -631,6 +631,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalYuanFamilyRift();
         }
 
+        // 207 年 8 月第 2 旬：白狼山之战与辽东斩二袁因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 207 && _state.Month == 8 && _state.Xun == 2)
+        {
+            TriggerHistoricalBailangMountain();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -1033,6 +1040,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new YuanFamilyRiftEvaluator();
         var executor = new YuanFamilyRiftExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-28 白狼山之战与一统北方因果推演 ===
+    // 在 207/8/2 旬推演白狼斩蹋顿辽东纳首收乌桓骑兵 vs 曹操威震夷狄 vs 塞北风雪阻滞
+    private void TriggerHistoricalBailangMountain()
+    {
+        var evaluator = new BailangMountainEvaluator();
+        var executor = new BailangMountainExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
