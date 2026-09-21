@@ -666,6 +666,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalLiuBeiYizhou();
         }
 
+        // 215 年 11 月第 2 旬：合肥之战与逍遥津之役因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 215 && _state.Month == 11 && _state.Xun == 2)
+        {
+            TriggerHistoricalHefeiBattle();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -1118,6 +1125,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new LiuBeiYizhouEvaluator();
         var executor = new LiuBeiYizhouExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-33 合肥之战与逍遥津之役因果推演 ===
+    // 在 215/11/2 旬推演张辽破孙权天子持节调停罢兵 vs 张辽威震江东 vs 孙权拔合肥
+    private void TriggerHistoricalHefeiBattle()
+    {
+        var evaluator = new HefeiBattleEvaluator();
+        var executor = new HefeiBattleExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
