@@ -680,6 +680,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalHanzhongBattle();
         }
 
+        // 219 年 10 月第 2 旬：襄樊之战与水淹七军因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 219 && _state.Month == 10 && _state.Xun == 2)
+        {
+            TriggerHistoricalXiangfanBattle();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -1152,6 +1159,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new HanzhongBattleEvaluator();
         var executor = new HanzhongBattleExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-35 襄樊之战与水淹七军因果推演 ===
+    // 在 219/10/2 旬推演天子持节救云长免遭暗算 vs 史实白衣渡江 vs 关羽克樊城逼洛阳
+    private void TriggerHistoricalXiangfanBattle()
+    {
+        var evaluator = new XiangfanBattleEvaluator();
+        var executor = new XiangfanBattleExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
