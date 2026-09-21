@@ -645,6 +645,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalJingzhouSuccession();
         }
 
+        // 208 年 11 月第 2 旬：赤壁之战与火烧连环船因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 208 && _state.Month == 11 && _state.Xun == 2)
+        {
+            TriggerHistoricalChibiBattle();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -1067,6 +1074,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new JingzhouSuccessionEvaluator();
         var executor = new JingzhouSuccessionExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-30 赤壁之战与三国鼎立前夜因果推演 ===
+    // 在 208/11/2 旬推演天子持节调停罢兵收四千万贡金 vs 史实火烧赤壁 vs 曹操席卷东南
+    private void TriggerHistoricalChibiBattle()
+    {
+        var evaluator = new ChibiBattleEvaluator();
+        var executor = new ChibiBattleExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
