@@ -638,6 +638,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalBailangMountain();
         }
 
+        // 208 年 7 月第 1 旬：刘表病亡与荆襄易主因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 208 && _state.Month == 7 && _state.Xun == 1)
+        {
+            TriggerHistoricalJingzhouSuccession();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -1050,6 +1057,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new BailangMountainEvaluator();
         var executor = new BailangMountainExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-29 刘表病亡与荆襄易主因果推演 ===
+    // 在 208/7/1 旬推演帝策分陕刘琦刘备领荆州 vs 曹操席卷荆襄 vs 刘备据江汉自雄
+    private void TriggerHistoricalJingzhouSuccession()
+    {
+        var evaluator = new JingzhouSuccessionEvaluator();
+        var executor = new JingzhouSuccessionExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
