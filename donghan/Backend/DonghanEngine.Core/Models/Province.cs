@@ -10,6 +10,8 @@ public class Province
     private int _garrison = 2000;
     private int _defenseLevel = 30;
     private int _distance = 2;
+    private int _population = 100000;
+    private int _landCarryingCapacity = 120000;
     private int _rebellionMonths = 0;
     private int _lowSupportStreakMonths = 0;
     private List<string> _neighbors = new();
@@ -17,6 +19,18 @@ public class Province
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? GovernorId { get; set; } = null;
+
+    public int Population
+    {
+        get => _population;
+        set => _population = Math.Max(1000, value);
+    }
+
+    public int LandCarryingCapacity
+    {
+        get => _landCarryingCapacity;
+        set => _landCarryingCapacity = Math.Max(1000, value);
+    }
     
     public int Distance
     {
