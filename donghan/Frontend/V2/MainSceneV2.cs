@@ -79,6 +79,7 @@ public partial class MainSceneV2 : Control
         AddButton(actions, "起驾巡幸", ShowTravel);
         AddButton(actions, "进入黄门密札", ShowIntel);
         AddButton(actions, "打开御案折匣", ShowEdicts);
+        AddButton(actions, "尚书台察举名册", ShowNominations);
         AddButton(actions, "查看朝臣名册", ShowMinisters);
         AddButton(actions, "进入西园军务", OpenWestGarden);
         AddButton(actions, "推进一旬", ShowTurnControl);
@@ -275,15 +276,9 @@ public partial class MainSceneV2 : Control
             btnBox.AddThemeConstantOverride("separation", 10);
             actionBox.AddChild(btnBox);
 
-            AddButton(btnBox, $"抄没家产（归国库）", () =>
+            AddButton(btnBox, $"直接籍没查抄（立威归国库）", () =>
             {
-                ExecuteSpecialAction(new SpecialActionCommand("confiscation", TargetNpcId: minister.Id, Destination: "国库"));
-                ShowMinisters();
-            });
-
-            AddButton(btnBox, $"抄没家产（归西园）", () =>
-            {
-                ExecuteSpecialAction(new SpecialActionCommand("confiscation", TargetNpcId: minister.Id, Destination: "西园"));
+                ExecuteSpecialAction(new SpecialActionCommand("confiscate_direct", TargetNpcId: minister.Id));
                 ShowMinisters();
             });
 
@@ -805,6 +800,13 @@ public partial class MainSceneV2 : Control
             ShowResult(_runtime.WestGarden.DrillArmy(new ArmyDrillCommand((int)paySpin.Value, officerId)));
         });
 
+        AddButton(actions, "内库大赏三军（鼓舞士气立威）", () =>
+        {
+            var result = _runtime.SpecialActions.Execute(new SpecialActionCommand("grant_military_bonus"));
+            ShowResult(result);
+            ShowWestGarden();
+        });
+
         var recruitSpin = new SpinBox
         {
             MinValue = 1000,
@@ -907,12 +909,88 @@ public partial class MainSceneV2 : Control
             child.QueueFree();
     }
 
+    private void ShowNominations()
+    {
+        ClearContent();
+        AddSectionTitle("尚书台折匣 · 岁举孝廉名册");
+        _content.AddChild(new Label
+        {
+            Text = "各大世家门阀所荐孝廉名册。陛下可御批除官以固门阀归心，亦可驳回以抑豪强（被弃名士或出走关东）。",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var nominations = _runtime.Nominations.GetPendingNominations();
+        if (nominations.Count == 0)
+        {
+            _content.AddChild(new Label { Text = "暂无世家呈递孝廉名册。" });
+            AddButton(_content, "返回御案", ShowHome);
+            return;
+        }
+
+        var scroll = new ScrollContainer
+        {
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+            CustomMinimumSize = new Vector2(0, 320)
+        };
+        _content.AddChild(scroll);
+
+        var listContainer = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        listContainer.AddThemeConstantOverride("separation", 10);
+        scroll.AddChild(listContainer);
+
+        foreach (var candidate in nominations)
+        {
+            var card = new PanelContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+            var cardBox = new VBoxContainer();
+            cardBox.AddThemeConstantOverride("separation", 6);
+            card.AddChild(cardBox);
+
+            var titleLabel = new Label
+            {
+                Text = $"【{candidate.Name}】（举荐门阀：{candidate.SponsoringFamilyId} ｜ 原籍：{candidate.NativeProvince}）",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            };
+            titleLabel.AddThemeColorOverride("font_color", new Color(0.95f, 0.77f, 0.28f, 1f));
+            cardBox.AddChild(titleLabel);
+
+            cardBox.AddChild(new Label
+            {
+                Text = $"五维属性：政治 {candidate.Politics} ｜ 智谋 {candidate.Intelligence} ｜ 魅力 {candidate.Charisma} ｜ 武力 {candidate.Martial}\n" +
+                       $"荐辟拟拜：{candidate.RecommendedOfficeTitle} ｜ 评语：{candidate.CandidateBio}",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            });
+
+            var btnRow = new HBoxContainer();
+            btnRow.AddThemeConstantOverride("separation", 12);
+            cardBox.AddChild(btnRow);
+
+            AddButton(btnRow, $"御批除拜【{candidate.RecommendedOfficeTitle}】", () =>
+            {
+                var result = _runtime.Nominations.Appoint(candidate, candidate.RecommendedOfficeTitle);
+                ShowResult(result);
+                ShowNominations();
+            });
+
+            AddButton(btnRow, "驳回奏请（弃贤外流）", () =>
+            {
+                var result = _runtime.Nominations.Reject(candidate);
+                ShowResult(result);
+                ShowNominations();
+            });
+
+            listContainer.AddChild(card);
+        }
+
+        AddButton(_content, "合上折匣 · 返回御案", ShowHome);
+        RefreshSnapshot();
+    }
+
     private void RefreshSnapshot()
     {
         var state = _runtime.State.GetSnapshot();
         _snapshot.Text =
             $"状态快照：{state.ReignTitle}{state.ReignYear}年 · {state.Year}年{state.Month}月第{state.Xun}旬\n" +
-            $"所在地：{state.CurrentLocation} ｜ 皇权：{state.ImperialPower} ｜ 国库：{state.Treasury}万 ｜ 私库：{state.PrivateTreasury}万 ｜ 民心：{state.PopularSupport}\n" +
+            $"所在地：{state.CurrentLocation} ｜ 皇权威望：{state.ImperialPower}（{state.PrestigeDescription}） ｜ 国库：{state.Treasury}万 ｜ 私库：{state.PrivateTreasury}万 ｜ 民心：{state.PopularSupport}\n" +
             $"西园军：{state.WestGardenArmySize}/{state.WestGardenArmyCapacity} ｜ 士气：{state.WestGardenMorale} ｜ 忠诚：{state.WestGardenLoyalty}";
     }
 }

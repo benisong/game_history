@@ -135,6 +135,13 @@ public interface IResolveEdictService
     ActionResult Resolve(ResolveEdictCommand command);
 }
 
+public interface INominationUiService
+{
+    IReadOnlyList<DonghanEngine.Core.Politics.NominationCandidate> GetPendingNominations();
+    ActionResult Appoint(DonghanEngine.Core.Politics.NominationCandidate candidate, string officeTitle);
+    ActionResult Reject(DonghanEngine.Core.Politics.NominationCandidate candidate);
+}
+
 public interface IEdictService : IGetPendingEdictsService, IResolveEdictService
 {
 }

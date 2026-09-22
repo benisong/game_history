@@ -20,7 +20,8 @@ public static class V2RuntimeFactory
             new GameEngineCourtService(engine),
             new GameEngineTurnService(engine, engine, stateReader),
             new GameEngineEdictService(engine, engine),
-            new GameEngineSpecialActionService(engine, engine, engine, engine, engine));
+            new GameEngineSpecialActionService(engine, engine, engine, engine, engine),
+            new GameEngineNominationUiService(engine));
     }
 
     public static V2Runtime CreateDefault(GameState state, System.Random? rng)

@@ -10,7 +10,8 @@ public sealed class V2Runtime
         ICourtService court,
         ITurnService turns,
         IEdictService edicts,
-        ISpecialActionService specialActions)
+        ISpecialActionService specialActions,
+        INominationUiService nominations)
     {
         State = state;
         Travel = travel;
@@ -20,6 +21,7 @@ public sealed class V2Runtime
         Turns = turns;
         Edicts = edicts;
         SpecialActions = specialActions;
+        Nominations = nominations;
     }
 
     public IGameStateReader State { get; }
@@ -30,4 +32,5 @@ public sealed class V2Runtime
     public ITurnService Turns { get; }
     public IEdictService Edicts { get; }
     public ISpecialActionService SpecialActions { get; }
+    public INominationUiService Nominations { get; }
 }
