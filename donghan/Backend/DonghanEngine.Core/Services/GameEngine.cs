@@ -15,6 +15,12 @@ public partial class GameEngine : IGameEngine
     private readonly INarrator _narrator;
     private readonly DonghanEngine.Core.Geopolitics.Contracts.IGeopoliticalSimulationEngine _geopoliticsEngine;
     private readonly DonghanEngine.Core.Geopolitics.Contracts.IImperialEdictExecutor _edictExecutor;
+    private readonly DonghanEngine.Core.Politics.IConfiscationService _confiscationService;
+    private readonly DonghanEngine.Core.Politics.IMilitaryPayrollService _payrollService;
+    private readonly DonghanEngine.Core.Politics.ITalentNominationService _nominationService;
+    private readonly DonghanEngine.Core.Politics.IImperialPrestigeEvaluator _prestigeEvaluator;
+    private readonly DonghanEngine.Core.Economy.IAgriculturalCarryingEngine _carryingEngine;
+    private readonly DonghanEngine.Core.Economy.IBanditWarlordSymbiosisEngine _symbiosisEngine;
     internal readonly Random _rng;
 
     public DonghanEngine.Core.Geopolitics.Contracts.IGeopoliticalSimulationEngine GeopoliticsEngine => _geopoliticsEngine;
@@ -27,7 +33,13 @@ public partial class GameEngine : IGameEngine
         INarrator narrator,
         Random? rng = null,
         DonghanEngine.Core.Geopolitics.Contracts.IGeopoliticalSimulationEngine? geopoliticsEngine = null,
-        DonghanEngine.Core.Geopolitics.Contracts.IImperialEdictExecutor? edictExecutor = null)
+        DonghanEngine.Core.Geopolitics.Contracts.IImperialEdictExecutor? edictExecutor = null,
+        DonghanEngine.Core.Politics.IConfiscationService? confiscationService = null,
+        DonghanEngine.Core.Politics.IMilitaryPayrollService? payrollService = null,
+        DonghanEngine.Core.Politics.ITalentNominationService? nominationService = null,
+        DonghanEngine.Core.Politics.IImperialPrestigeEvaluator? prestigeEvaluator = null,
+        DonghanEngine.Core.Economy.IAgriculturalCarryingEngine? carryingEngine = null,
+        DonghanEngine.Core.Economy.IBanditWarlordSymbiosisEngine? symbiosisEngine = null)
     {
         _state = state;
         _scheduler = scheduler;
@@ -37,6 +49,12 @@ public partial class GameEngine : IGameEngine
         _rng = rng ?? new Random();
         _geopoliticsEngine = geopoliticsEngine ?? new DonghanEngine.Core.Geopolitics.GeopoliticalSimulationEngine();
         _edictExecutor = edictExecutor ?? new DonghanEngine.Core.Geopolitics.Memorials.ImperialEdictExecutor();
+        _confiscationService = confiscationService ?? new DonghanEngine.Core.Politics.ConfiscationService();
+        _payrollService = payrollService ?? new DonghanEngine.Core.Politics.MilitaryPayrollService();
+        _nominationService = nominationService ?? new DonghanEngine.Core.Politics.TalentNominationService();
+        _prestigeEvaluator = prestigeEvaluator ?? new DonghanEngine.Core.Politics.ImperialPrestigeEvaluator();
+        _carryingEngine = carryingEngine ?? new DonghanEngine.Core.Economy.AgriculturalCarryingEngine();
+        _symbiosisEngine = symbiosisEngine ?? new DonghanEngine.Core.Economy.BanditWarlordSymbiosisEngine();
     }
 
     public GameState GetState() => _state;
@@ -185,6 +203,37 @@ public partial class GameEngine : IGameEngine
 
         _state.AddToChronicle(BuildConfiscationChronicle(settlement));
         return new TurnResult { StoryText = BuildConfiscationStory(settlement) };
+    }
+
+    public DonghanEngine.Core.Politics.ConfiscationExecutionResult ExecuteConfiscateTarget(string targetNpcId)
+    {
+        if (_state.CurrentLocation != "宣政殿")
+            throw new InvalidOperationException("只有在宣政殿才能当朝宣布抄家圣旨！");
+
+        return _confiscationService.ConfiscateTarget(_state, targetNpcId);
+    }
+
+    public DonghanEngine.Core.Politics.MilitaryPayrollResult ExecuteGrantMilitaryBonus()
+    {
+        if (_state.CurrentLocation != "西园")
+            throw new InvalidOperationException("只有在西园才能御览校场、犒赏三军！");
+
+        return _payrollService.ProcessPayroll(_state, grantExtraBonus: true);
+    }
+
+    public IReadOnlyList<DonghanEngine.Core.Politics.NominationCandidate> GetPendingNominations()
+    {
+        return _nominationService.GenerateAnnualNominations(_state);
+    }
+
+    public DonghanEngine.Core.Politics.NominationResolutionResult AppointNominationCandidate(DonghanEngine.Core.Politics.NominationCandidate candidate, string officeTitle)
+    {
+        return _nominationService.AppointCandidate(_state, candidate, officeTitle);
+    }
+
+    public DonghanEngine.Core.Politics.NominationResolutionResult RejectNominationCandidate(DonghanEngine.Core.Politics.NominationCandidate candidate)
+    {
+        return _nominationService.RejectCandidate(_state, candidate);
     }
 
     public TurnResult ExecuteQuickAction(string actionId)
@@ -416,6 +465,34 @@ public partial class GameEngine : IGameEngine
 
         // 异步后台演进官员想法与天灾日常
         await _scheduler.OrchestrateXunUpdateAsync(_state);
+
+        // 每旬自动结算：军饷发放与禁军士气/哗变判定
+        _payrollService.ProcessPayroll(_state, grantExtraBonus: false);
+
+        // 每旬自动评估天子威望状态 (高压转嫁压迫判定)
+        var prestigeResult = _prestigeEvaluator.Evaluate(_state.ImperialPower);
+        if (prestigeResult.OppressionTransferRate > 0)
+        {
+            var oppressors = _prestigeEvaluator.EvaluateOppressionTransferOfficials(_state, prestigeResult);
+            if (oppressors.Count > 0)
+            {
+                // 酷吏转嫁压迫削减民心
+                _state.PopularSupport = Math.Clamp(_state.PopularSupport - 2, 0, 100);
+            }
+        }
+
+        // 季末 (3/6/9/12月第3旬)：评估各州农业土地承载力与流民反哺诸侯
+        if (_state.Xun == 3 && (_state.Month == 3 || _state.Month == 6 || _state.Month == 9 || _state.Month == 12))
+        {
+            foreach (var (pId, prov) in _state.Provinces)
+            {
+                var carryReport = _carryingEngine.EvaluateProvince(prov);
+                if (carryReport.DisplacedRefugees > 0)
+                {
+                    _symbiosisEngine.EvaluateBanditSpillover(_state, pId, carryReport.DisplacedRefugees);
+                }
+            }
+        }
 
         // 189 年之后：开启天下诸侯宏观地缘推演（诸侯攻伐、战役步进与岁贡）
         if (_state.Year >= 189)

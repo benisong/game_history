@@ -31,6 +31,19 @@ public interface IDisasterReliefDomainService
 public interface IConfiscationDomainService
 {
     TurnResult ExecuteConfiscationAction(string targetMinisterId, string destination);
+    DonghanEngine.Core.Politics.ConfiscationExecutionResult ExecuteConfiscateTarget(string targetNpcId);
+}
+
+public interface IMilitaryPayrollDomainService
+{
+    DonghanEngine.Core.Politics.MilitaryPayrollResult ExecuteGrantMilitaryBonus();
+}
+
+public interface ITalentNominationDomainService
+{
+    IReadOnlyList<DonghanEngine.Core.Politics.NominationCandidate> GetPendingNominations();
+    DonghanEngine.Core.Politics.NominationResolutionResult AppointNominationCandidate(DonghanEngine.Core.Politics.NominationCandidate candidate, string officeTitle);
+    DonghanEngine.Core.Politics.NominationResolutionResult RejectNominationCandidate(DonghanEngine.Core.Politics.NominationCandidate candidate);
 }
 
 public interface IQuickActionDomainService
@@ -88,6 +101,8 @@ public interface IGameEngine :
     IRecruitArmyDomainService,
     IDisasterReliefDomainService,
     IConfiscationDomainService,
+    IMilitaryPayrollDomainService,
+    ITalentNominationDomainService,
     IQuickActionDomainService,
     IResolveEdictDomainService,
     IGrandCourtDomainService,
