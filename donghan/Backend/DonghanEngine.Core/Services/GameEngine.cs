@@ -708,6 +708,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalBaidiEntrustment();
         }
 
+        // 225 年 3 月第 1 旬：诸葛亮南征与七擒孟获因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 225 && _state.Month == 3 && _state.Xun == 1)
+        {
+            TriggerHistoricalSouthernExpedition();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -1220,6 +1227,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new BaidiEntrustmentEvaluator();
         var executor = new BaidiEntrustmentExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-39 诸葛亮南征与七擒孟获因果推演 ===
+    // 在 225/3/1 旬推演七擒孟获滇马入洛充禁军 vs 诸葛亮平定南中积蓄国力 vs 瘴疠弥漫
+    private void TriggerHistoricalSouthernExpedition()
+    {
+        var evaluator = new SouthernExpeditionEvaluator();
+        var executor = new SouthernExpeditionExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
