@@ -701,6 +701,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalYilingBattle();
         }
 
+        // 223 年 4 月第 1 旬：白帝托孤与诸葛亮治蜀因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 223 && _state.Month == 4 && _state.Xun == 1)
+        {
+            TriggerHistoricalBaidiEntrustment();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -1203,6 +1210,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new YilingBattleEvaluator();
         var executor = new YilingBattleExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-38 白帝托孤与诸葛亮治蜀因果推演 ===
+    // 在 223/4/1 旬推演天子册封孔明蜀相表忠纳贡 vs 诸葛亮鞠躬尽瘁 vs 蜀中内耗
+    private void TriggerHistoricalBaidiEntrustment()
+    {
+        var evaluator = new BaidiEntrustmentEvaluator();
+        var executor = new BaidiEntrustmentExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
