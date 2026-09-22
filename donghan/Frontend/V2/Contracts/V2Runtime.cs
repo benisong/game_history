@@ -12,7 +12,8 @@ public sealed class V2Runtime
         IEdictService edicts,
         ISpecialActionService specialActions,
         INominationUiService nominations,
-        IOfficialRankUiService ranks)
+        IOfficialRankUiService ranks,
+        IAgriculturalPolicyUiService agriculture)
     {
         State = state;
         Travel = travel;
@@ -24,6 +25,7 @@ public sealed class V2Runtime
         SpecialActions = specialActions;
         Nominations = nominations;
         Ranks = ranks;
+        Agriculture = agriculture;
     }
 
     public IGameStateReader State { get; }
@@ -36,4 +38,5 @@ public sealed class V2Runtime
     public ISpecialActionService SpecialActions { get; }
     public INominationUiService Nominations { get; }
     public IOfficialRankUiService Ranks { get; }
+    public IAgriculturalPolicyUiService Agriculture { get; }
 }

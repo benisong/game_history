@@ -516,6 +516,21 @@ public partial class MainSceneV2 : Control
             governorSelector.GetSelectedMetadata().AsString())));
         if (!string.IsNullOrEmpty(province.GovernorId))
             AddButton(actionBox, "召还现任太守", () => ExecuteIntelAction(new ProvinceActionCommand(province.Id, ProvinceActionKind.RecallGovernor)));
+
+        AddButton(actionBox, "度田丈量（严明清查）", () =>
+        {
+            var result = _runtime.Agriculture.SurveyLand(province.Id, DonghanEngine.Core.Economy.CadastralSurveyIntensity.Standard);
+            ShowResult(result);
+            ShowIntel();
+        });
+
+        AddButton(actionBox, "兴修水利（大兴官渠1000万）", () =>
+        {
+            var result = _runtime.Agriculture.BuildIrrigation(province.Id);
+            ShowResult(result);
+            ShowIntel();
+        });
+
         if (province.IsRebelling)
         {
             AddButton(actionBox, "出兵平叛（3000人）", () => ExecuteIntelAction(new ProvinceActionCommand(province.Id, ProvinceActionKind.SuppressRebellion, "cao_cao", 3000)));

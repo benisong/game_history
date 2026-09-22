@@ -149,6 +149,12 @@ public interface IOfficialRankUiService
     ActionResult SellOffice(string buyerNpcId, string targetTitle);
 }
 
+public interface IAgriculturalPolicyUiService
+{
+    ActionResult SurveyLand(string provinceId, DonghanEngine.Core.Economy.CadastralSurveyIntensity intensity);
+    ActionResult BuildIrrigation(string provinceId);
+}
+
 public interface IEdictService : IGetPendingEdictsService, IResolveEdictService
 {
 }

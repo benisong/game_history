@@ -22,6 +22,7 @@ public partial class GameEngine : IGameEngine
     private readonly DonghanEngine.Core.Politics.IOfficialRankService _rankService;
     private readonly DonghanEngine.Core.Economy.IAgriculturalCarryingEngine _carryingEngine;
     private readonly DonghanEngine.Core.Economy.IBanditWarlordSymbiosisEngine _symbiosisEngine;
+    private readonly DonghanEngine.Core.Economy.CadastralAndIrrigationService _cadastralAndIrrigationService;
     internal readonly Random _rng;
 
     public DonghanEngine.Core.Geopolitics.Contracts.IGeopoliticalSimulationEngine GeopoliticsEngine => _geopoliticsEngine;
@@ -41,7 +42,8 @@ public partial class GameEngine : IGameEngine
         DonghanEngine.Core.Politics.IImperialPrestigeEvaluator? prestigeEvaluator = null,
         DonghanEngine.Core.Politics.IOfficialRankService? rankService = null,
         DonghanEngine.Core.Economy.IAgriculturalCarryingEngine? carryingEngine = null,
-        DonghanEngine.Core.Economy.IBanditWarlordSymbiosisEngine? symbiosisEngine = null)
+        DonghanEngine.Core.Economy.IBanditWarlordSymbiosisEngine? symbiosisEngine = null,
+        DonghanEngine.Core.Economy.CadastralAndIrrigationService? cadastralAndIrrigationService = null)
     {
         _state = state;
         _scheduler = scheduler;
@@ -58,6 +60,7 @@ public partial class GameEngine : IGameEngine
         _rankService = rankService ?? new DonghanEngine.Core.Politics.OfficialRankService();
         _carryingEngine = carryingEngine ?? new DonghanEngine.Core.Economy.AgriculturalCarryingEngine();
         _symbiosisEngine = symbiosisEngine ?? new DonghanEngine.Core.Economy.BanditWarlordSymbiosisEngine();
+        _cadastralAndIrrigationService = cadastralAndIrrigationService ?? new DonghanEngine.Core.Economy.CadastralAndIrrigationService();
     }
 
     public GameState GetState() => _state;
@@ -258,6 +261,22 @@ public partial class GameEngine : IGameEngine
             throw new InvalidOperationException("只有在西园万金堂才能开榜卖官鬻爵！");
 
         return _rankService.SellOfficeToNpc(_state, buyerNpcId, targetTitle);
+    }
+
+    public DonghanEngine.Core.Economy.CadastralSurveyResult ExecuteCadastralSurvey(string provinceId, DonghanEngine.Core.Economy.CadastralSurveyIntensity intensity)
+    {
+        if (_state.CurrentLocation != "宣政殿")
+            throw new InvalidOperationException("只有在宣政殿大朝会才能颁发度田丈量诏令！");
+
+        return _cadastralAndIrrigationService.ExecuteCadastralSurvey(_state, provinceId, intensity);
+    }
+
+    public DonghanEngine.Core.Economy.IrrigationProjectResult ExecuteConstructIrrigation(string provinceId)
+    {
+        if (_state.CurrentLocation != "宣政殿")
+            throw new InvalidOperationException("只有在宣政殿大朝会才能调拨太仓国帑兴修水利！");
+
+        return _cadastralAndIrrigationService.ConstructIrrigation(_state, provinceId);
     }
 
     public TurnResult ExecuteQuickAction(string actionId)

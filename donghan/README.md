@@ -8,7 +8,7 @@
 
 本项目规避了高算力损耗的网页套壳模式，完全采用面向对象（C# OOP）的高性能策略引擎，并预留了面向多智能体（Multi-Agent）大语言模型（如 DeepSeek/Gemini）的异步调度中间件与防御性数据缓冲槽，实现真实的朝党斗争、西园理财、天灾赈灾及帝王心术博弈。
 
-**项目规模**：总计 **367 个自动化测试（后端 319 + 前端 V2 48）100% 全绿通过**。后端 `DonghanEngine.Core` 已彻底落地 DDD 分包、不可变/只读集合防篡改封装、充血领域模型（OOP）与细粒度单方法服务接口隔离（ISP）；已实装**东汉文武双轨九品官阶晋升与西园鬻官通天子系统（`DonghanEngine.Core.Politics.OfficialRankService`：正规升迁按部就班、特旨超擢限3品防失序、西园万金堂直通一品三公/所得入私库但引发民心与清流耻与为伍反噬）**、宏观经济土地承载力与流民部曲子包（`DonghanEngine.Core.Economy`）、帝王权术财政博弈与抄家关联惩罚/军饷哗变子包（`DonghanEngine.Core.Politics`）、世家察举荐辟系统（`TalentNominationService`）、天子威望非线性力学评估子包（`ImperialPrestigeEvaluator`：46~60 紧凑黄金平衡区）、184年至226年灵帝延寿70岁全周期43项历史大事件全景因果推演管线；主引擎 `GameEngine` 与前端 V2 适配层及 Godot UI（`ShowPromotionDialog` / `ShowOfficeSaleDialog` / `ShowNominations`）已完成全业务交互大闭环；打通与 `GameEngine` 每旬推进与尚书台御批（`ResolveGeopoliticalMemorial`）的双向闭环；前端已建立 V2 契约架构与单一职责适配层。
+**项目规模**：总计 **371 个自动化测试（后端 322 + 前端 V2 49）100% 全绿通过**。后端 `DonghanEngine.Core` 已彻底落地 DDD 分包、不可变/只读集合防篡改封装、充血领域模型（OOP）与细粒度单方法服务接口隔离（ISP）；已实装**国家级度田令与水利官修子系统（`DonghanEngine.Core.Economy.CadastralAndIrrigationService`：严明度田清查隐田、追缴隐税、收归编户齐民，以及都江堰/白渠/芍陂大兴水利永久提升土地人口承载力）**、东汉文武双轨九品官阶晋升与西园鬻官通天子系统（`DonghanEngine.Core.Politics.OfficialRankService`）、宏观经济土地承载力与流民部曲子包（`DonghanEngine.Core.Economy`）、帝王权术财政博弈与抄家关联惩罚/军饷哗变子包（`DonghanEngine.Core.Politics`）、世家察举荐辟系统（`TalentNominationService`）、天子威望非线性力学评估子包（`ImperialPrestigeEvaluator`：46~60 紧凑黄金平衡区）、184年至226年灵帝延寿70岁全周期43项历史大事件全景因果推演管线；主引擎 `GameEngine` 与前端 V2 适配层及 Godot UI（`ShowPromotionDialog` / `ShowOfficeSaleDialog` / `ShowNominations` / `SurveyLand` / `BuildIrrigation`）已完成全业务交互大闭环；打通与 `GameEngine` 每旬推进与尚书台御批（`ResolveGeopoliticalMemorial`）的双向闭环；前端已建立 V2 契约架构与单一职责适配层。
 
 ---
 

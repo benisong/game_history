@@ -53,6 +53,12 @@ public interface IOfficialRankDomainService
     DonghanEngine.Core.Politics.OfficeSaleResult ExecuteSellOfficeToNpc(string buyerNpcId, string targetTitle);
 }
 
+public interface ICadastralAndIrrigationDomainService
+{
+    DonghanEngine.Core.Economy.CadastralSurveyResult ExecuteCadastralSurvey(string provinceId, DonghanEngine.Core.Economy.CadastralSurveyIntensity intensity);
+    DonghanEngine.Core.Economy.IrrigationProjectResult ExecuteConstructIrrigation(string provinceId);
+}
+
 public interface IQuickActionDomainService
 {
     TurnResult ExecuteQuickAction(string actionId);
@@ -111,6 +117,7 @@ public interface IGameEngine :
     IMilitaryPayrollDomainService,
     ITalentNominationDomainService,
     IOfficialRankDomainService,
+    ICadastralAndIrrigationDomainService,
     IQuickActionDomainService,
     IResolveEdictDomainService,
     IGrandCourtDomainService,
