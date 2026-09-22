@@ -31,24 +31,32 @@ public sealed class GameEngineStateReader : IGameStateReader
     public IReadOnlyList<MinisterSnapshot> GetMinisters() =>
         _stateProvider.GetState().Npcs.Values.Select(Snapshot).ToList();
 
-    internal static GameStateSnapshot Snapshot(GameState state) => new(
-        state.ReignTitle,
-        state.ReignYear,
-        state.Year,
-        state.Month,
-        state.Xun,
-        state.CurrentLocation,
-        state.ImperialPower,
-        state.Treasury,
-        state.PrivateTreasury,
-        state.PopularSupport,
-        state.Health,
-        state.WestGardenArmy.Size,
-        12000,
-        state.WestGardenArmy.Morale,
-        state.WestGardenArmy.Loyalty,
-        state.Outcome.ToString(),
-        state.Chronicle.ToList());
+    internal static GameStateSnapshot Snapshot(GameState state)
+    {
+        var prestigeEvaluator = new DonghanEngine.Core.Politics.ImperialPrestigeEvaluator();
+        var prestigeResult = prestigeEvaluator.Evaluate(state.ImperialPower);
+
+        return new GameStateSnapshot(
+            state.ReignTitle,
+            state.ReignYear,
+            state.Year,
+            state.Month,
+            state.Xun,
+            state.CurrentLocation,
+            state.ImperialPower,
+            state.Treasury,
+            state.PrivateTreasury,
+            state.PopularSupport,
+            state.Health,
+            state.WestGardenArmy.Size,
+            12000,
+            state.WestGardenArmy.Morale,
+            state.WestGardenArmy.Loyalty,
+            state.Outcome.ToString(),
+            state.Chronicle.ToList(),
+            prestigeResult.State.ToString(),
+            prestigeResult.StatusDescription);
+    }
 
     private static MinisterSnapshot Snapshot(NpcState npc) => new(
         npc.Id, npc.Name, npc.Title, npc.Faction, npc.Favorability, npc.Power,
@@ -73,6 +81,8 @@ public sealed class GameEngineStateReader : IGameStateReader
             province.DefenseLevel,
             province.Distance,
             province.GovernorId,
-            governorName);
+            governorName,
+            province.Population,
+            province.LandCarryingCapacity);
     }
 }

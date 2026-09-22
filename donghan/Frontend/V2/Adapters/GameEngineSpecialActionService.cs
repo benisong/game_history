@@ -9,17 +9,20 @@ public sealed class GameEngineSpecialActionService : ISpecialActionService
     private readonly IQuickActionDomainService _quickActionDomain;
     private readonly IDisasterReliefDomainService _reliefDomain;
     private readonly IConfiscationDomainService _confiscationDomain;
+    private readonly IMilitaryPayrollDomainService _payrollDomain;
     private readonly IGameStateProvider _stateProvider;
 
     public GameEngineSpecialActionService(
         IQuickActionDomainService quickActionDomain,
         IDisasterReliefDomainService reliefDomain,
         IConfiscationDomainService confiscationDomain,
+        IMilitaryPayrollDomainService payrollDomain,
         IGameStateProvider stateProvider)
     {
         _quickActionDomain = quickActionDomain;
         _reliefDomain = reliefDomain;
         _confiscationDomain = confiscationDomain;
+        _payrollDomain = payrollDomain;
         _stateProvider = stateProvider;
     }
 
@@ -28,6 +31,34 @@ public sealed class GameEngineSpecialActionService : ISpecialActionService
         try
         {
             var state = _stateProvider.GetState();
+
+            if (command.ActionId == "grant_military_bonus")
+            {
+                var payrollResult = _payrollDomain.ExecuteGrantMilitaryBonus();
+                return new ActionResult(
+                    true,
+                    payrollResult.NarrativeTitle,
+                    payrollResult.ChronicleText,
+                    ReportKind.Information,
+                    Array.Empty<StateChange>());
+            }
+
+            if (command.ActionId == "confiscate_direct")
+            {
+                var confiscateResult = _confiscationDomain.ExecuteConfiscateTarget(command.TargetNpcId);
+                if (!confiscateResult.Success)
+                {
+                    return ActionResult.Failure("籍没查抄回奏", confiscateResult.ChronicleText, ReportKind.Warning, "ConfiscationFailed");
+                }
+
+                return new ActionResult(
+                    true,
+                    confiscateResult.NarrativeTitle,
+                    confiscateResult.ChronicleText,
+                    ReportKind.Information,
+                    Array.Empty<StateChange>());
+            }
+
             TurnResult result = command.ActionId switch
             {
                 "sell_office" => _quickActionDomain.ExecuteQuickAction("sell_office"),
@@ -59,6 +90,8 @@ public sealed class GameEngineSpecialActionService : ISpecialActionService
         "harem_rest" => "后宫起居回奏",
         "disaster_relief" => "大朝赈灾回奏",
         "confiscation" => "抄家回奏",
+        "grant_military_bonus" => "犒赏三军回奏",
+        "confiscate_direct" => "籍没查抄回奏",
         _ => "特殊行动回奏"
     };
 }

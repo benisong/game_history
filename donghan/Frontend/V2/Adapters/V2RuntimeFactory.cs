@@ -9,6 +9,20 @@ public static class V2RuntimeFactory
 
     public static V2Runtime CreateDefault(GameState state) => CreateDefault(state, null);
 
+    public static V2Runtime Create(GameEngine engine)
+    {
+        var stateReader = new GameEngineStateReader(engine);
+        return new V2Runtime(
+            stateReader,
+            new GameEngineTravelService(engine, engine),
+            new GameEngineWestGardenService(engine, engine, engine),
+            new GameEngineIntelService(engine, stateReader),
+            new GameEngineCourtService(engine),
+            new GameEngineTurnService(engine, engine, stateReader),
+            new GameEngineEdictService(engine, engine),
+            new GameEngineSpecialActionService(engine, engine, engine, engine, engine));
+    }
+
     public static V2Runtime CreateDefault(GameState state, System.Random? rng)
     {
         var engine = new GameEngine(
@@ -19,15 +33,6 @@ public static class V2RuntimeFactory
             new MockNarrator(),
             rng);
 
-        var stateReader = new GameEngineStateReader(engine);
-        return new V2Runtime(
-            stateReader,
-            new GameEngineTravelService(engine, engine),
-            new GameEngineWestGardenService(engine, engine, engine),
-            new GameEngineIntelService(engine, stateReader),
-            new GameEngineCourtService(engine),
-            new GameEngineTurnService(engine, engine, stateReader),
-            new GameEngineEdictService(engine, engine),
-            new GameEngineSpecialActionService(engine, engine, engine, engine));
+        return Create(engine);
     }
 }

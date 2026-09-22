@@ -52,7 +52,9 @@ public sealed record GameStateSnapshot(
     int WestGardenMorale,
     int WestGardenLoyalty,
     string Outcome,
-    IReadOnlyList<string> Chronicle);
+    IReadOnlyList<string> Chronicle,
+    string PrestigeState = "GoldenBalance",
+    string PrestigeDescription = "威严得体 · 垂拱而治");
 
 public sealed record ProvinceSnapshot(
     string Id,
@@ -66,7 +68,9 @@ public sealed record ProvinceSnapshot(
     int DefenseLevel,
     int Distance,
     string? GovernorId,
-    string GovernorName);
+    string GovernorName,
+    int Population = 100000,
+    int LandCarryingCapacity = 120000);
 
 public sealed record MinisterSnapshot(
     string Id,
