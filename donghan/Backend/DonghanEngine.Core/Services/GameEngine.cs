@@ -694,6 +694,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalCaoCaoSuccession();
         }
 
+        // 222 年 6 月第 2 旬：夷陵之战与孙刘和睦因果推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 222 && _state.Month == 6 && _state.Xun == 2)
+        {
+            TriggerHistoricalYilingBattle();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -1186,6 +1193,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new CaoCaoSuccessionEvaluator();
         var executor = new CaoCaoSuccessionExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-37 夷陵之战与孙刘和睦因果推演 ===
+    // 在 222/6/2 旬推演天子持节调停夷陵罢兵孙刘修好 vs 陆逊火烧连营 vs 蜀军破吴
+    private void TriggerHistoricalYilingBattle()
+    {
+        var evaluator = new YilingBattleEvaluator();
+        var executor = new YilingBattleExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
