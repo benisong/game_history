@@ -715,6 +715,13 @@ public partial class GameEngine : IGameEngine
             TriggerHistoricalSouthernExpedition();
         }
 
+        // 226 年 8 月第 2 旬：灵帝七旬大寿与大汉中兴盛世大圆满终极推演
+        if (!_state.DisableHistoricalTriggers &&
+            _state.Year == 226 && _state.Month == 8 && _state.Xun == 2)
+        {
+            TriggerHistoricalGrandJubilee();
+        }
+
         // P0-2 结局判定：每旬结算一次
         UpdateOutcome();
 
@@ -1237,6 +1244,16 @@ public partial class GameEngine : IGameEngine
     {
         var evaluator = new SouthernExpeditionEvaluator();
         var executor = new SouthernExpeditionExecutor();
+        var result = evaluator.Evaluate(_state);
+        executor.Execute(_state, result);
+    }
+
+    // === P0-40 灵帝延寿七旬大寿与大汉中兴盛世终极推演 ===
+    // 在 226/8/2 旬推演七旬天子万年九宾来朝大圆满 vs 盛世同庆 vs 藩镇异心
+    private void TriggerHistoricalGrandJubilee()
+    {
+        var evaluator = new GrandJubileeEvaluator();
+        var executor = new GrandJubileeExecutor();
         var result = evaluator.Evaluate(_state);
         executor.Execute(_state, result);
     }
