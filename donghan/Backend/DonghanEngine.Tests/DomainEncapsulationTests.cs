@@ -34,7 +34,7 @@ public class DomainEncapsulationTests
         Assert.Equal(0, npc.Power);
         Assert.Equal(100, npc.Corruption);
         Assert.Equal(100, npc.Health);
-        Assert.Equal(4, npc.TitleTier);
+        Assert.Equal(9, npc.TitleTier);
         Assert.Equal(0, npc.StashedWealth);
     }
 

@@ -11,7 +11,8 @@ public sealed class V2Runtime
         ITurnService turns,
         IEdictService edicts,
         ISpecialActionService specialActions,
-        INominationUiService nominations)
+        INominationUiService nominations,
+        IOfficialRankUiService ranks)
     {
         State = state;
         Travel = travel;
@@ -22,6 +23,7 @@ public sealed class V2Runtime
         Edicts = edicts;
         SpecialActions = specialActions;
         Nominations = nominations;
+        Ranks = ranks;
     }
 
     public IGameStateReader State { get; }
@@ -33,4 +35,5 @@ public sealed class V2Runtime
     public IEdictService Edicts { get; }
     public ISpecialActionService SpecialActions { get; }
     public INominationUiService Nominations { get; }
+    public IOfficialRankUiService Ranks { get; }
 }

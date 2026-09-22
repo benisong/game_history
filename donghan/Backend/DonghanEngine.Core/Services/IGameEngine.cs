@@ -46,6 +46,13 @@ public interface ITalentNominationDomainService
     DonghanEngine.Core.Politics.NominationResolutionResult RejectNominationCandidate(DonghanEngine.Core.Politics.NominationCandidate candidate);
 }
 
+public interface IOfficialRankDomainService
+{
+    IReadOnlyList<DonghanEngine.Core.Politics.OfficialPosition> GetAllOfficialPositions();
+    DonghanEngine.Core.Politics.PromotionResult ExecutePromoteOfficial(string npcId, string targetTitle);
+    DonghanEngine.Core.Politics.OfficeSaleResult ExecuteSellOfficeToNpc(string buyerNpcId, string targetTitle);
+}
+
 public interface IQuickActionDomainService
 {
     TurnResult ExecuteQuickAction(string actionId);
@@ -103,6 +110,7 @@ public interface IGameEngine :
     IConfiscationDomainService,
     IMilitaryPayrollDomainService,
     ITalentNominationDomainService,
+    IOfficialRankDomainService,
     IQuickActionDomainService,
     IResolveEdictDomainService,
     IGrandCourtDomainService,

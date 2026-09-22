@@ -24,7 +24,7 @@ public class NpcState
     public int TitleTier
     {
         get => _titleTier;
-        set => _titleTier = Math.Clamp(value, 0, 4);
+        set => _titleTier = Math.Clamp(value, 0, 9);
     }
     
     public int BirthYear { get; set; } = 150;            // 出生年份

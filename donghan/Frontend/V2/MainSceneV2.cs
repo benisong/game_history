@@ -282,6 +282,16 @@ public partial class MainSceneV2 : Control
                 ShowMinisters();
             });
 
+            AddButton(btnBox, $"正道升迁除官", () =>
+            {
+                ShowPromotionDialog(minister);
+            });
+
+            AddButton(btnBox, $"西园开榜卖官", () =>
+            {
+                ShowOfficeSaleDialog(minister);
+            });
+
             AddButton(btnBox, $"命其经办赈灾（1000万）", () =>
             {
                 ExecuteSpecialAction(new SpecialActionCommand("disaster_relief", 1000, minister.Id));
@@ -320,6 +330,97 @@ public partial class MainSceneV2 : Control
         >= 25 => "清正",
         _ => "廉直"
     };
+
+    private void ShowPromotionDialog(MinisterSnapshot minister)
+    {
+        ClearContent();
+        AddSectionTitle($"正道阶梯升迁 · 考课除官【{minister.Name}】");
+        _content.AddChild(new Label
+        {
+            Text = $"当前官职：{minister.Title}（品阶：{minister.Traits?.FirstOrDefault() ?? "未定"}）。\n" +
+                   "升迁铁律：按部就班一级一级升；若特旨超擢，破格拔擢一次最多不得跨越三品（超擢引发清流老臣微词）。",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var positions = _runtime.Ranks.GetAllPositions();
+        var scroll = new ScrollContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 320) };
+        _content.AddChild(scroll);
+
+        var list = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        list.AddThemeConstantOverride("separation", 8);
+        scroll.AddChild(list);
+
+        foreach (var pos in positions)
+        {
+            var row = new HBoxContainer();
+            row.AddThemeConstantOverride("separation", 10);
+
+            string branchText = pos.Branch == DonghanEngine.Core.Politics.OfficialBranch.Civilian ? "文官" : "武官";
+            var label = new Label
+            {
+                Text = $"【{pos.RankTier}品】{pos.Title}（{branchText}） ｜ 职责：{pos.Description}",
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+            };
+            row.AddChild(label);
+
+            AddButton(row, $"诏拜【{pos.Title}】", () =>
+            {
+                var result = _runtime.Ranks.Promote(minister.Id, pos.Title);
+                ShowResult(result);
+                ShowMinisters();
+            });
+
+            list.AddChild(row);
+        }
+
+        AddButton(_content, "返回名册", ShowMinisters);
+        RefreshSnapshot();
+    }
+
+    private void ShowOfficeSaleDialog(MinisterSnapshot minister)
+    {
+        ClearContent();
+        AddSectionTitle($"西园万金堂 · 卖官鬻爵【{minister.Name}】");
+        _content.AddChild(new Label
+        {
+            Text = "西园卖官通天法：只要钱给够，无视任何等级资历，哪怕白丁直接拜一品三公！\n" +
+                   "代价警示：所得巨款直接进入天子私库，但天下民心大跌、清流士林耻与为伍！",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var positions = _runtime.Ranks.GetAllPositions();
+        var scroll = new ScrollContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 320) };
+        _content.AddChild(scroll);
+
+        var list = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        list.AddThemeConstantOverride("separation", 8);
+        scroll.AddChild(list);
+
+        foreach (var pos in positions)
+        {
+            var row = new HBoxContainer();
+            row.AddThemeConstantOverride("separation", 10);
+
+            var label = new Label
+            {
+                Text = $"【{pos.RankTier}品】{pos.Title} ｜ 明码标价：{pos.PriceInWan}万钱 ｜ 职责：{pos.Description}",
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+            };
+            row.AddChild(label);
+
+            AddButton(row, $"卖官【{pos.PriceInWan}万】", () =>
+            {
+                var result = _runtime.Ranks.SellOffice(minister.Id, pos.Title);
+                ShowResult(result);
+                ShowMinisters();
+            });
+
+            list.AddChild(row);
+        }
+
+        AddButton(_content, "返回名册", ShowMinisters);
+        RefreshSnapshot();
+    }
 
     private void ShowIntel()
     {

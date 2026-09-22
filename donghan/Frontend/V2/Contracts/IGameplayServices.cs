@@ -142,6 +142,13 @@ public interface INominationUiService
     ActionResult Reject(DonghanEngine.Core.Politics.NominationCandidate candidate);
 }
 
+public interface IOfficialRankUiService
+{
+    IReadOnlyList<DonghanEngine.Core.Politics.OfficialPosition> GetAllPositions();
+    ActionResult Promote(string npcId, string targetTitle);
+    ActionResult SellOffice(string buyerNpcId, string targetTitle);
+}
+
 public interface IEdictService : IGetPendingEdictsService, IResolveEdictService
 {
 }

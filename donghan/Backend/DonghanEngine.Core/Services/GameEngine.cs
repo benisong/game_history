@@ -19,6 +19,7 @@ public partial class GameEngine : IGameEngine
     private readonly DonghanEngine.Core.Politics.IMilitaryPayrollService _payrollService;
     private readonly DonghanEngine.Core.Politics.ITalentNominationService _nominationService;
     private readonly DonghanEngine.Core.Politics.IImperialPrestigeEvaluator _prestigeEvaluator;
+    private readonly DonghanEngine.Core.Politics.IOfficialRankService _rankService;
     private readonly DonghanEngine.Core.Economy.IAgriculturalCarryingEngine _carryingEngine;
     private readonly DonghanEngine.Core.Economy.IBanditWarlordSymbiosisEngine _symbiosisEngine;
     internal readonly Random _rng;
@@ -38,6 +39,7 @@ public partial class GameEngine : IGameEngine
         DonghanEngine.Core.Politics.IMilitaryPayrollService? payrollService = null,
         DonghanEngine.Core.Politics.ITalentNominationService? nominationService = null,
         DonghanEngine.Core.Politics.IImperialPrestigeEvaluator? prestigeEvaluator = null,
+        DonghanEngine.Core.Politics.IOfficialRankService? rankService = null,
         DonghanEngine.Core.Economy.IAgriculturalCarryingEngine? carryingEngine = null,
         DonghanEngine.Core.Economy.IBanditWarlordSymbiosisEngine? symbiosisEngine = null)
     {
@@ -53,6 +55,7 @@ public partial class GameEngine : IGameEngine
         _payrollService = payrollService ?? new DonghanEngine.Core.Politics.MilitaryPayrollService();
         _nominationService = nominationService ?? new DonghanEngine.Core.Politics.TalentNominationService();
         _prestigeEvaluator = prestigeEvaluator ?? new DonghanEngine.Core.Politics.ImperialPrestigeEvaluator();
+        _rankService = rankService ?? new DonghanEngine.Core.Politics.OfficialRankService();
         _carryingEngine = carryingEngine ?? new DonghanEngine.Core.Economy.AgriculturalCarryingEngine();
         _symbiosisEngine = symbiosisEngine ?? new DonghanEngine.Core.Economy.BanditWarlordSymbiosisEngine();
     }
@@ -234,6 +237,27 @@ public partial class GameEngine : IGameEngine
     public DonghanEngine.Core.Politics.NominationResolutionResult RejectNominationCandidate(DonghanEngine.Core.Politics.NominationCandidate candidate)
     {
         return _nominationService.RejectCandidate(_state, candidate);
+    }
+
+    public IReadOnlyList<DonghanEngine.Core.Politics.OfficialPosition> GetAllOfficialPositions()
+    {
+        return _rankService.GetAllPositions();
+    }
+
+    public DonghanEngine.Core.Politics.PromotionResult ExecutePromoteOfficial(string npcId, string targetTitle)
+    {
+        if (_state.CurrentLocation != "宣政殿")
+            throw new InvalidOperationException("只有在宣政殿才能正式颁旨除官拜将！");
+
+        return _rankService.PromoteOfficial(_state, npcId, targetTitle);
+    }
+
+    public DonghanEngine.Core.Politics.OfficeSaleResult ExecuteSellOfficeToNpc(string buyerNpcId, string targetTitle)
+    {
+        if (_state.CurrentLocation != "西园")
+            throw new InvalidOperationException("只有在西园万金堂才能开榜卖官鬻爵！");
+
+        return _rankService.SellOfficeToNpc(_state, buyerNpcId, targetTitle);
     }
 
     public TurnResult ExecuteQuickAction(string actionId)
