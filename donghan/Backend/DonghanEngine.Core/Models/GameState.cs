@@ -169,6 +169,10 @@ public class GameState
     // === P0-3 旗：测试与沙盒可关掉历史硬 trigger，避免污染"折子过期"等单测 ===
     public bool DisableHistoricalTriggers { get; set; } = false;
 
+    // === 历史大事件动态分支联动标记 ===
+    // 219 年 10 月襄樊之战天子是否成功持节保全关羽
+    public bool IsGuanYuSavedAtXiangfan { get; set; } = false;
+
     public GameState()
     {
         // 大将军何进：外戚权臣，初始私蓄 1500。何进权势 80，好感 35。性格：平庸。Traits：[“拥兵自重”]

@@ -9,6 +9,21 @@ public sealed class YilingBattleEvaluator : IYilingBattleEvaluator
 {
     public YilingBattleResult Evaluate(GameState state)
     {
+        // 1. 若关羽在 219 年襄樊之战中已被天子持节成功保全：刘备不伐吴，夷陵之战自动跳过，直接宣谕孙刘和睦
+        if (state.IsGuanYuSavedAtXiangfan)
+        {
+            return new YilingBattleResult(
+                YilingBattleOutcome.ImperialMediationSunLiuAlliance,
+                "【汉室屏藩 · 关羽永固】关羽坐镇荆襄两家相安！夷陵无战事，孙刘共尊天子！",
+                "【修好】因天子于建安二十四年持节保全前将军关羽，孙刘两家未结死仇。汉中王刘备固守汉中荆襄，孙权息兵结好，关羽威震华夏，夷陵烽烟消弭无形！孙刘两家各进纳贡金三千万钱入洛阳太仓，同尊大汉天子为天下宗主，皇权大振！",
+                ImperialPowerDelta: 15,
+                TreasuryGoldDelta: 3000,
+                LiuBeiPowerDelta: 15,
+                LiuBeiLoyaltyDelta: 30,
+                SunQuanPowerDelta: 15,
+                SunQuanLoyaltyDelta: 30);
+        }
+
         bool strongCourt = state.ImperialPower >= 50;
         bool moderateCourt = state.ImperialPower >= 35;
 

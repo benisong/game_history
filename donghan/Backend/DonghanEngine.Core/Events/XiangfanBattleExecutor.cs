@@ -50,7 +50,8 @@ public sealed class XiangfanBattleExecutor : IXiangfanBattleExecutor
             }
         }
 
-        // 4. 记入起居注
+        // 4. 记入起居注与全局联动标记
+        state.IsGuanYuSavedAtXiangfan = result.GuanYuSaved;
         state.AddToChronicle(result.ChronicleText);
 
         turnResult.StoryText = $"{result.NarrativeTitle}\n\n{result.ChronicleText}";
