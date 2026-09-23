@@ -83,6 +83,10 @@ public sealed class GameEngineStateReader : IGameStateReader
             province.GovernorId,
             governorName,
             province.Population,
-            province.LandCarryingCapacity);
+            province.LandCarryingCapacity,
+            province.StateControlledLand,
+            province.GentryControlledLand,
+            province.ScorchedLand,
+            province.ScorchedMonthsRemaining);
     }
 }

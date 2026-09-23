@@ -153,6 +153,7 @@ public interface IAgriculturalPolicyUiService
 {
     ActionResult SurveyLand(string provinceId, DonghanEngine.Core.Economy.CadastralSurveyIntensity intensity);
     ActionResult BuildIrrigation(string provinceId);
+    ActionResult RepurchaseGentryLand(string provinceId, int purchaseAmount);
 }
 
 public interface IEdictService : IGetPendingEdictsService, IResolveEdictService

@@ -12,6 +12,10 @@ public class Province
     private int _distance = 2;
     private int _population = 100000;
     private int _landCarryingCapacity = 120000;
+    private int _stateControlledLand = 60000;
+    private int _gentryControlledLand = 60000;
+    private int _scorchedLand = 0;
+    private int _scorchedMonthsRemaining = 0;
     private int _rebellionMonths = 0;
     private int _lowSupportStreakMonths = 0;
     private List<string> _neighbors = new();
@@ -30,6 +34,30 @@ public class Province
     {
         get => _landCarryingCapacity;
         set => _landCarryingCapacity = Math.Max(1000, value);
+    }
+
+    public int StateControlledLand
+    {
+        get => _stateControlledLand;
+        set => _stateControlledLand = Math.Max(0, value);
+    }
+
+    public int GentryControlledLand
+    {
+        get => _gentryControlledLand;
+        set => _gentryControlledLand = Math.Max(0, value);
+    }
+
+    public int ScorchedLand
+    {
+        get => _scorchedLand;
+        set => _scorchedLand = Math.Max(0, value);
+    }
+
+    public int ScorchedMonthsRemaining
+    {
+        get => _scorchedMonthsRemaining;
+        set => _scorchedMonthsRemaining = Math.Max(0, value);
     }
     
     public int Distance

@@ -23,6 +23,7 @@ public partial class GameEngine : IGameEngine
     private readonly DonghanEngine.Core.Economy.IAgriculturalCarryingEngine _carryingEngine;
     private readonly DonghanEngine.Core.Economy.IBanditWarlordSymbiosisEngine _symbiosisEngine;
     private readonly DonghanEngine.Core.Economy.CadastralAndIrrigationService _cadastralAndIrrigationService;
+    private readonly DonghanEngine.Core.Economy.ILandOwnershipService _landOwnershipService;
     internal readonly Random _rng;
 
     public DonghanEngine.Core.Geopolitics.Contracts.IGeopoliticalSimulationEngine GeopoliticsEngine => _geopoliticsEngine;
@@ -43,7 +44,8 @@ public partial class GameEngine : IGameEngine
         DonghanEngine.Core.Politics.IOfficialRankService? rankService = null,
         DonghanEngine.Core.Economy.IAgriculturalCarryingEngine? carryingEngine = null,
         DonghanEngine.Core.Economy.IBanditWarlordSymbiosisEngine? symbiosisEngine = null,
-        DonghanEngine.Core.Economy.CadastralAndIrrigationService? cadastralAndIrrigationService = null)
+        DonghanEngine.Core.Economy.CadastralAndIrrigationService? cadastralAndIrrigationService = null,
+        DonghanEngine.Core.Economy.ILandOwnershipService? landOwnershipService = null)
     {
         _state = state;
         _scheduler = scheduler;
@@ -61,6 +63,7 @@ public partial class GameEngine : IGameEngine
         _carryingEngine = carryingEngine ?? new DonghanEngine.Core.Economy.AgriculturalCarryingEngine();
         _symbiosisEngine = symbiosisEngine ?? new DonghanEngine.Core.Economy.BanditWarlordSymbiosisEngine();
         _cadastralAndIrrigationService = cadastralAndIrrigationService ?? new DonghanEngine.Core.Economy.CadastralAndIrrigationService();
+        _landOwnershipService = landOwnershipService ?? new DonghanEngine.Core.Economy.LandOwnershipService();
     }
 
     public GameState GetState() => _state;
@@ -277,6 +280,16 @@ public partial class GameEngine : IGameEngine
             throw new InvalidOperationException("只有在宣政殿大朝会才能调拨太仓国帑兴修水利！");
 
         return _cadastralAndIrrigationService.ConstructIrrigation(_state, provinceId);
+    }
+
+    public DonghanEngine.Core.Economy.LandRepurchaseResult ExecuteRepurchaseLand(string provinceId, int purchaseAmount)
+    {
+        return _landOwnershipService.RepurchaseStateLandByGentry(_state, provinceId, purchaseAmount);
+    }
+
+    public DonghanEngine.Core.Economy.PostWarLandResolutionResult ExecuteResolveWarScorching(string provinceId, string victorFactionId, bool isImperialDirectArmy)
+    {
+        return _landOwnershipService.ResolveWarLandScorching(_state, provinceId, victorFactionId, isImperialDirectArmy);
     }
 
     public TurnResult ExecuteQuickAction(string actionId)
@@ -524,9 +537,18 @@ public partial class GameEngine : IGameEngine
             }
         }
 
+        // 月度时序（每月中旬）：推进战乱焦土自然复耕时钟 (半年/6个月不产粮)
+        if (_state.Xun == 2)
+        {
+            _landOwnershipService.AdvanceScorchedLandMonthly(_state);
+        }
+
         // 季末 (3/6/9/12月第3旬)：评估各州农业土地承载力与流民反哺诸侯
         if (_state.Xun == 3 && (_state.Month == 3 || _state.Month == 6 || _state.Month == 9 || _state.Month == 12))
         {
+            // 征收各州季度田赋 (国家官田全额纳税，世家私田少收40%)
+            _landOwnershipService.CollectQuarterlyLandTax(_state, applyToTreasury: true);
+
             foreach (var (pId, prov) in _state.Provinces)
             {
                 var carryReport = _carryingEngine.EvaluateProvince(prov);

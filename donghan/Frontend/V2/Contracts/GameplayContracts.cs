@@ -70,7 +70,11 @@ public sealed record ProvinceSnapshot(
     string? GovernorId,
     string GovernorName,
     int Population = 100000,
-    int LandCarryingCapacity = 120000);
+    int LandCarryingCapacity = 120000,
+    int StateControlledLand = 60000,
+    int GentryControlledLand = 60000,
+    int ScorchedLand = 0,
+    int ScorchedMonthsRemaining = 0);
 
 public sealed record MinisterSnapshot(
     string Id,

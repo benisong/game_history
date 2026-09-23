@@ -85,12 +85,36 @@ public class GameEngineCoreIntegrationTests
         var state = new GameState
         {
             Year = 184,
-            Month = 3,
-            Xun = 2, // 下一步进入 184/3/3 季末结算
+            Month = 5,
+            Xun = 1, // 下一步进入 184/5/2 常规月份推进
             Treasury = 5000,
             ImperialPower = 52
         };
         state.WestGardenArmy.Size = 8000;
+        state.WestGardenArmy.Morale = 50;
+
+        var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
+
+        int initialTreasury = state.Treasury;
+
+        await engine.NextXunAsync(); // 进入 184/5/2
+
+        // 1. 验证常规军饷已自动核扣
+        Assert.True(state.Treasury < initialTreasury, "每旬推进应自动扣除西园禁军常规军饷");
+    }
+
+    [Fact]
+    public async Task Test_NextXunAsync_QuarterEnd_CollectsLandTax_AndSpillsBandits()
+    {
+        var state = new GameState
+        {
+            Year = 184,
+            Month = 3,
+            Xun = 2, // 下一步进入 184/3/3 季末结算
+            Treasury = 1000,
+            ImperialPower = 52
+        };
+        state.WestGardenArmy.Size = 2000;
         state.WestGardenArmy.Morale = 50;
 
         // 设置青州严重超载
@@ -102,15 +126,13 @@ public class GameEngineCoreIntegrationTests
 
         var engine = new GameEngine(state, new MockScheduler(), new MockOracle(), new MockMinisterAgent(), new MockNarrator());
 
-        int initialTreasury = state.Treasury;
-
         await engine.NextXunAsync(); // 进入 184/3/3
 
-        // 1. 验证常规军饷已自动核扣
-        Assert.True(state.Treasury < initialTreasury, "每旬推进应自动扣除西园禁军常规军饷");
+        // 1. 验证季末田赋入库且包含起居注
+        Assert.Contains(state.Chronicle, c => c.Contains("季税入库") && c.Contains("少收四成"));
 
         // 2. 验证季末宏观经济超载触发流民潮与曹操收编
         Assert.True(caoCao.Power > 60, "青州严重超载应在季末反哺曹操收编流民部曲增长权势");
-        Assert.Contains(state.Chronicle, c => c.Contains("青州兵") || c.Contains("发饷") || c.Contains("流民"));
+        Assert.Contains(state.Chronicle, c => c.Contains("青州兵") || c.Contains("流民"));
     }
 }

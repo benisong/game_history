@@ -531,6 +531,13 @@ public partial class MainSceneV2 : Control
             ShowIntel();
         });
 
+        AddButton(actionBox, "准世家赎买官田（5000顷）", () =>
+        {
+            var result = _runtime.Agriculture.RepurchaseGentryLand(province.Id, 5000);
+            ShowResult(result);
+            ShowIntel();
+        });
+
         if (province.IsRebelling)
         {
             AddButton(actionBox, "出兵平叛（3000人）", () => ExecuteIntelAction(new ProvinceActionCommand(province.Id, ProvinceActionKind.SuppressRebellion, "cao_cao", 3000)));

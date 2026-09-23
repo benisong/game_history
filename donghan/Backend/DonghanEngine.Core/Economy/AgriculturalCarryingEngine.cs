@@ -16,7 +16,10 @@ public sealed class AgriculturalCarryingEngine : IAgriculturalCarryingEngine
 
         // 1. 计算灾害对土地实际承载力的折损系数 (旱灾/蝗灾严重度 0~50)
         double weatherPenalty = Math.Clamp(weatherSeverity * 0.015, 0.0, 0.60);
-        int effectiveCapacity = (int)(rawCapacity * (1.0 - weatherPenalty));
+        
+        // 若处于战乱焦土期（半年不产粮），有效土地承载直接扣除焦土规模
+        int productiveLand = Math.Max(1000, rawCapacity - province.ScorchedLand);
+        int effectiveCapacity = (int)(productiveLand * (1.0 - weatherPenalty));
         effectiveCapacity = Math.Max(1000, effectiveCapacity);
 
         // 2. 粮食产出与需求计算 (石)
