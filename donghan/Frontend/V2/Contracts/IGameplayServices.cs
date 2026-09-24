@@ -157,6 +157,12 @@ public interface IAgriculturalPolicyUiService
     ActionResult RepurchaseGentryLand(string provinceId, int purchaseAmount);
 }
 
+public interface IGovernorAppraisalUiService
+{
+    DonghanEngine.Core.Politics.AnnualAppraisalReport GetAnnualAppraisal();
+    ActionResult PromoteGovernorToCourt(string governorId, string targetCourtTitle);
+}
+
 public interface IEdictService : IGetPendingEdictsService, IResolveEdictService
 {
 }

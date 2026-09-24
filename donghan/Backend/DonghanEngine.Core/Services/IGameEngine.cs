@@ -65,6 +65,12 @@ public interface ILandOwnershipDomainService
     DonghanEngine.Core.Economy.PostWarLandResolutionResult ExecuteResolveWarScorching(string provinceId, string victorFactionId, bool isImperialDirectArmy);
 }
 
+public interface IGovernorAppraisalDomainService
+{
+    DonghanEngine.Core.Politics.AnnualAppraisalReport ExecuteAnnualAppraisal();
+    DonghanEngine.Core.Politics.GovernorPromotionResolutionResult ExecutePromoteGovernorToCourt(string governorId, string targetCourtTitle);
+}
+
 public interface IQuickActionDomainService
 {
     TurnResult ExecuteQuickAction(string actionId);
@@ -125,6 +131,7 @@ public interface IGameEngine :
     IOfficialRankDomainService,
     ICadastralAndIrrigationDomainService,
     ILandOwnershipDomainService,
+    IGovernorAppraisalDomainService,
     IQuickActionDomainService,
     IResolveEdictDomainService,
     IGrandCourtDomainService,

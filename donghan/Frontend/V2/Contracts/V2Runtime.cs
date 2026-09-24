@@ -13,7 +13,8 @@ public sealed class V2Runtime
         ISpecialActionService specialActions,
         INominationUiService nominations,
         IOfficialRankUiService ranks,
-        IAgriculturalPolicyUiService agriculture)
+        IAgriculturalPolicyUiService agriculture,
+        IGovernorAppraisalUiService appraisal)
     {
         State = state;
         Travel = travel;
@@ -26,6 +27,7 @@ public sealed class V2Runtime
         Nominations = nominations;
         Ranks = ranks;
         Agriculture = agriculture;
+        Appraisal = appraisal;
     }
 
     public IGameStateReader State { get; }
@@ -39,4 +41,5 @@ public sealed class V2Runtime
     public INominationUiService Nominations { get; }
     public IOfficialRankUiService Ranks { get; }
     public IAgriculturalPolicyUiService Agriculture { get; }
+    public IGovernorAppraisalUiService Appraisal { get; }
 }

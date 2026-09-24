@@ -25,6 +25,7 @@ public partial class GameEngine : IGameEngine
     private readonly DonghanEngine.Core.Economy.ICadastralSurveyService _cadastralService;
     private readonly DonghanEngine.Core.Economy.IIrrigationService _irrigationService;
     private readonly DonghanEngine.Core.Economy.ILandOwnershipService _landOwnershipService;
+    private readonly DonghanEngine.Core.Politics.IGovernorAppraisalService _governorAppraisalService;
     internal readonly Random _rng;
 
     public DonghanEngine.Core.Geopolitics.Contracts.IGeopoliticalSimulationEngine GeopoliticsEngine => _geopoliticsEngine;
@@ -47,7 +48,8 @@ public partial class GameEngine : IGameEngine
         DonghanEngine.Core.Economy.IBanditWarlordSymbiosisEngine? symbiosisEngine = null,
         DonghanEngine.Core.Economy.ICadastralSurveyService? cadastralService = null,
         DonghanEngine.Core.Economy.IIrrigationService? irrigationService = null,
-        DonghanEngine.Core.Economy.ILandOwnershipService? landOwnershipService = null)
+        DonghanEngine.Core.Economy.ILandOwnershipService? landOwnershipService = null,
+        DonghanEngine.Core.Politics.IGovernorAppraisalService? governorAppraisalService = null)
     {
         _state = state;
         _scheduler = scheduler;
@@ -67,6 +69,7 @@ public partial class GameEngine : IGameEngine
         _cadastralService = cadastralService ?? new DonghanEngine.Core.Economy.CadastralAndIrrigationService();
         _irrigationService = irrigationService ?? new DonghanEngine.Core.Economy.CadastralAndIrrigationService();
         _landOwnershipService = landOwnershipService ?? new DonghanEngine.Core.Economy.LandOwnershipService();
+        _governorAppraisalService = governorAppraisalService ?? new DonghanEngine.Core.Politics.GovernorAppraisalService();
     }
 
     public GameState GetState() => _state;
@@ -293,6 +296,19 @@ public partial class GameEngine : IGameEngine
     public DonghanEngine.Core.Economy.PostWarLandResolutionResult ExecuteResolveWarScorching(string provinceId, string victorFactionId, bool isImperialDirectArmy)
     {
         return _landOwnershipService.ResolveWarLandScorching(_state, provinceId, victorFactionId, isImperialDirectArmy);
+    }
+
+    public DonghanEngine.Core.Politics.AnnualAppraisalReport ExecuteAnnualAppraisal()
+    {
+        return _governorAppraisalService.EvaluateAnnualAppraisal(_state);
+    }
+
+    public DonghanEngine.Core.Politics.GovernorPromotionResolutionResult ExecutePromoteGovernorToCourt(string governorId, string targetCourtTitle)
+    {
+        if (_state.CurrentLocation != "宣政殿")
+            throw new InvalidOperationException("只有在宣政殿大朝会才能下诏内调刺史入京！");
+
+        return _governorAppraisalService.PromoteGovernorToCourt(_state, governorId, targetCourtTitle);
     }
 
     public TurnResult ExecuteQuickAction(string actionId)
@@ -544,6 +560,12 @@ public partial class GameEngine : IGameEngine
         if (_state.Xun == 2)
         {
             _landOwnershipService.AdvanceScorchedLandMonthly(_state);
+        }
+
+        // 年末 (12月第3旬)：尚书台年终大考课 (刺史太守考评)
+        if (_state.Xun == 3 && _state.Month == 12)
+        {
+            _governorAppraisalService.EvaluateAnnualAppraisal(_state);
         }
 
         // 季末 (3/6/9/12月第3旬)：评估各州农业土地承载力与流民反哺诸侯

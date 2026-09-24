@@ -23,7 +23,8 @@ public static class V2RuntimeFactory
             new GameEngineSpecialActionService(engine, engine, engine, engine, engine),
             new GameEngineNominationUiService(engine),
             new GameEngineOfficialRankUiService(engine),
-            new GameEngineAgriculturalPolicyUiService(engine, engine));
+            new GameEngineAgriculturalPolicyUiService(engine, engine),
+            new GameEngineGovernorAppraisalUiService(engine));
     }
 
     public static V2Runtime CreateDefault(GameState state, System.Random? rng)

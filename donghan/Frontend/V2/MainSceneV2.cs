@@ -78,6 +78,7 @@ public partial class MainSceneV2 : Control
         _content.AddChild(actions);
         AddButton(actions, "起驾巡幸", ShowTravel);
         AddButton(actions, "大汉十三州全景沙盘", ShowGeopoliticsMap);
+        AddButton(actions, "尚书台刺史大考课", ShowGovernorAppraisal);
         AddButton(actions, "进入黄门密札", ShowIntel);
         AddButton(actions, "打开御案折匣", ShowEdicts);
         AddButton(actions, "尚书台察举名册", ShowNominations);
@@ -420,6 +421,84 @@ public partial class MainSceneV2 : Control
         }
 
         AddButton(_content, "返回名册", ShowMinisters);
+        RefreshSnapshot();
+    }
+
+    private void ShowGovernorAppraisal()
+    {
+        ClearContent();
+        AddSectionTitle("尚书台年终大考课 · 刺史太守上计册");
+
+        _content.AddChild(new Label
+        {
+            Text = "【上计考课】司徒府与尚书台每年岁终严考十三州封疆大吏：评定治绩民心、输赋额度与户口增殖。\n" +
+                   "• 【上考】长吏治绩昭著，天子可诏令征拜内调入京任九卿（执金吾/太常/少府），收回地方兵印归中央直辖。\n" +
+                   "• 刺史野心与朝廷威望博弈：若刺史野心高企（>=80）或朝廷威望微弱，刺史将称病抗旨拥兵自重！",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var report = _runtime.Appraisal.GetAnnualAppraisal();
+
+        var scroll = new ScrollContainer
+        {
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+            CustomMinimumSize = new Vector2(0, 400)
+        };
+        _content.AddChild(scroll);
+
+        var list = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        list.AddThemeConstantOverride("separation", 10);
+        scroll.AddChild(list);
+
+        foreach (var r in report.Records)
+        {
+            var card = new VBoxContainer();
+            card.AddThemeConstantOverride("separation", 6);
+            list.AddChild(card);
+
+            string gradeBadge = r.Grade switch
+            {
+                DonghanEngine.Core.Politics.AppraisalGrade.Superior => "🌟【上考·政绩优异】",
+                DonghanEngine.Core.Politics.AppraisalGrade.Standard => "📜【中考·平庸尽职】",
+                _ => "⚠️【下考·治下凋敝/跋扈】"
+            };
+
+            var title = new Label
+            {
+                Text = $"{gradeBadge} {r.ProvinceName}太守【{r.GovernorName}】 ｜ 治安民心：{r.LocalSupport} ｜ 岁纳田赋：{r.TaxContribution}万钱 ｜ 野心：{r.Ambition} ｜ 忠诚：{r.Favorability}"
+            };
+            card.AddChild(title);
+
+            var desc = new Label
+            {
+                Text = $"• 考评奏疏：{r.EvaluationReport}\n• 尚书台建议：{r.RecommendedAction}",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            };
+            card.AddChild(desc);
+
+            var btnRow = new HBoxContainer();
+            btnRow.AddThemeConstantOverride("separation", 10);
+            card.AddChild(btnRow);
+
+            AddButton(btnRow, $"征拜【执金吾】内调还京", () =>
+            {
+                var res = _runtime.Appraisal.PromoteGovernorToCourt(r.GovernorId, "执金吾");
+                ShowResult(res);
+                ShowGovernorAppraisal();
+            });
+
+            AddButton(btnRow, $"征拜【太常卿】入阁辅政", () =>
+            {
+                var res = _runtime.Appraisal.PromoteGovernorToCourt(r.GovernorId, "太常");
+                ShowResult(res);
+                ShowGovernorAppraisal();
+            });
+        }
+
+        AddButton(_content, "返回御案", ShowHome);
         RefreshSnapshot();
     }
 
