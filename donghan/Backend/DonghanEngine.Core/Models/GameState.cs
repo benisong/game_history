@@ -173,6 +173,15 @@ public class GameState
     // 219 年 10 月襄樊之战天子是否成功持节保全关羽
     public bool IsGuanYuSavedAtXiangfan { get; set; } = false;
 
+    // 197 年 1 月袁术僭号是否被朝廷彻底剿灭 (默认 true 史实线已剿灭，避免影响 200 年默认独立单测)
+    public bool IsYuanShuEliminatedEarly { get; set; } = true;
+
+    // 198 年 12 月白门楼吕布是否被朝廷特赦收编为禁军大将 (true = 吕布存活效忠朝廷; false = 吕布伏诛)
+    public bool IsLvBuDraftedToImperialArmy { get; set; } = false;
+
+    // 196 年孙策平定江东天子是否优抚确立大义保全其性命 (true = 孙策存活掌江东; false = 孙策遇刺孙权继位)
+    public bool IsSunCeAssassinationAverted { get; set; } = false;
+
     public GameState()
     {
         // 大将军何进：外戚权臣，初始私蓄 1500。何进权势 80，好感 35。性格：平庸。Traits：[“拥兵自重”]

@@ -43,6 +43,7 @@ public sealed class BaimenlouExecutor : IBaimenlouExecutor
                 lvBu.IsActive = false;
                 lvBu.DeathReason = "【白门楼受戮】建安三年冬，下邳城破，天子密敕缢杀于白门楼。";
                 lvBu.Power = 0;
+                state.IsLvBuDraftedToImperialArmy = false;
             }
             else if (result.Outcome == BaimenlouOutcome.PardonLvBuDraftToWestGarden)
             {
@@ -51,12 +52,14 @@ public sealed class BaimenlouExecutor : IBaimenlouExecutor
                 lvBu.Faction = "帝党派";
                 lvBu.Favorability = 90; // 感天子救命之恩
                 lvBu.Power = 60;
+                state.IsLvBuDraftedToImperialArmy = true;
             }
             else if (result.Outcome == BaimenlouOutcome.LvBuFleesToHebei)
             {
                 lvBu.InitialLocation = "冀州邺城";
                 lvBu.Faction = "军阀派";
                 lvBu.Favorability = 20;
+                state.IsLvBuDraftedToImperialArmy = false;
             }
         }
 

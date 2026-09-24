@@ -9,6 +9,21 @@ public sealed class GuanduPreludeEvaluator : IGuanduPreludeEvaluator
 {
     public GuanduPreludeResult Evaluate(GameState state)
     {
+        // 1. 若 197 年袁术未被彻底剿灭 (二袁合流)：袁绍得淮南呼应，兵力暴涨至 15 万压境官渡，曹操濒死绝境
+        if (!state.IsYuanShuEliminatedEarly && state.Npcs.TryGetValue("yuan_shu", out var ys) && ys.IsActive)
+        {
+            return new GuanduPreludeResult(
+                GuanduPreludeOutcome.HegemonicClashUnchecked,
+                "【二袁合流 · 十五万大军压境】袁术残部北投袁绍！河北淮南合流围攻中原！",
+                "【危局】因朝廷此前未能彻底剿灭淮南袁术，袁术率残部部曲与巨粮北投大将军袁绍，达成“二袁合流”！袁绍兵力激增至十五万大军，水陆并进直扑官渡！司空曹操军粮匮竭濒临绝境，中原震恐，洛阳京畿面临空前地缘威逼！",
+                ImperialPowerDelta: -10,
+                TreasuryGoldDelta: 0,
+                CaoCaoLoyaltyDelta: 30, // 曹操孤立无援，极端渴求朝廷支持
+                YuanShaoLoyaltyDelta: -30,
+                WestGardenTroopBonus: 0,
+                WestGardenMoraleBonus: -15);
+        }
+
         bool strongCourt = state.ImperialPower >= 50;
         bool moderateCourt = state.ImperialPower >= 35;
 

@@ -9,6 +9,21 @@ public sealed class TongguanBattleEvaluator : ITongguanBattleEvaluator
 {
     public TongguanBattleResult Evaluate(GameState state)
     {
+        // 0. 若吕布此前已被朝廷收编为西园大将 (飞将对神威)：吕布亲督禁军克复潼关，大破西凉铁骑
+        if (state.IsLvBuDraftedToImperialArmy && state.Npcs.TryGetValue("lv_bu", out var lb) && lb.IsActive)
+        {
+            return new TongguanBattleResult(
+                TongguanBattleOutcome.ImperialReclaimsGuanzhongDirect,
+                "【飞将战神威 · 禁军克潼关】吕布亲领西园精骑西征！阵斩西凉诸将，三辅尽归天子！",
+                "【绝胜】建安十六年春，关中马超、韩遂起兵十万阻截潼关。天子命西园大将吕布提天子亲军五千铁骑西征！吕布与马超战于潼关阵前，飞将神威震慑西凉，一战击溃关中联军！长安与三辅全境毫无悬念归朝廷直接管辖，关陇诸部望风归降，上缴战利金四千万入洛阳太仓！皇权大振！",
+                ImperialPowerDelta: 18,
+                TreasuryGoldDelta: 4000,
+                CaoCaoPowerDelta: 10,
+                CaoCaoLoyaltyDelta: 15,
+                MaChaoLoyaltyDelta: 25,
+                LiangzhouGovernorId: "ma_chao");
+        }
+
         bool strongCourt = state.ImperialPower >= 50;
         bool moderateCourt = state.ImperialPower >= 35;
 

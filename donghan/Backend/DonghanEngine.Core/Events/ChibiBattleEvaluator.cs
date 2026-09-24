@@ -9,6 +9,22 @@ public sealed class ChibiBattleEvaluator : IChibiBattleEvaluator
 {
     public ChibiBattleResult Evaluate(GameState state)
     {
+        // 0. 若孙策存活掌江东 (孙郎亲征赤壁)：江东极具攻击性，孙策亲统全军火攻大破曹操并主动北伐淮南
+        if (state.IsSunCeAssassinationAverted && state.Npcs.TryGetValue("sun_ce", out var sc) && sc.IsActive)
+        {
+            return new ChibiBattleResult(
+                ChibiBattleOutcome.SunLiuChibiFireTriumph,
+                "【江东小霸王亲征 · 赤壁烈焰】孙策亲领楼船火攻大破曹军！乘胜席卷淮南！",
+                "【绝胜】建安十三年冬，小霸王孙策未死，亲统江东水陆大军与刘备会师赤壁！孙策身先士卒突入曹军水寨，周瑜放火烧尽连环战船，曹操大败北溃！孙策挥军乘胜反攻淮南，江东军威震骇中原，孙氏遣使入洛阳上表告捷，献战利金两千五百万入太仓！",
+                ImperialPowerDelta: 10,
+                TreasuryGoldDelta: 2500,
+                CaoCaoPowerDelta: -35,
+                CaoCaoLoyaltyDelta: 10,
+                LiuBeiPowerDelta: 25,
+                LiuBeiLoyaltyDelta: 20,
+                SunQuanLoyaltyDelta: 30);
+        }
+
         bool strongCourt = state.ImperialPower >= 50;
         bool moderateCourt = state.ImperialPower >= 35;
 

@@ -45,11 +45,19 @@ public sealed class SunCeJiangdongExecutor : ISunCeJiangdongExecutor
                 HistoricalRole = "小霸王孙策，勇冠三军，开创江东基业"
             });
         }
-
+        // 2. 孙策权势与忠诚结算
         if (state.Npcs.TryGetValue("sun_ce", out var sunCe))
         {
             sunCe.AdjustPower(result.SunCePowerDelta);
             sunCe.AdjustFavorability(result.SunCeLoyaltyDelta);
+            if (result.Outcome == SunCeJiangdongOutcome.RatifyAndCollectSaltIronTax)
+            {
+                state.IsSunCeAssassinationAverted = true;
+            }
+            else
+            {
+                state.IsSunCeAssassinationAverted = false;
+            }
         }
 
         // 3. 扬州领地太守移交与守军更新

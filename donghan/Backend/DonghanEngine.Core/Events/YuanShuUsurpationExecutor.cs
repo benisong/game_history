@@ -39,6 +39,11 @@ public sealed class YuanShuUsurpationExecutor : IYuanShuUsurpationExecutor
                 yuanShu.IsActive = false;
                 yuanShu.DeathReason = "【僭号败亡】建安二年，袁术僭帝号，为四海诸侯奉天子诏合围诛灭。";
                 yuanShu.Power = 0;
+                state.IsYuanShuEliminatedEarly = true;
+            }
+            else
+            {
+                state.IsYuanShuEliminatedEarly = false;
             }
         }
 
