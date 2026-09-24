@@ -16,6 +16,7 @@ public interface IProvinceSnapshotReader
 {
     ProvinceSnapshot? GetProvince(string provinceId);
     IReadOnlyList<ProvinceSnapshot> GetAllProvinces();
+    IReadOnlyList<WarlordFactionSnapshot> GetAllFactions();
 }
 
 public interface IMinisterSnapshotReader

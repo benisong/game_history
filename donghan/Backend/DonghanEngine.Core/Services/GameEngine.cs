@@ -22,7 +22,8 @@ public partial class GameEngine : IGameEngine
     private readonly DonghanEngine.Core.Politics.IOfficialRankService _rankService;
     private readonly DonghanEngine.Core.Economy.IAgriculturalCarryingEngine _carryingEngine;
     private readonly DonghanEngine.Core.Economy.IBanditWarlordSymbiosisEngine _symbiosisEngine;
-    private readonly DonghanEngine.Core.Economy.CadastralAndIrrigationService _cadastralAndIrrigationService;
+    private readonly DonghanEngine.Core.Economy.ICadastralSurveyService _cadastralService;
+    private readonly DonghanEngine.Core.Economy.IIrrigationService _irrigationService;
     private readonly DonghanEngine.Core.Economy.ILandOwnershipService _landOwnershipService;
     internal readonly Random _rng;
 
@@ -44,7 +45,8 @@ public partial class GameEngine : IGameEngine
         DonghanEngine.Core.Politics.IOfficialRankService? rankService = null,
         DonghanEngine.Core.Economy.IAgriculturalCarryingEngine? carryingEngine = null,
         DonghanEngine.Core.Economy.IBanditWarlordSymbiosisEngine? symbiosisEngine = null,
-        DonghanEngine.Core.Economy.CadastralAndIrrigationService? cadastralAndIrrigationService = null,
+        DonghanEngine.Core.Economy.ICadastralSurveyService? cadastralService = null,
+        DonghanEngine.Core.Economy.IIrrigationService? irrigationService = null,
         DonghanEngine.Core.Economy.ILandOwnershipService? landOwnershipService = null)
     {
         _state = state;
@@ -62,7 +64,8 @@ public partial class GameEngine : IGameEngine
         _rankService = rankService ?? new DonghanEngine.Core.Politics.OfficialRankService();
         _carryingEngine = carryingEngine ?? new DonghanEngine.Core.Economy.AgriculturalCarryingEngine();
         _symbiosisEngine = symbiosisEngine ?? new DonghanEngine.Core.Economy.BanditWarlordSymbiosisEngine();
-        _cadastralAndIrrigationService = cadastralAndIrrigationService ?? new DonghanEngine.Core.Economy.CadastralAndIrrigationService();
+        _cadastralService = cadastralService ?? new DonghanEngine.Core.Economy.CadastralAndIrrigationService();
+        _irrigationService = irrigationService ?? new DonghanEngine.Core.Economy.CadastralAndIrrigationService();
         _landOwnershipService = landOwnershipService ?? new DonghanEngine.Core.Economy.LandOwnershipService();
     }
 
@@ -271,7 +274,7 @@ public partial class GameEngine : IGameEngine
         if (_state.CurrentLocation != "宣政殿")
             throw new InvalidOperationException("只有在宣政殿大朝会才能颁发度田丈量诏令！");
 
-        return _cadastralAndIrrigationService.ExecuteCadastralSurvey(_state, provinceId, intensity);
+        return _cadastralService.ExecuteCadastralSurvey(_state, provinceId, intensity);
     }
 
     public DonghanEngine.Core.Economy.IrrigationProjectResult ExecuteConstructIrrigation(string provinceId)
@@ -279,7 +282,7 @@ public partial class GameEngine : IGameEngine
         if (_state.CurrentLocation != "宣政殿")
             throw new InvalidOperationException("只有在宣政殿大朝会才能调拨太仓国帑兴修水利！");
 
-        return _cadastralAndIrrigationService.ConstructIrrigation(_state, provinceId);
+        return _irrigationService.ConstructIrrigation(_state, provinceId);
     }
 
     public DonghanEngine.Core.Economy.LandRepurchaseResult ExecuteRepurchaseLand(string provinceId, int purchaseAmount)

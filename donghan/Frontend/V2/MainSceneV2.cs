@@ -77,6 +77,7 @@ public partial class MainSceneV2 : Control
         actions.AddThemeConstantOverride("separation", 12);
         _content.AddChild(actions);
         AddButton(actions, "起驾巡幸", ShowTravel);
+        AddButton(actions, "大汉十三州全景沙盘", ShowGeopoliticsMap);
         AddButton(actions, "进入黄门密札", ShowIntel);
         AddButton(actions, "打开御案折匣", ShowEdicts);
         AddButton(actions, "尚书台察举名册", ShowNominations);
@@ -419,6 +420,121 @@ public partial class MainSceneV2 : Control
         }
 
         AddButton(_content, "返回名册", ShowMinisters);
+        RefreshSnapshot();
+    }
+
+    private void ShowGeopoliticsMap()
+    {
+        ClearContent();
+        AddSectionTitle("大汉十三州全景沙盘 · 地缘与土地产权图谱");
+
+        _content.AddChild(new Label
+        {
+            Text = "【帝王舆图】实时呈现天下十三州割据归属、土地产权格局（国家官田 vs 世家私田）与人口承载负荷。\n" +
+                   "• 产权规则：国家官田纳全赋，世家私田少收四成；战乱焦土半年休耕；天子亲军平叛收归官田。\n" +
+                   "• 点击各州郡可一键下诏执行度田、水利、赎田或遣将平叛。",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
+        });
+
+        var scroll = new ScrollContainer
+        {
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+            CustomMinimumSize = new Vector2(0, 420)
+        };
+        _content.AddChild(scroll);
+
+        var grid = new GridContainer
+        {
+            Columns = 2,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        grid.AddThemeConstantOverride("h_separation", 14);
+        grid.AddThemeConstantOverride("v_separation", 14);
+        scroll.AddChild(grid);
+
+        var provinces = GetProvinceList();
+        foreach (var p in provinces)
+        {
+            var card = new VBoxContainer
+            {
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                CustomMinimumSize = new Vector2(380, 180)
+            };
+            card.AddThemeConstantOverride("separation", 6);
+            grid.AddChild(card);
+
+            // 承载负荷计算
+            int loadPercent = p.LandCarryingCapacity > 0 ? (p.Population * 100) / p.LandCarryingCapacity : 100;
+            string loadStatus = loadPercent switch
+            {
+                > 120 => "【红色重度超载·流民四起】",
+                > 100 => "【黄色轻度超载·隐忧】",
+                _ => "【绿色沃野充盈·宜居】"
+            };
+
+            // 状态标签
+            string statusTag = p.IsRebelling ? " ｜ [🚨 烽烟叛乱中]" : "";
+            string scorchTag = p.ScorchedMonthsRemaining > 0 ? $" ｜ [🔥 战乱焦土休耕中（余{p.ScorchedMonthsRemaining}月）]" : "";
+
+            var titleLabel = new Label
+            {
+                Text = $"【{p.Name}】 归属：{p.ControllingFactionName}{statusTag}{scorchTag}",
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            card.AddChild(titleLabel);
+
+            int stateRatio = (p.StateControlledLand * 100) / Math.Max(1, p.StateControlledLand + p.GentryControlledLand);
+            int gentryRatio = 100 - stateRatio;
+
+            var detailsLabel = new Label
+            {
+                Text = $"• 人口：{p.Population:N0} / 承载上限：{p.LandCarryingCapacity:N0} ({loadPercent}%) {loadStatus}\n" +
+                       $"• 土地产权：国家官田 {p.StateControlledLand:N0} 顷 ({stateRatio}%) ｜ 世家私田 {p.GentryControlledLand:N0} 顷 ({gentryRatio}%)\n" +
+                       $"• 焦土荒田：{p.ScorchedLand:N0} 顷 ｜ 太守：{(string.IsNullOrEmpty(p.GovernorName) ? "暂缺" : p.GovernorName)} ｜ 驻军：{p.Garrison} 人 ｜ 治安民心：{p.LocalSupport}",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            };
+            card.AddChild(detailsLabel);
+
+            // 快捷行政动作按钮排
+            var btnRow = new FlowContainer();
+            btnRow.AddThemeConstantOverride("separation", 6);
+            card.AddChild(btnRow);
+
+            AddButton(btnRow, $"度田清查", () =>
+            {
+                var res = _runtime.Agriculture.SurveyLand(p.Id, DonghanEngine.Core.Economy.CadastralSurveyIntensity.Standard);
+                ShowResult(res);
+                ShowGeopoliticsMap();
+            });
+
+            AddButton(btnRow, $"大兴水利", () =>
+            {
+                var res = _runtime.Agriculture.BuildIrrigation(p.Id);
+                ShowResult(res);
+                ShowGeopoliticsMap();
+            });
+
+            if (p.StateControlledLand >= 1000)
+            {
+                AddButton(btnRow, $"准世家赎田", () =>
+                {
+                    var res = _runtime.Agriculture.RepurchaseGentryLand(p.Id, 5000);
+                    ShowResult(res);
+                    ShowGeopoliticsMap();
+                });
+            }
+
+            if (p.IsRebelling)
+            {
+                AddButton(btnRow, $"出兵平叛", () =>
+                {
+                    ExecuteIntelAction(new ProvinceActionCommand(p.Id, ProvinceActionKind.SuppressRebellion, "cao_cao", 3000));
+                    ShowGeopoliticsMap();
+                });
+            }
+        }
+
+        AddButton(_content, "返回御案", ShowHome);
         RefreshSnapshot();
     }
 

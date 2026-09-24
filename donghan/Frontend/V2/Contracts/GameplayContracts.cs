@@ -74,7 +74,21 @@ public sealed record ProvinceSnapshot(
     int StateControlledLand = 60000,
     int GentryControlledLand = 60000,
     int ScorchedLand = 0,
-    int ScorchedMonthsRemaining = 0);
+    int ScorchedMonthsRemaining = 0,
+    string ControllingFactionId = "court",
+    string ControllingFactionName = "朝廷直辖");
+
+public sealed record WarlordFactionSnapshot(
+    string FactionId,
+    string FactionName,
+    string LeaderNpcId,
+    string LeaderName,
+    string Posture,
+    IReadOnlyList<string> ControlledProvinceIds,
+    int Troops,
+    int Provisions,
+    int Loyalty,
+    int Ambition);
 
 public sealed record MinisterSnapshot(
     string Id,

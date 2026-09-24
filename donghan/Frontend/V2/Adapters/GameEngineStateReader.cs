@@ -18,14 +18,39 @@ public sealed class GameEngineStateReader : IGameStateReader
     {
         var state = _stateProvider.GetState();
         return state.Provinces.TryGetValue(provinceId, out var province)
-            ? Snapshot(state, province)
+            ? Snapshot(state, province, _stateProvider)
             : null;
     }
 
     public IReadOnlyList<ProvinceSnapshot> GetAllProvinces()
     {
         var state = _stateProvider.GetState();
-        return state.Provinces.Values.Select(p => Snapshot(state, p)).ToList();
+        return state.Provinces.Values.Select(p => Snapshot(state, p, _stateProvider)).ToList();
+    }
+
+    public IReadOnlyList<WarlordFactionSnapshot> GetAllFactions()
+    {
+        var state = _stateProvider.GetState();
+        var list = new List<WarlordFactionSnapshot>();
+        if (_stateProvider is GameEngine ge)
+        {
+            foreach (var f in ge.GeopoliticsEngine.Factions.Values)
+            {
+                string leaderName = state.Npcs.TryGetValue(f.LeaderNpcId, out var npc) ? npc.Name : f.LeaderNpcId;
+                list.Add(new WarlordFactionSnapshot(
+                    f.FactionId,
+                    f.FactionName,
+                    f.LeaderNpcId,
+                    leaderName,
+                    f.Posture.ToString(),
+                    f.ControlledProvinces.ToList(),
+                    f.TotalTroops,
+                    f.Provisions,
+                    f.ImperialLoyalty,
+                    f.ExpansionDesire));
+            }
+        }
+        return list;
     }
 
     public IReadOnlyList<MinisterSnapshot> GetMinisters() =>
@@ -64,11 +89,29 @@ public sealed class GameEngineStateReader : IGameStateReader
         npc.Martial, npc.Leadership, npc.Politics, npc.Charisma, npc.Ambition,
         npc.Personality, npc.Style, npc.Traits.ToList());
 
-    private static ProvinceSnapshot Snapshot(GameState state, Province province)
+    private static ProvinceSnapshot Snapshot(GameState state, Province province, IGameStateProvider stateProvider)
     {
         string governorName = province.GovernorId != null && state.Npcs.TryGetValue(province.GovernorId, out var governor)
             ? governor.Name
             : string.Empty;
+
+        // 获取实际地缘割据势力归属
+        string controllingFactionId = "court";
+        string controllingFactionName = "朝廷直辖";
+
+        if (stateProvider is GameEngine ge)
+        {
+            foreach (var f in ge.GeopoliticsEngine.Factions.Values)
+            {
+                if (f.ControlledProvinces.Contains(province.Id))
+                {
+                    controllingFactionId = f.FactionId;
+                    controllingFactionName = f.FactionName;
+                    break;
+                }
+            }
+        }
+
         return new ProvinceSnapshot(
             province.Id,
             province.Name,
@@ -87,6 +130,8 @@ public sealed class GameEngineStateReader : IGameStateReader
             province.StateControlledLand,
             province.GentryControlledLand,
             province.ScorchedLand,
-            province.ScorchedMonthsRemaining);
+            province.ScorchedMonthsRemaining,
+            controllingFactionId,
+            controllingFactionName);
     }
 }
