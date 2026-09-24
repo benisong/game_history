@@ -96,6 +96,7 @@ public partial class MainSceneV3 : Control
             Text = "🔄 切换至 V2 典雅列表界面",
             CustomMinimumSize = new Vector2(170, 36)
         };
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(switchBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.PrimaryGold);
         switchBtn.Pressed += SwitchToV2Theme;
         barHBox.AddChild(switchBtn);
     }
@@ -187,6 +188,7 @@ public partial class MainSceneV3 : Control
             Text = "⏳ 运筹帷幄 · 推进一旬",
             CustomMinimumSize = new Vector2(150, 34)
         };
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(nextTurnBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.PrimaryGold);
         nextTurnBtn.Pressed += OnNextTurnPressed;
         deskHeader.AddChild(nextTurnBtn);
         _rightDesk.AddChild(deskHeader);
@@ -273,6 +275,11 @@ public partial class MainSceneV3 : Control
                         $"• 承载: {loadIcon}{loadPct}% ｜ 治安: {p.LocalSupport}\n" +
                         $"• 官田占比: {stateRatio}% (官{p.StateControlledLand / 1000}k/世{p.GentryControlledLand / 1000}k)";
 
+            DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(
+                card, 
+                DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.SandTableLand, 
+                isSelected: isSelected);
+
             string targetId = p.Id;
             card.Pressed += () =>
             {
@@ -304,6 +311,7 @@ public partial class MainSceneV3 : Control
 
         // 快捷决策轮盘按钮
         var surveyBtn = new Button { Text = "🌾 下诏度田清查" };
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(surveyBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.TealPolicy);
         surveyBtn.Pressed += () =>
         {
             var res = _runtime.Agriculture.SurveyLand(p.Id, CadastralSurveyIntensity.Standard);
@@ -313,6 +321,7 @@ public partial class MainSceneV3 : Control
         _provinceQuickActionWheel.AddChild(surveyBtn);
 
         var irrBtn = new Button { Text = "💧 官修水利扩容" };
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(irrBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.TealPolicy);
         irrBtn.Pressed += () =>
         {
             var res = _runtime.Agriculture.BuildIrrigation(p.Id);
@@ -324,6 +333,7 @@ public partial class MainSceneV3 : Control
         if (p.StateControlledLand >= 1000)
         {
             var buyBtn = new Button { Text = "🪙 准世家赎田入库" };
+            DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(buyBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.ActionWheel);
             buyBtn.Pressed += () =>
             {
                 var res = _runtime.Agriculture.RepurchaseGentryLand(p.Id, 5000);
@@ -336,6 +346,7 @@ public partial class MainSceneV3 : Control
         if (p.IsRebelling)
         {
             var suppressBtn = new Button { Text = "⚔️ 遣将发兵平叛" };
+            DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(suppressBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.CrimsonWarning);
             suppressBtn.Pressed += () =>
             {
                 var res = _runtime.Intel.ExecuteProvinceAction(new ProvinceActionCommand(p.Id, ProvinceActionKind.SuppressRebellion, "cao_cao", 3000));
@@ -396,6 +407,7 @@ public partial class MainSceneV3 : Control
                 int optIdx = i;
                 var opt = edict.Options[i];
                 var optBtn = new Button { Text = $"🔴 朱批：{opt.Description}" };
+                DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(optBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.PrimaryGold);
                 optBtn.Pressed += () =>
                 {
                     var res = _runtime.Edicts.Resolve(new ResolveEdictCommand(edict.Id, optIdx));
@@ -437,6 +449,7 @@ public partial class MainSceneV3 : Control
             cardBox.AddChild(btnRow);
 
             var confiscateBtn = new Button { Text = "⚖️ 查办抄家" };
+            DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(confiscateBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.CrimsonWarning);
             confiscateBtn.Pressed += () =>
             {
                 var res = _runtime.SpecialActions.Execute(new SpecialActionCommand("confiscate_direct", TargetNpcId: m.Id));
@@ -466,6 +479,7 @@ public partial class MainSceneV3 : Control
         _westGardenPanel.AddChild(btnRow);
 
         var buyTaiweiBtn = new Button { Text = "💰 卖【太尉】官职（售金一亿入内帑）" };
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(buyTaiweiBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.PrimaryGold);
         buyTaiweiBtn.Pressed += () =>
         {
             var res = _runtime.Ranks.SellOffice("cao_cao", "太尉");
@@ -475,6 +489,7 @@ public partial class MainSceneV3 : Control
         btnRow.AddChild(buyTaiweiBtn);
 
         var payArmyBtn = new Button { Text = "🎖️ 内帑犒赏西园三军（提振士气与皇权）" };
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(payArmyBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.DarkWood);
         payArmyBtn.Pressed += () =>
         {
             var res = _runtime.WestGarden.PayArmy(new ArmyPayCommand(2000, "huangfu_song"));
@@ -484,6 +499,7 @@ public partial class MainSceneV3 : Control
         btnRow.AddChild(payArmyBtn);
 
         var recruitBtn = new Button { Text = "🚩 募兵两千入西园" };
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(recruitBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.DarkWood);
         recruitBtn.Pressed += () =>
         {
             var res = _runtime.WestGarden.DrillArmy(new ArmyDrillCommand(2000, "huangfu_song"));

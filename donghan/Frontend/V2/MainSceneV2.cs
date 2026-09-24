@@ -1224,6 +1224,7 @@ public partial class MainSceneV2 : Control
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
         button.Pressed += action;
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(button, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.DarkWood);
         parent.AddChild(button);
     }
 
