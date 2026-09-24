@@ -207,10 +207,10 @@ public partial class MainSceneV3 : Control
         };
         deskHeader.AddChild(restBtn);
 
-        // 后宫游幸按钮 (刺激回精，损耗阳气)
+        // 临幸后宫按钮 (以阳气兑换精力，1点阳气换3-5点精力)
         var haremBtn = new Button
         {
-            Text = "🌸 后宫游幸",
+            Text = "🌸 临幸后宫",
             CustomMinimumSize = new Vector2(110, 34)
         };
         DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(haremBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.DarkWood);
@@ -259,18 +259,18 @@ public partial class MainSceneV3 : Control
 
         string xunText = snap.Xun switch { 1 => "上旬", 2 => "中旬", _ => "下旬" };
 
-        string auraText = diagnosis.Aura switch
+        string mentalStatusText = diagnosis.MentalState switch
         {
-            DonghanEngine.Core.Health.ImperialVitalityAura.RadiantDragon => "🔴 气色：龙精虎猛",
-            DonghanEngine.Core.Health.ImperialVitalityAura.StableHarmonious => "🟢 气色：神闲气定",
-            DonghanEngine.Core.Health.ImperialVitalityAura.SlightlyWeary => "🟡 气色：神思稍倦",
-            DonghanEngine.Core.Health.ImperialVitalityAura.YangDepleted => "🟣 气色：虚阳上浮(阳亏)",
-            DonghanEngine.Core.Health.ImperialVitalityAura.SeverelyExhausted => "🟠 气色：虚耗神伤",
-            _ => "💀 气色：气若游丝(病笃)"
+            DonghanEngine.Core.Health.ImperialMentalState.Radiant => "🔴 精神状态：龙精虎猛",
+            DonghanEngine.Core.Health.ImperialMentalState.ClearAndCalm => "🟢 精神状态：神闲气定",
+            DonghanEngine.Core.Health.ImperialMentalState.SlightlyFatigued => "🟡 精神状态：神思稍倦",
+            DonghanEngine.Core.Health.ImperialMentalState.YangDeficient => "🟣 精神状态：虚阳浮越(阳亏)",
+            DonghanEngine.Core.Health.ImperialMentalState.DeeplyExhausted => "🟠 精神状态：虚耗神伤",
+            _ => "💀 精神状态：气若游丝(病笃)"
         };
 
-        // 1. 刷新顶部威望与财政状态（气色替代死板数值，保留医理诊断）
-        _statsLabel.Text = $"【{snap.ReignTitle} {snap.ReignYear}年】 {snap.Year}年{snap.Month}月 {xunText} ｜ 驻跸: {snap.CurrentLocation} ｜ {auraText} ｜ " +
+        // 1. 刷新顶部威望与财政状态（精神状态暗线暗示精力与阳气，保留医理诊断）
+        _statsLabel.Text = $"【{snap.ReignTitle} {snap.ReignYear}年】 {snap.Year}年{snap.Month}月 {xunText} ｜ 驻跸: {snap.CurrentLocation} ｜ {mentalStatusText} ｜ " +
                            $"威望: {snap.ImperialPower} ({snap.PrestigeDescription}) ｜ 太仓: {snap.Treasury:N0}万 ｜ 内帑: {snap.PrivateTreasury:N0}万 ｜ 禁军: {snap.WestGardenArmySize:N0}人";
 
         // 2. 渲染天下十三州地块卡片

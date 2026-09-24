@@ -51,7 +51,7 @@ public sealed class GameEngineImperialHealthUiService : IImperialHealthUiService
         }
         catch (Exception ex)
         {
-            return ActionResult.Failure("后宫游幸失败", ex.Message, ReportKind.Warning, ex.GetType().Name);
+            return ActionResult.Failure("临幸后宫失败", ex.Message, ReportKind.Warning, ex.GetType().Name);
         }
     }
 }

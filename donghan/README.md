@@ -8,15 +8,16 @@
 
 本项目规避了高算力损耗的网页套壳模式，完全采用面向对象（C# OOP）的高性能策略引擎，并预留了面向多智能体（Multi-Agent）大语言模型（如 DeepSeek/Gemini）的异步调度中间件与防御性数据缓冲槽，实现真实的朝党斗争、西园理财、天灾赈灾及帝王心术博弈。
 
-**项目规模**：总计 **393 个自动化测试（后端 341 + 前端 V2/V3 52）100% 全绿通过**。后端 `DonghanEngine.Core` 已彻底落地 DDD 分包、不可变/只读集合防篡改封装、充血领域模型（OOP）与细粒度单方法服务接口隔离（ISP）；已实装**天子精气神动态非线性力学与寿命暗线系统（`DonghanEngine.Core.Health.ImperialHealthService`：精力/阳气数值完全隐藏，只显古典气色与太医请脉札；静养按当前精力比例40%恢复；结算精力低于40/20永久折损1/2点上限；后宫游幸损阳气，阳气<50/20恢复效率腰斩至20%/10%；精力最大值<80染疾沉疴，每少10点生命力少10年预期寿数）、全新 V3 沉浸式天子御案与天下沙盘交互界面及全组件手型指针与悬停发光/动态弹性微缩放反馈系统（`Frontend/Common/ImperialUiThemeHelper.cs` & `Frontend/V3/MainSceneV3.cs`）**、尚书台岁终大考课与封疆大吏内调博弈系统（`DonghanEngine.Core.Politics.GovernorAppraisalService`）、大汉十三州全景沙盘与地缘土地产权可视化视图（Godot V2 UI `ShowGeopoliticsMap` / `ShowGovernorAppraisal`）、全周期跨年份多朝代历史大事件动态因果网（二袁官渡合流/白门楼特赦吕布克潼关/保全孙策亲征赤壁/关羽存活夷陵消弭）、土地所有权核心玩法与战乱焦土/世家赎田系统（`DonghanEngine.Core.Economy.LandOwnershipService`）、国家级度田令与水利官修子系统（`DonghanEngine.Core.Economy.CadastralAndIrrigationService`）、东汉文武双轨九品官阶晋升与西园鬻官通天子系统（`DonghanEngine.Core.Politics.OfficialRankService`）、宏观经济土地承载力与流民部曲子包（`DonghanEngine.Core.Economy`）、帝王权术财政博弈与抄家关联惩罚/军饷哗变子包（`DonghanEngine.Core.Politics`）、世家察举荐辟系统（`TalentNominationService`）、天子威望非线性力学评估子包（`ImperialPrestigeEvaluator`：46~60 紧凑黄金平衡区）、184年至226年灵帝延寿70岁全周期43项历史大事件全景因果推演管线；主引擎 `GameEngine` 与前端适配层及 Godot UI 已完成全业务交互大闭环；打通与 `GameEngine` 每旬推进与尚书台御批（`ResolveGeopoliticalMemorial`）的双向闭环；前端已建立 V2/V3 契约架构与单一职责适配层。
+**项目规模**：总计 **393 个自动化测试（后端 341 + 前端 V2/V3 52）100% 全绿通过**。后端 `DonghanEngine.Core` 已彻底落地 DDD 分包、不可变/只读集合防篡改封装、充血领域模型（OOP）与细粒度单方法服务接口隔离（ISP）；已实装**天子精气神月度结算恢复与临幸阳气换精力非线性力学系统（`DonghanEngine.Core.Health.ImperialHealthService`：精力纯隐藏不对外展示，以【精神状态】古典医理暗示；精力按月（下旬）统一结算恢复当前剩余值的40%；结算精力低于40/20永久折损1/2点上限；阳气每旬自然恢复1-2点；临幸后宫按1点阳气兑换3-5点精力；阳气<50恢复效率减半至20%，阳气<20跌至10%；精力上限<80染疾沉疴，每少10点生命力少10年预期寿数）、全新 V3 沉浸式天子御案与天下沙盘交互界面及全组件手型指针与悬停发光/动态弹性微缩放反馈系统（`Frontend/Common/ImperialUiThemeHelper.cs` & `Frontend/V3/MainSceneV3.cs`）**、尚书台岁终大考课与封疆大吏内调博弈系统（`DonghanEngine.Core.Politics.GovernorAppraisalService`）、大汉十三州全景沙盘与地缘土地产权可视化视图（Godot V2 UI `ShowGeopoliticsMap` / `ShowGovernorAppraisal`）、全周期跨年份多朝代历史大事件动态因果网（二袁官渡合流/白门楼特赦吕布克潼关/保全孙策亲征赤壁/关羽存活夷陵消弭）、土地所有权核心玩法与战乱焦土/世家赎田系统（`DonghanEngine.Core.Economy.LandOwnershipService`）、国家级度田令与水利官修子系统（`DonghanEngine.Core.Economy.CadastralAndIrrigationService`）、东汉文武双轨九品官阶晋升与西园鬻官通天子系统（`DonghanEngine.Core.Politics.OfficialRankService`）、宏观经济土地承载力与流民部曲子包（`DonghanEngine.Core.Economy`）、帝王权术财政博弈与抄家关联惩罚/军饷哗变子包（`DonghanEngine.Core.Politics`）、世家察举荐辟系统（`TalentNominationService`）、天子威望非线性力学评估子包（`ImperialPrestigeEvaluator`：46~60 紧凑黄金平衡区）、184年至226年灵帝延寿70岁全周期43项历史大事件全景因果推演管线；主引擎 `GameEngine` 与前端适配层及 Godot UI 已完成全业务交互大闭环；打通与 `GameEngine` 每旬推进与尚书台御批（`ResolveGeopoliticalMemorial`）的双向闭环；前端已建立 V2/V3 契约架构与单一职责适配层。
 
 ### 已实现核心系统与交互矩阵
-- [x] **天子精气神动态非线性力学与寿命暗线系统（Imperial Health & Vitality Dynamics）**：
-  - 精力数值完全隐藏，界面只呈现【龙精虎猛/神闲气定/神思稍倦/虚阳上浮/虚耗神伤/气若游丝】与太医院请脉札；
-  - 阳气真元随时间缓慢恢复（每旬自然 +3）；
-  - 温德殿静养按当前剩余精力的 $40\%$ 动态比例恢复；
-  - 旬结算当前精力 $<40$ 永久减少 1 点上限，$<20$ 永久减少 2 点上限；
-  - 阳气 $<50$ 恢复率减半至 $20\%$，阳气 $<20$ 恢复率降至 $10\%$（后宫沉湎深层反噬）；
+- [x] **天子精气神月度结算恢复与临幸阳气换精力系统（Imperial Health & Vitality Dynamics）**：
+  - 精力数值完全隐藏，界面只呈现【精神状态】古典医理暗示与太医院请脉札；
+  - 阳气真元每旬自动恢复 $1 \sim 2$ 点；
+  - 精力按月（每月下旬）统一结算恢复当前剩余精力的 $40\%$；
+  - 临幸后宫按照 $1$ 点阳气兑换 $3 \sim 5$ 点精力；
+  - 月末结算时当前精力 $<40$ 永久减少 1 点上限，$<20$ 永久减少 2 点上限；
+  - 阳气 $<50$ 月末恢复率减半至 $20\%$，阳气 $<20$ 恢复率降至 $10\%$；
   - 精力上限 $<80$ 触发染疾沉疴，每少 10 点上限折损 10 年预期寿命（以 70 岁大寿为基准）。
 - [x] **V3 沉浸式天子御案与沙盘工作台（V3 Immersive Imperial Desk & Map）**：
   - 左侧 55%：天下十三州交互沙盘，地块点击弹出【度田/水利/赎田/平叛】快捷决策轮盘；

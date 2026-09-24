@@ -326,7 +326,7 @@ public partial class GameEngine : IGameEngine
 
     public DonghanEngine.Core.Health.HealthActionResolutionResult IndulgeInHarem()
     {
-        return _healthService.IndulgeInHarem(_state);
+        return _healthService.IndulgeInHarem(_state, yangToSpend: 4);
     }
 
     public TurnResult ExecuteQuickAction(string actionId)
@@ -559,8 +559,14 @@ public partial class GameEngine : IGameEngine
         // 异步后台演进官员想法与天灾日常
         await _scheduler.OrchestrateXunUpdateAsync(_state);
 
-        // 0. 每旬自动结算：天子隐藏精气神（阳气自然恢复、过劳损耗精力上限、判定染疾与寿数折损）
+        // 0. 每旬自动结算：阳气随时间自然缓慢恢复 (1-2 点)
         _healthService.AdvanceXunHealthSettlement(_state);
+
+        // 0.1 每月末 (3旬)：精力按月进行结算恢复 (恢复当前剩余精力40%，受阳气折损制约；低谷扣减上限；判定生病与寿命)
+        if (_state.Xun == 3)
+        {
+            _healthService.AdvanceMonthlyEnergySettlement(_state);
+        }
 
         // 每旬自动结算：军饷发放与禁军士气/哗变判定
         _payrollService.ProcessPayroll(_state, grantExtraBonus: false);

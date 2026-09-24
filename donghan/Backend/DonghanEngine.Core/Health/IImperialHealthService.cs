@@ -1,22 +1,24 @@
-using System;
 using DonghanEngine.Core;
 
 namespace DonghanEngine.Core.Health;
 
 public interface IImperialHealthService
 {
-    // 1. 每旬时序演进结算（阳气随时间自然缓慢恢复 + 旬末低于阈值永久扣减最大值 + 判定染疾与寿数折损）
+    // 1. 每旬结算（阳气每旬自然恢复 1-2 点）
     ImperialHealthDiagnosisReport AdvanceXunHealthSettlement(GameState state);
 
-    // 2. 节点恢复精力（恢复量 = 当前剩余精力的40% * 阳气与名医系数）
+    // 2. 每月末（下旬/第3旬）统一精力结算与恢复（恢复当前剩余精力的 40%，受阳气折损制约；低谷扣减精力上限；判定生病与寿命）
+    ImperialHealthDiagnosisReport AdvanceMonthlyEnergySettlement(GameState state);
+
+    // 3. 临幸后宫（以阳气换精力：消耗 1 点阳气兑换 3~5 点精力，阳气越充沛效果越好）
+    HealthActionResolutionResult IndulgeInHarem(GameState state, int yangToSpend = 4);
+
+    // 4. 温德殿静养（本旬息政，额外提前获得一次当月剩余精力 40% 的休整恢复）
     HealthActionResolutionResult RestAtWendePalace(GameState state);
 
-    // 3. 后宫游幸调剂（刺激回精，但扣减阳气）
-    HealthActionResolutionResult IndulgeInHarem(GameState state);
-
-    // 4. 消耗精力执行政务（大朝会、巡幸、阅兵、抄家）
+    // 5. 政务消耗精力（大朝会、巡幸、阅兵、抄家等消耗 2~8 点精力）
     void ConsumeEnergyForAffairs(GameState state, int cost, string affairName);
 
-    // 5. 获取太医令当前请脉诊断
+    // 6. 获取太医令当前请脉诊断与精神状态
     ImperialHealthDiagnosisReport GetPhysicianDiagnosis(GameState state);
 }

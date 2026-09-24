@@ -9,7 +9,7 @@ public class ImperialHealthDynamicTests
     private readonly ImperialHealthService _healthService = new();
 
     [Fact]
-    public void Test_RestAtWendePalace_RecoversFortyPercentOfCurrentEnergy()
+    public void Test_AdvanceMonthlyEnergySettlement_RecoversFortyPercentOfCurrentEnergy()
     {
         var state = new GameState
         {
@@ -18,17 +18,16 @@ public class ImperialHealthDynamicTests
             HiddenYangVitality = 100
         };
 
-        // 规则 2：恢复当前剩余精力的 40%
+        // 规则 1 & 2：月末结算恢复当前剩余精力的 40%
         // 50 * 0.40 = 20 点恢复 -> 50 + 20 = 70
-        var res = _healthService.RestAtWendePalace(state);
+        var res = _healthService.AdvanceMonthlyEnergySettlement(state);
 
-        Assert.True(res.Success);
-        Assert.Equal(20, res.EnergyDelta);
+        Assert.NotNull(res);
         Assert.Equal(70, state.HiddenCurrentEnergy);
     }
 
     [Fact]
-    public void Test_YangVitalityDepletion_ReducesRecoveryRate()
+    public void Test_YangVitalityDepletion_ReducesMonthlyRecoveryRate()
     {
         // 规则 4：阳气低于50恢复效率变成一半即20%
         var stateYang30 = new GameState
@@ -39,8 +38,7 @@ public class ImperialHealthDynamicTests
         };
 
         // 50 * 0.20 = 10 点恢复 -> 50 + 10 = 60
-        var res30 = _healthService.RestAtWendePalace(stateYang30);
-        Assert.Equal(10, res30.EnergyDelta);
+        _healthService.AdvanceMonthlyEnergySettlement(stateYang30);
         Assert.Equal(60, stateYang30.HiddenCurrentEnergy);
 
         // 阳气低于20恢复效率变成10%
@@ -52,15 +50,14 @@ public class ImperialHealthDynamicTests
         };
 
         // 50 * 0.10 = 5 点恢复 -> 50 + 5 = 55
-        var res10 = _healthService.RestAtWendePalace(stateYang10);
-        Assert.Equal(5, res10.EnergyDelta);
+        _healthService.AdvanceMonthlyEnergySettlement(stateYang10);
         Assert.Equal(55, stateYang10.HiddenCurrentEnergy);
     }
 
     [Fact]
-    public void Test_Settlement_EnergyBelowThresholds_PermanentlyReducesMaxEnergy()
+    public void Test_MonthlySettlement_EnergyBelowThresholds_PermanentlyReducesMaxEnergy()
     {
-        // 规则 3：当前精力低于40扣1点最大值，低于20扣2点
+        // 规则 3：月末结算时当前精力低于40扣1点最大值，低于20扣2点
         var state35 = new GameState
         {
             HiddenCurrentEnergy = 35,
@@ -68,19 +65,25 @@ public class ImperialHealthDynamicTests
             HiddenYangVitality = 80
         };
 
+        // 先执行一旬推进：阳气自然恢复 1-2 点 (2点)
         _healthService.AdvanceXunHealthSettlement(state35);
-        Assert.Equal(99, state35.HiddenMaxEnergy); // 100 - 1
-        Assert.Equal(83, state35.HiddenYangVitality); // 规则 1：阳气随时间自然回升 +3
+        Assert.Equal(82, state35.HiddenYangVitality);
 
-        var state15 = new GameState
+        // 月末结算：35 * 40% = 14 -> 回到 49；但由于结算前判定或低谷扣减
+        _healthService.AdvanceMonthlyEnergySettlement(state35);
+        // 回复后当前精力 35 + 14 = 49 (>=40 不扣减)
+        Assert.Equal(49, state35.HiddenCurrentEnergy);
+
+        // 若极度透支：当前精力 10 点，回复 10*40%=4 变为 14 (<20) -> 永久扣减 2 点最大值
+        var state10 = new GameState
         {
-            HiddenCurrentEnergy = 15,
+            HiddenCurrentEnergy = 10,
             HiddenMaxEnergy = 100,
             HiddenYangVitality = 80
         };
-
-        _healthService.AdvanceXunHealthSettlement(state15);
-        Assert.Equal(98, state15.HiddenMaxEnergy); // 100 - 2
+        _healthService.AdvanceMonthlyEnergySettlement(state10);
+        Assert.Equal(14, state10.HiddenCurrentEnergy);
+        Assert.Equal(98, state10.HiddenMaxEnergy); // 100 - 2
     }
 
     [Fact]
@@ -105,19 +108,22 @@ public class ImperialHealthDynamicTests
     }
 
     [Fact]
-    public void Test_HaremIndulgence_DrainsYangVitality()
+    public void Test_IndulgeInHarem_ConvertsYangToEnergy_WithOneToThreeToFiveRatio()
     {
+        // 规则 3：临幸后宫按照 1 点阳气换 3-5 点精力
         var state = new GameState
         {
             HiddenCurrentEnergy = 40,
             HiddenMaxEnergy = 100,
-            HiddenYangVitality = 90
+            HiddenYangVitality = 80 // 阳气充盈 (>=60, 兑换率 5)
         };
 
-        var res = _healthService.IndulgeInHarem(state);
+        // 消耗 4 点阳气换精力：4 * 5 = 20 点精力
+        var res = _healthService.IndulgeInHarem(state, yangToSpend: 4);
         Assert.True(res.Success);
-        Assert.Equal(-12, res.YangDelta);
-        Assert.Equal(78, state.HiddenYangVitality); // 90 - 12
-        Assert.Equal(55, state.HiddenCurrentEnergy); // 40 + 15
+        Assert.Equal(-4, res.YangDelta);
+        Assert.Equal(76, state.HiddenYangVitality); // 80 - 4
+        Assert.Equal(20, res.EnergyDelta);
+        Assert.Equal(60, state.HiddenCurrentEnergy); // 40 + 20
     }
 }
