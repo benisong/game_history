@@ -182,6 +182,13 @@ public class GameState
     // 196 年孙策平定江东天子是否优抚确立大义保全其性命 (true = 孙策存活掌江东; false = 孙策遇刺孙权继位)
     public bool IsSunCeAssassinationAverted { get; set; } = false;
 
+    // === 天子精气神与健康暗线模型 (纯隐藏数值) ===
+    public int HiddenMaxEnergy { get; set; } = 100;     // 精力最大值上限 (初始100，低于80开始生病)
+    public int HiddenCurrentEnergy { get; set; } = 100; // 当前剩余精力值
+    public int HiddenYangVitality { get; set; } = 100;  // 阳气真元 (初始100，后宫折损，随时间自然恢复)
+    public int ConsecutiveLowEnergyXun { get; set; } = 0;// 连续低精力旬数记录
+    public string? ChiefPhysicianId { get; set; } = null;// 当朝太医令 (如 zhang_zhongjing, hua_tuo)
+
     public GameState()
     {
         // 大将军何进：外戚权臣，初始私蓄 1500。何进权势 80，好感 35。性格：平庸。Traits：[“拥兵自重”]

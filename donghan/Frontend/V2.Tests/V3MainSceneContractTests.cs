@@ -33,5 +33,13 @@ public class V3MainSceneContractTests
 
         var irrRes = runtime.Agriculture.BuildIrrigation("yuzhou");
         Assert.NotNull(irrRes);
+
+        // 验证健康气色与温德殿静养
+        var diagnosis = runtime.Health.GetPhysicianDiagnosis();
+        Assert.NotNull(diagnosis);
+        Assert.Equal(DonghanEngine.Core.Health.ImperialVitalityAura.RadiantDragon, diagnosis.Aura);
+
+        var restRes = runtime.Health.RestAtWendePalace();
+        Assert.True(restRes.Success);
     }
 }

@@ -191,6 +191,37 @@ public partial class MainSceneV3 : Control
         DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(nextTurnBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.PrimaryGold);
         nextTurnBtn.Pressed += OnNextTurnPressed;
         deskHeader.AddChild(nextTurnBtn);
+
+        // 温德殿静养按钮 (恢复当前精力40%)
+        var restBtn = new Button
+        {
+            Text = "🍵 温德殿静养",
+            CustomMinimumSize = new Vector2(120, 34)
+        };
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(restBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.DarkWood);
+        restBtn.Pressed += () =>
+        {
+            var res = _runtime.Health.RestAtWendePalace();
+            ShowActionResult(res);
+            RefreshUi();
+        };
+        deskHeader.AddChild(restBtn);
+
+        // 后宫游幸按钮 (刺激回精，损耗阳气)
+        var haremBtn = new Button
+        {
+            Text = "🌸 后宫游幸",
+            CustomMinimumSize = new Vector2(110, 34)
+        };
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(haremBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.DarkWood);
+        haremBtn.Pressed += () =>
+        {
+            var res = _runtime.Health.IndulgeInHarem();
+            ShowActionResult(res);
+            RefreshUi();
+        };
+        deskHeader.AddChild(haremBtn);
+
         _rightDesk.AddChild(deskHeader);
 
         // 实体御案多功能 Tab 分页
@@ -224,12 +255,23 @@ public partial class MainSceneV3 : Control
     private void RefreshUi()
     {
         var snap = _runtime.State.GetSnapshot();
+        var diagnosis = _runtime.Health.GetPhysicianDiagnosis();
 
         string xunText = snap.Xun switch { 1 => "上旬", 2 => "中旬", _ => "下旬" };
 
-        // 1. 刷新顶部威望与财政状态
-        _statsLabel.Text = $"【{snap.ReignTitle} {snap.ReignYear}年】 {snap.Year}年{snap.Month}月 {xunText} ｜ 驻跸: {snap.CurrentLocation} ｜ " +
-                           $"威望: {snap.ImperialPower} ({snap.PrestigeDescription}) ｜ 太仓: {snap.Treasury:N0}万 ｜ 内帑: {snap.PrivateTreasury:N0}万 ｜ 禁军: {snap.WestGardenArmySize:N0}人 (士气{snap.WestGardenMorale})";
+        string auraText = diagnosis.Aura switch
+        {
+            DonghanEngine.Core.Health.ImperialVitalityAura.RadiantDragon => "🔴 气色：龙精虎猛",
+            DonghanEngine.Core.Health.ImperialVitalityAura.StableHarmonious => "🟢 气色：神闲气定",
+            DonghanEngine.Core.Health.ImperialVitalityAura.SlightlyWeary => "🟡 气色：神思稍倦",
+            DonghanEngine.Core.Health.ImperialVitalityAura.YangDepleted => "🟣 气色：虚阳上浮(阳亏)",
+            DonghanEngine.Core.Health.ImperialVitalityAura.SeverelyExhausted => "🟠 气色：虚耗神伤",
+            _ => "💀 气色：气若游丝(病笃)"
+        };
+
+        // 1. 刷新顶部威望与财政状态（气色替代死板数值，保留医理诊断）
+        _statsLabel.Text = $"【{snap.ReignTitle} {snap.ReignYear}年】 {snap.Year}年{snap.Month}月 {xunText} ｜ 驻跸: {snap.CurrentLocation} ｜ {auraText} ｜ " +
+                           $"威望: {snap.ImperialPower} ({snap.PrestigeDescription}) ｜ 太仓: {snap.Treasury:N0}万 ｜ 内帑: {snap.PrivateTreasury:N0}万 ｜ 禁军: {snap.WestGardenArmySize:N0}人";
 
         // 2. 渲染天下十三州地块卡片
         RenderSandTableProvinces();

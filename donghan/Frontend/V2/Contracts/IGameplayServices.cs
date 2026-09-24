@@ -163,6 +163,13 @@ public interface IGovernorAppraisalUiService
     ActionResult PromoteGovernorToCourt(string governorId, string targetCourtTitle);
 }
 
+public interface IImperialHealthUiService
+{
+    DonghanEngine.Core.Health.ImperialHealthDiagnosisReport GetPhysicianDiagnosis();
+    ActionResult RestAtWendePalace();
+    ActionResult IndulgeInHarem();
+}
+
 public interface IEdictService : IGetPendingEdictsService, IResolveEdictService
 {
 }

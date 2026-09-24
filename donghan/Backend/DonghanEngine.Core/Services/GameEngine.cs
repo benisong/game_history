@@ -26,6 +26,7 @@ public partial class GameEngine : IGameEngine
     private readonly DonghanEngine.Core.Economy.IIrrigationService _irrigationService;
     private readonly DonghanEngine.Core.Economy.ILandOwnershipService _landOwnershipService;
     private readonly DonghanEngine.Core.Politics.IGovernorAppraisalService _governorAppraisalService;
+    private readonly DonghanEngine.Core.Health.IImperialHealthService _healthService;
     internal readonly Random _rng;
 
     public DonghanEngine.Core.Geopolitics.Contracts.IGeopoliticalSimulationEngine GeopoliticsEngine => _geopoliticsEngine;
@@ -49,7 +50,8 @@ public partial class GameEngine : IGameEngine
         DonghanEngine.Core.Economy.ICadastralSurveyService? cadastralService = null,
         DonghanEngine.Core.Economy.IIrrigationService? irrigationService = null,
         DonghanEngine.Core.Economy.ILandOwnershipService? landOwnershipService = null,
-        DonghanEngine.Core.Politics.IGovernorAppraisalService? governorAppraisalService = null)
+        DonghanEngine.Core.Politics.IGovernorAppraisalService? governorAppraisalService = null,
+        DonghanEngine.Core.Health.IImperialHealthService? healthService = null)
     {
         _state = state;
         _scheduler = scheduler;
@@ -70,6 +72,7 @@ public partial class GameEngine : IGameEngine
         _irrigationService = irrigationService ?? new DonghanEngine.Core.Economy.CadastralAndIrrigationService();
         _landOwnershipService = landOwnershipService ?? new DonghanEngine.Core.Economy.LandOwnershipService();
         _governorAppraisalService = governorAppraisalService ?? new DonghanEngine.Core.Politics.GovernorAppraisalService();
+        _healthService = healthService ?? new DonghanEngine.Core.Health.ImperialHealthService();
     }
 
     public GameState GetState() => _state;
@@ -311,6 +314,21 @@ public partial class GameEngine : IGameEngine
         return _governorAppraisalService.PromoteGovernorToCourt(_state, governorId, targetCourtTitle);
     }
 
+    public DonghanEngine.Core.Health.ImperialHealthDiagnosisReport GetPhysicianDiagnosis()
+    {
+        return _healthService.GetPhysicianDiagnosis(_state);
+    }
+
+    public DonghanEngine.Core.Health.HealthActionResolutionResult RestAtWendePalace()
+    {
+        return _healthService.RestAtWendePalace(_state);
+    }
+
+    public DonghanEngine.Core.Health.HealthActionResolutionResult IndulgeInHarem()
+    {
+        return _healthService.IndulgeInHarem(_state);
+    }
+
     public TurnResult ExecuteQuickAction(string actionId)
     {
         var result = new TurnResult();
@@ -540,6 +558,9 @@ public partial class GameEngine : IGameEngine
 
         // 异步后台演进官员想法与天灾日常
         await _scheduler.OrchestrateXunUpdateAsync(_state);
+
+        // 0. 每旬自动结算：天子隐藏精气神（阳气自然恢复、过劳损耗精力上限、判定染疾与寿数折损）
+        _healthService.AdvanceXunHealthSettlement(_state);
 
         // 每旬自动结算：军饷发放与禁军士气/哗变判定
         _payrollService.ProcessPayroll(_state, grantExtraBonus: false);

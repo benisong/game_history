@@ -71,6 +71,13 @@ public interface IGovernorAppraisalDomainService
     DonghanEngine.Core.Politics.GovernorPromotionResolutionResult ExecutePromoteGovernorToCourt(string governorId, string targetCourtTitle);
 }
 
+public interface IImperialHealthDomainService
+{
+    DonghanEngine.Core.Health.ImperialHealthDiagnosisReport GetPhysicianDiagnosis();
+    DonghanEngine.Core.Health.HealthActionResolutionResult RestAtWendePalace();
+    DonghanEngine.Core.Health.HealthActionResolutionResult IndulgeInHarem();
+}
+
 public interface IQuickActionDomainService
 {
     TurnResult ExecuteQuickAction(string actionId);
@@ -132,6 +139,7 @@ public interface IGameEngine :
     ICadastralAndIrrigationDomainService,
     ILandOwnershipDomainService,
     IGovernorAppraisalDomainService,
+    IImperialHealthDomainService,
     IQuickActionDomainService,
     IResolveEdictDomainService,
     IGrandCourtDomainService,
