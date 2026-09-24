@@ -76,6 +76,7 @@ public partial class MainSceneV2 : Control
         var actions = new FlowContainer();
         actions.AddThemeConstantOverride("separation", 12);
         _content.AddChild(actions);
+        AddButton(actions, "✨ 切换至 V3 沉浸式天子御案", SwitchToV3Scene);
         AddButton(actions, "起驾巡幸", ShowTravel);
         AddButton(actions, "大汉十三州全景沙盘", ShowGeopoliticsMap);
         AddButton(actions, "尚书台刺史大考课", ShowGovernorAppraisal);
@@ -91,6 +92,11 @@ public partial class MainSceneV2 : Control
             AddButton(actions, "后宫休养", () => ExecuteSpecialAction(new SpecialActionCommand("harem_rest")));
         _status.Text = "V2 Runtime 已组装：UI 只依赖 Contracts 接口。Legacy 链路未修改。";
         RefreshSnapshot();
+    }
+
+    private void SwitchToV3Scene()
+    {
+        GetTree().ChangeSceneToFile("res://V3/MainSceneV3.tscn");
     }
 
     private void ShowTravel()
