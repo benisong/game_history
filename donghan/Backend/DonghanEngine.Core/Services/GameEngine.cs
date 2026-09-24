@@ -326,7 +326,7 @@ public partial class GameEngine : IGameEngine
 
     public DonghanEngine.Core.Health.HealthActionResolutionResult IndulgeInHarem()
     {
-        return _healthService.IndulgeInHarem(_state, yangToSpend: 4);
+        return _healthService.IndulgeInHarem(_state);
     }
 
     public TurnResult ExecuteQuickAction(string actionId)

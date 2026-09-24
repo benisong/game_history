@@ -80,11 +80,11 @@ public sealed class ImperialHealthService : IImperialHealthService
         return GetPhysicianDiagnosis(state);
     }
 
-    public HealthActionResolutionResult IndulgeInHarem(GameState state, int yangToSpend = 4)
+    public HealthActionResolutionResult IndulgeInHarem(GameState state)
     {
-        // 规则 3：临幸后宫按照一点阳气换 3-5 点精力
-        int actualYangSpent = Math.Min(yangToSpend, state.HiddenYangVitality);
-        if (actualYangSpent <= 0)
+        // 规则：每次临幸后宫阳气减少 5 点
+        const int yangCost = 5;
+        if (state.HiddenYangVitality < yangCost)
         {
             return new HealthActionResolutionResult(
                 Success: false,
@@ -93,37 +93,41 @@ public sealed class ImperialHealthService : IImperialHealthService
                 YangDelta: 0,
                 NewMentalState: GetPhysicianDiagnosis(state).MentalState,
                 NarrativeTitle: "【阳气衰竭 · 难近声色】",
-                ChronicleText: "天子真阳耗竭、四肢畏寒，已无力临幸后宫，切须清心养元！");
+                ChronicleText: "天子真阳亏虚不足（少于5点），四肢畏寒神怠，已无力临幸后宫，切须清心养元！");
         }
 
-        state.HiddenYangVitality = Math.Max(0, state.HiddenYangVitality - actualYangSpent);
-
-        // 兑换比例：1 点阳气兑换 3~5 点精力 (默认 4)
-        int rate = DefaultEnergyPerYangPoint;
-        if (state.HiddenYangVitality < 20)
+        // 规则：阳气 80 以上每点换 5 点精力，70 以上换 4 点，70 以下换 3 点
+        int ratePerPoint;
+        if (state.HiddenYangVitality >= 80)
         {
-            rate = 3; // 阳气极度枯竭时转化折损
+            ratePerPoint = 5;
         }
-        else if (state.HiddenYangVitality >= 60)
+        else if (state.HiddenYangVitality >= 70)
         {
-            rate = 5; // 阳气充盈时转化效率高
+            ratePerPoint = 4;
+        }
+        else
+        {
+            ratePerPoint = 3;
         }
 
-        int energyGained = actualYangSpent * rate;
+        int energyGained = yangCost * ratePerPoint;
+        state.HiddenYangVitality = Math.Max(0, state.HiddenYangVitality - yangCost);
+
         int oldEnergy = state.HiddenCurrentEnergy;
         state.HiddenCurrentEnergy = Math.Clamp(state.HiddenCurrentEnergy + energyGained, 0, state.HiddenMaxEnergy);
         int realGained = state.HiddenCurrentEnergy - oldEnergy;
 
         var diag = GetPhysicianDiagnosis(state);
-        string warning = state.HiddenYangVitality < 50 ? "（太医令密奏：真阳已跌破半数，畏寒面青，月末恢复效率将折半！）" : "";
-        string chronicle = $"【临幸后宫】天子驻跸后宫温德欢宴。阳气折损{actualYangSpent}点，精神提振{warning}。";
+        string warning = state.HiddenYangVitality < 50 ? "（太医令密奏：真阳已跌破半数，畏寒面青，月末精力恢复效率将折半！）" : "";
+        string chronicle = $"【临幸后宫】天子驻跸后宫温德欢宴。阳气折损{yangCost}点，借阳化精提振精神{warning}。";
         state.AddToChronicle(chronicle);
 
         return new HealthActionResolutionResult(
             Success: true,
             ActionName: "临幸后宫",
             EnergyDelta: realGained,
-            YangDelta: -actualYangSpent,
+            YangDelta: -yangCost,
             NewMentalState: diag.MentalState,
             NarrativeTitle: "【后宫临幸 · 借阳化精】",
             ChronicleText: chronicle);
