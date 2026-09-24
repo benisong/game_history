@@ -27,6 +27,7 @@ public partial class GameEngine : IGameEngine
     private readonly DonghanEngine.Core.Economy.ILandOwnershipService _landOwnershipService;
     private readonly DonghanEngine.Core.Politics.IGovernorAppraisalService _governorAppraisalService;
     private readonly DonghanEngine.Core.Health.IImperialHealthService _healthService;
+    private readonly DonghanEngine.Core.Politics.ICourtDelegationService _courtDelegationService;
     internal readonly Random _rng;
 
     public DonghanEngine.Core.Geopolitics.Contracts.IGeopoliticalSimulationEngine GeopoliticsEngine => _geopoliticsEngine;
@@ -51,7 +52,8 @@ public partial class GameEngine : IGameEngine
         DonghanEngine.Core.Economy.IIrrigationService? irrigationService = null,
         DonghanEngine.Core.Economy.ILandOwnershipService? landOwnershipService = null,
         DonghanEngine.Core.Politics.IGovernorAppraisalService? governorAppraisalService = null,
-        DonghanEngine.Core.Health.IImperialHealthService? healthService = null)
+        DonghanEngine.Core.Health.IImperialHealthService? healthService = null,
+        DonghanEngine.Core.Politics.ICourtDelegationService? courtDelegationService = null)
     {
         _state = state;
         _scheduler = scheduler;
@@ -73,6 +75,7 @@ public partial class GameEngine : IGameEngine
         _landOwnershipService = landOwnershipService ?? new DonghanEngine.Core.Economy.LandOwnershipService();
         _governorAppraisalService = governorAppraisalService ?? new DonghanEngine.Core.Politics.GovernorAppraisalService();
         _healthService = healthService ?? new DonghanEngine.Core.Health.ImperialHealthService();
+        _courtDelegationService = courtDelegationService ?? new DonghanEngine.Core.Politics.CourtDelegationService(healthService: _healthService);
     }
 
     public GameState GetState() => _state;
@@ -327,6 +330,21 @@ public partial class GameEngine : IGameEngine
     public DonghanEngine.Core.Health.HealthActionResolutionResult IndulgeInHarem()
     {
         return _healthService.IndulgeInHarem(_state);
+    }
+
+    public IReadOnlyList<DonghanEngine.Core.Politics.DelegationAffairItem> GetPendingAffairs()
+    {
+        return _courtDelegationService.GetPendingAffairs(_state);
+    }
+
+    public DonghanEngine.Core.Politics.AffairExecutionReport ExecuteDirectAffair(string affairId)
+    {
+        return _courtDelegationService.ExecuteDirectAffair(_state, affairId);
+    }
+
+    public DonghanEngine.Core.Politics.BatchDelegationResult ExecuteBatchDelegation(IReadOnlyList<string>? affairIds = null)
+    {
+        return _courtDelegationService.ExecuteBatchDelegation(_state, affairIds);
     }
 
     public TurnResult ExecuteQuickAction(string actionId)

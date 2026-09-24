@@ -28,6 +28,7 @@ public partial class MainSceneV3 : Control
     // 右侧：实体化御案工作台 (折匣 / 名册 / 军务 / 朝会)
     private VBoxContainer _rightDesk = null!;
     private TabContainer _deskTabs = null!;
+    private VBoxContainer _affairsDeskPanel = null!;
     private VBoxContainer _edictDeskPanel = null!;
     private VBoxContainer _ministerCardPanel = null!;
     private VBoxContainer _westGardenPanel = null!;
@@ -231,22 +232,27 @@ public partial class MainSceneV3 : Control
         };
         _rightDesk.AddChild(_deskTabs);
 
-        // Tab 1: 奏折折匣 (朱批与御案)
+        // Tab 1: 廷议待办与分权交办 (新增：亲裁 vs 一键分发群僚)
+        _affairsDeskPanel = new VBoxContainer { Name = "朝堂廷议待办" };
+        _affairsDeskPanel.AddThemeConstantOverride("separation", 10);
+        _deskTabs.AddChild(_affairsDeskPanel);
+
+        // Tab 2: 奏折折匣 (朱批与御案)
         _edictDeskPanel = new VBoxContainer { Name = "御案折匣" };
         _edictDeskPanel.AddThemeConstantOverride("separation", 10);
         _deskTabs.AddChild(_edictDeskPanel);
 
-        // Tab 2: 朝臣名册与考课
+        // Tab 3: 朝臣名册与考课
         _ministerCardPanel = new VBoxContainer { Name = "尚书台群僚" };
         _ministerCardPanel.AddThemeConstantOverride("separation", 10);
         _deskTabs.AddChild(_ministerCardPanel);
 
-        // Tab 3: 西园秘营与万金堂
+        // Tab 4: 西园秘营与万金堂
         _westGardenPanel = new VBoxContainer { Name = "西园军务与鬻官" };
         _westGardenPanel.AddThemeConstantOverride("separation", 10);
         _deskTabs.AddChild(_westGardenPanel);
 
-        // Tab 4: 起居注编年史
+        // Tab 5: 起居注编年史
         _chroniclePanel = new VBoxContainer { Name = "起居注" };
         _chroniclePanel.AddThemeConstantOverride("separation", 8);
         _deskTabs.AddChild(_chroniclePanel);
@@ -280,6 +286,7 @@ public partial class MainSceneV3 : Control
         RenderSelectedProvinceDetail();
 
         // 4. 渲染右侧 Tab 各面板
+        RenderAffairsDesk();
         RenderEdictDesk();
         RenderMinisterCards();
         RenderWestGardenDesk();
@@ -396,6 +403,100 @@ public partial class MainSceneV3 : Control
                 RefreshUi();
             };
             _provinceQuickActionWheel.AddChild(suppressBtn);
+        }
+    }
+
+    private void RenderAffairsDesk()
+    {
+        foreach (var c in _affairsDeskPanel.GetChildren()) c.QueueFree();
+
+        var affairs = _runtime.Delegation.GetPendingAffairs();
+        if (affairs.Count == 0)
+        {
+            _affairsDeskPanel.AddChild(new Label
+            {
+                Text = "🏛️ 朝堂政简刑清：暂无待办廷议政务。",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            });
+            return;
+        }
+
+        var headerBox = new HBoxContainer();
+        headerBox.AddThemeConstantOverride("separation", 10);
+        _affairsDeskPanel.AddChild(headerBox);
+
+        var tip = new Label
+        {
+            Text = "【廷议分权】陛下可亲自朱批决断（耗费全额精力），亦可大笔一挥将剩余政务一揽子分派司徒/大将军/中常侍代办（仅耗2点精力）！",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        headerBox.AddChild(tip);
+
+        var batchBtn = new Button
+        {
+            Text = "📜 一键分交群僚代办 (仅耗2精力)",
+            CustomMinimumSize = new Vector2(210, 36)
+        };
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(batchBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.PrimaryGold);
+        batchBtn.Pressed += () =>
+        {
+            var res = _runtime.Delegation.ExecuteBatchDelegation();
+            ShowActionResult(res);
+            RefreshUi();
+        };
+        headerBox.AddChild(batchBtn);
+
+        var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
+        var box = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        box.AddThemeConstantOverride("separation", 10);
+        scroll.AddChild(box);
+        _affairsDeskPanel.AddChild(scroll);
+
+        foreach (var affair in affairs)
+        {
+            var card = new PanelContainer();
+            var cardBox = new VBoxContainer();
+            cardBox.AddThemeConstantOverride("separation", 6);
+            card.AddChild(cardBox);
+
+            string hubBadge = affair.PreferredHub switch
+            {
+                DonghanEngine.Core.Politics.CourtDelegationHubKind.ThreeExcellencies => "🏛️【司徒府·清流民政】",
+                DonghanEngine.Core.Politics.CourtDelegationHubKind.GrandGeneral => "⚔️【大将军府·外戚军务】",
+                DonghanEngine.Core.Politics.CourtDelegationHubKind.PalaceAttendants => "💰【内侍省·十常侍理财】",
+                _ => "📜【尚书台·台阁考课】"
+            };
+
+            var title = new Label
+            {
+                Text = $"{hubBadge} 【{affair.Title}】 ｜ 支用公帑：{affair.BaseTreasuryCost}万钱 ｜ 亲裁精力：{affair.BaseDirectEnergyCost}点"
+            };
+            title.AddThemeFontSizeOverride("font_size", 14);
+            cardBox.AddChild(title);
+
+            cardBox.AddChild(new Label
+            {
+                Text = $"• 事务奏请：{affair.Description}",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            });
+
+            var btnRow = new HBoxContainer();
+            btnRow.AddThemeConstantOverride("separation", 8);
+            cardBox.AddChild(btnRow);
+
+            var directBtn = new Button { Text = "🔴 天子亲裁决断" };
+            DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(directBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.DarkWood);
+            string targetAffairId = affair.AffairId;
+            directBtn.Pressed += () =>
+            {
+                var res = _runtime.Delegation.ExecuteDirectAffair(targetAffairId);
+                ShowActionResult(res);
+                RefreshUi();
+            };
+            btnRow.AddChild(directBtn);
+
+            box.AddChild(card);
         }
     }
 

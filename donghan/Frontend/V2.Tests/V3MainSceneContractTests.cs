@@ -41,5 +41,12 @@ public class V3MainSceneContractTests
 
         var restRes = runtime.Health.RestAtWendePalace();
         Assert.True(restRes.Success);
+
+        // 验证廷议待办读取与一键交办 (仅扣 2 精力)
+        var affairs = runtime.Delegation.GetPendingAffairs();
+        Assert.NotEmpty(affairs);
+
+        var batchRes = runtime.Delegation.ExecuteBatchDelegation();
+        Assert.True(batchRes.Success);
     }
 }

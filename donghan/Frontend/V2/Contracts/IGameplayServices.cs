@@ -170,6 +170,13 @@ public interface IImperialHealthUiService
     ActionResult IndulgeInHarem();
 }
 
+public interface ICourtDelegationUiService
+{
+    IReadOnlyList<DonghanEngine.Core.Politics.DelegationAffairItem> GetPendingAffairs();
+    ActionResult ExecuteDirectAffair(string affairId);
+    ActionResult ExecuteBatchDelegation(IReadOnlyList<string>? affairIds = null);
+}
+
 public interface IEdictService : IGetPendingEdictsService, IResolveEdictService
 {
 }
