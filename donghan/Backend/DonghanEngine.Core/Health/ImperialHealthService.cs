@@ -175,13 +175,21 @@ public sealed class ImperialHealthService : IImperialHealthService
 
     public void ConsumeEnergyForAffairs(GameState state, int cost, string affairName)
     {
-        // 政务消耗：名医在朝减免 15% 损耗
-        int actualCost = cost;
-        if (state.ChiefPhysicianId == "zhang_zhongjing")
+        double multiplier = 1.0;
+
+        // 规则：阳气低于 30，则处理政务 150% 精力消耗，变相生病虚耗
+        if (state.HiddenYangVitality < 30)
         {
-            actualCost = (int)Math.Max(1, cost * 0.85);
+            multiplier *= 1.50;
         }
 
+        // 名医在朝减免 15% 损耗
+        if (state.ChiefPhysicianId == "zhang_zhongjing")
+        {
+            multiplier *= 0.85;
+        }
+
+        int actualCost = (int)Math.Max(1, Math.Round(cost * multiplier));
         state.HiddenCurrentEnergy = Math.Max(0, state.HiddenCurrentEnergy - actualCost);
     }
 
@@ -215,6 +223,13 @@ public sealed class ImperialHealthService : IImperialHealthService
             stateDesc = "🟠 虚耗神伤 · 亏蚀根本";
             pulse = "脉象浮大无力，弦紧兼数，气血两亏。";
             advice = "太医院急奏：精亏血耗，已逼近沉疴之坎，月末结算恐永久损耗寿命元气！";
+        }
+        else if (state.HiddenYangVitality < 30)
+        {
+            mentalState = ImperialMentalState.YangDeficient;
+            stateDesc = "🟣 虚阳浮越 · 畏寒面青(阳气衰竭)";
+            pulse = "尺脉沉微，真阳衰竭，动则气喘，畏寒神怠。";
+            advice = "太医令急奏：真阳已跌破三成，政务劳形损耗剧增五成(150%)，月末恢复仅剩一成，切勿再临外朝！";
         }
         else if (state.HiddenYangVitality < 50)
         {

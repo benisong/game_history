@@ -264,7 +264,7 @@ public partial class MainSceneV3 : Control
             DonghanEngine.Core.Health.ImperialMentalState.Radiant => "🔴 精神状态：龙精虎猛",
             DonghanEngine.Core.Health.ImperialMentalState.ClearAndCalm => "🟢 精神状态：神闲气定",
             DonghanEngine.Core.Health.ImperialMentalState.SlightlyFatigued => "🟡 精神状态：神思稍倦",
-            DonghanEngine.Core.Health.ImperialMentalState.YangDeficient => "🟣 精神状态：虚阳浮越(阳亏)",
+            DonghanEngine.Core.Health.ImperialMentalState.YangDeficient => "🟣 精神状态：虚阳浮越(畏寒阳亏)",
             DonghanEngine.Core.Health.ImperialMentalState.DeeplyExhausted => "🟠 精神状态：虚耗神伤",
             _ => "💀 精神状态：气若游丝(病笃)"
         };

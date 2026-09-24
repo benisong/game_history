@@ -107,6 +107,33 @@ public class ImperialHealthDynamicTests
     }
 
     [Fact]
+    public void Test_ConsumeEnergyForAffairs_YangBelowThirty_IncreasesCostToOneHundredFiftyPercent()
+    {
+        // 规则：阳气低于 30，处理政务 150% 精力消耗（变相生病）
+        var stateNormalYang = new GameState
+        {
+            HiddenCurrentEnergy = 50,
+            HiddenMaxEnergy = 100,
+            HiddenYangVitality = 80
+        };
+
+        // 正常消耗 10 点精力 -> 50 - 10 = 40
+        _healthService.ConsumeEnergyForAffairs(stateNormalYang, 10, "大朝会");
+        Assert.Equal(40, stateNormalYang.HiddenCurrentEnergy);
+
+        var stateLowYang = new GameState
+        {
+            HiddenCurrentEnergy = 50,
+            HiddenMaxEnergy = 100,
+            HiddenYangVitality = 25 // 阳气 < 30
+        };
+
+        // 150% 消耗：10 * 1.5 = 15 点精力 -> 50 - 15 = 35
+        _healthService.ConsumeEnergyForAffairs(stateLowYang, 10, "大朝会");
+        Assert.Equal(35, stateLowYang.HiddenCurrentEnergy);
+    }
+
+    [Fact]
     public void Test_IndulgeInHarem_TieredConversion_EightyPlus_SeventyPlus_BelowSeventy()
     {
         // 规则：每次临幸阳气减少 5 点
