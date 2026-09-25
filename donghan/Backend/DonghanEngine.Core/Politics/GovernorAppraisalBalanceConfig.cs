@@ -1,6 +1,8 @@
+using DonghanEngine.Core.Balance;
+
 namespace DonghanEngine.Core.Politics;
 
-public sealed class GovernorAppraisalBalanceConfig
+public sealed class GovernorAppraisalBalanceConfig : IGovernorAppraisalBalanceProvider
 {
     public int InferiorSupportThreshold { get; set; } = 30;
     public int InferiorAmbitionThreshold { get; set; } = 80;

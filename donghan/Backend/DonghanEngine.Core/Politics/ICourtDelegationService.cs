@@ -15,6 +15,6 @@ public interface ICourtDelegationService
     BatchDelegationResult ExecuteBatchDelegation(GameState state, IReadOnlyList<string>? affairIds = null);
 
     // 允许外部动态调整/加载平衡配置（完全不写死）
-    void UpdateConfig(DelegationConfig config);
-    DelegationConfig GetConfig();
+    void UpdateConfig(DonghanEngine.Core.Balance.IDelegationBalanceProvider config);
+    DonghanEngine.Core.Balance.IDelegationBalanceProvider GetConfig();
 }

@@ -8,21 +8,21 @@ namespace DonghanEngine.Core.Politics;
 /// 纯领域服务：执行常规军饷发放、内库额外犒赏与禁军哗变判定（单一职责）
 /// 支持 IInitializableBalance&lt;PayrollBalanceConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class MilitaryPayrollService : IMilitaryPayrollService, IInitializableBalance<PayrollBalanceConfig>
+public sealed class MilitaryPayrollService : IMilitaryPayrollService, IInitializableBalance<IPayrollBalanceProvider>
 {
-    private PayrollBalanceConfig _config;
+    private IPayrollBalanceProvider _config;
 
-    public MilitaryPayrollService(PayrollBalanceConfig? config = null)
+    public MilitaryPayrollService(IPayrollBalanceProvider? config = null)
     {
         _config = config ?? new PayrollBalanceConfig();
     }
 
-    public void InitializeConfig(PayrollBalanceConfig config)
+    public void InitializeConfig(IPayrollBalanceProvider config)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
     }
 
-    public PayrollBalanceConfig GetConfig() => _config;
+    public IPayrollBalanceProvider GetConfig() => _config;
 
     public MilitaryPayrollResult ProcessPayroll(GameState state, bool grantExtraBonus = false)
     {

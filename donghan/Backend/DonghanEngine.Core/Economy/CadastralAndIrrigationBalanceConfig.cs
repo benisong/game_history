@@ -1,6 +1,8 @@
+using DonghanEngine.Core.Balance;
+
 namespace DonghanEngine.Core.Economy;
 
-public sealed class CadastralAndIrrigationBalanceConfig
+public sealed class CadastralAndIrrigationBalanceConfig : ICadastralAndIrrigationBalanceProvider
 {
     // 度田三种强度配置
     public double MildReduction { get; set; } = 0.05;

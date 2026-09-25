@@ -1,6 +1,8 @@
+using DonghanEngine.Core.Balance;
+
 namespace DonghanEngine.Core.Politics;
 
-public sealed class ImperialPrestigeBalanceConfig
+public sealed class ImperialPrestigeBalanceConfig : IImperialPrestigeBalanceProvider
 {
     public int PuppetMaxThreshold { get; set; } = 25;
     public double PuppetEfficiency { get; set; } = 0.35;

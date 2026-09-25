@@ -8,21 +8,21 @@ namespace DonghanEngine.Core.Economy;
 /// 纯领域服务：流民转化流寇、反哺地缘军阀收编部曲引擎（单一职责）
 /// 支持 IInitializableBalance&lt;BanditBalanceConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class BanditWarlordSymbiosisEngine : IBanditWarlordSymbiosisEngine, IInitializableBalance<BanditBalanceConfig>
+public sealed class BanditWarlordSymbiosisEngine : IBanditWarlordSymbiosisEngine, IInitializableBalance<IBanditBalanceProvider>
 {
-    private BanditBalanceConfig _config;
+    private IBanditBalanceProvider _config;
 
-    public BanditWarlordSymbiosisEngine(BanditBalanceConfig? config = null)
+    public BanditWarlordSymbiosisEngine(IBanditBalanceProvider? config = null)
     {
         _config = config ?? new BanditBalanceConfig();
     }
 
-    public void InitializeConfig(BanditBalanceConfig config)
+    public void InitializeConfig(IBanditBalanceProvider config)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
     }
 
-    public BanditBalanceConfig GetConfig() => _config;
+    public IBanditBalanceProvider GetConfig() => _config;
 
     public BanditSpilloverResult EvaluateBanditSpillover(GameState state, string provinceId, int displacedRefugees)
     {

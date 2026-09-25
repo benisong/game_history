@@ -11,23 +11,23 @@ namespace DonghanEngine.Core.Politics;
 /// 纯领域服务：朝堂廷议分权代办、大臣属性扭曲与精力平衡引擎（单一职责）
 /// 支持 IInitializableBalance&lt;DelegationConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class CourtDelegationService : ICourtDelegationService, IInitializableBalance<DelegationConfig>
+public sealed class CourtDelegationService : ICourtDelegationService, IInitializableBalance<IDelegationBalanceProvider>
 {
-    private DelegationConfig _config;
+    private IDelegationBalanceProvider _config;
     private readonly IImperialHealthService _healthService;
 
     public CourtDelegationService(
-        DelegationConfig? config = null,
+        IDelegationBalanceProvider? config = null,
         IImperialHealthService? healthService = null)
     {
         _config = config ?? new DelegationConfig();
         _healthService = healthService ?? new ImperialHealthService();
     }
 
-    public void InitializeConfig(DelegationConfig config) => UpdateConfig(config);
+    public void InitializeConfig(IDelegationBalanceProvider config) => UpdateConfig(config);
 
-    public void UpdateConfig(DelegationConfig config) => _config = config ?? throw new ArgumentNullException(nameof(config));
-    public DelegationConfig GetConfig() => _config;
+    public void UpdateConfig(IDelegationBalanceProvider config) => _config = config ?? throw new ArgumentNullException(nameof(config));
+    public IDelegationBalanceProvider GetConfig() => _config;
 
     public IReadOnlyList<DelegationAffairItem> GetPendingAffairs(GameState state)
     {

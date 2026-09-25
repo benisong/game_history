@@ -9,21 +9,21 @@ namespace DonghanEngine.Core.Politics;
 /// 纯领域服务：刺史/州牧年终大考课与内调升迁博弈（单一职责）
 /// 支持 IInitializableBalance&lt;GovernorAppraisalBalanceConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class GovernorAppraisalService : IGovernorAppraisalService, IInitializableBalance<GovernorAppraisalBalanceConfig>
+public sealed class GovernorAppraisalService : IGovernorAppraisalService, IInitializableBalance<IGovernorAppraisalBalanceProvider>
 {
-    private GovernorAppraisalBalanceConfig _config;
+    private IGovernorAppraisalBalanceProvider _config;
 
-    public GovernorAppraisalService(GovernorAppraisalBalanceConfig? config = null)
+    public GovernorAppraisalService(IGovernorAppraisalBalanceProvider? config = null)
     {
         _config = config ?? new GovernorAppraisalBalanceConfig();
     }
 
-    public void InitializeConfig(GovernorAppraisalBalanceConfig config)
+    public void InitializeConfig(IGovernorAppraisalBalanceProvider config)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
     }
 
-    public GovernorAppraisalBalanceConfig GetConfig() => _config;
+    public IGovernorAppraisalBalanceProvider GetConfig() => _config;
 
     public AnnualAppraisalReport EvaluateAnnualAppraisal(GameState state)
     {

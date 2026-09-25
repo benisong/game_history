@@ -1,6 +1,8 @@
+using DonghanEngine.Core.Balance;
+
 namespace DonghanEngine.Core.Health;
 
-public sealed class HealthBalanceConfig
+public sealed class HealthBalanceConfig : IHealthBalanceProvider
 {
     public double MonthlyRecoveryRate { get; set; } = 0.40;
     public int LowEnergyThreshold1 { get; set; } = 40;

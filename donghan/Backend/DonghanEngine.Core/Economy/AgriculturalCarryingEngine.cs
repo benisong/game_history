@@ -8,21 +8,21 @@ namespace DonghanEngine.Core.Economy;
 /// 纯领域服务：评估州郡土地人口承载力、世家土地兼并与马尔萨斯危机（单一职责）
 /// 支持 IInitializableBalance&lt;AgriculturalCarryingBalanceConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class AgriculturalCarryingEngine : IAgriculturalCarryingEngine, IInitializableBalance<AgriculturalCarryingBalanceConfig>
+public sealed class AgriculturalCarryingEngine : IAgriculturalCarryingEngine, IInitializableBalance<IAgriculturalCarryingBalanceProvider>
 {
-    private AgriculturalCarryingBalanceConfig _config;
+    private IAgriculturalCarryingBalanceProvider _config;
 
-    public AgriculturalCarryingEngine(AgriculturalCarryingBalanceConfig? config = null)
+    public AgriculturalCarryingEngine(IAgriculturalCarryingBalanceProvider? config = null)
     {
         _config = config ?? new AgriculturalCarryingBalanceConfig();
     }
 
-    public void InitializeConfig(AgriculturalCarryingBalanceConfig config)
+    public void InitializeConfig(IAgriculturalCarryingBalanceProvider config)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
     }
 
-    public AgriculturalCarryingBalanceConfig GetConfig() => _config;
+    public IAgriculturalCarryingBalanceProvider GetConfig() => _config;
 
     public ProvinceCarryingReport EvaluateProvince(Province province, int weatherSeverity = 0, double aristocracyLandRatio = 0.40)
     {

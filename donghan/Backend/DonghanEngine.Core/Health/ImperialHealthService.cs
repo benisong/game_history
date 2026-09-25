@@ -8,21 +8,21 @@ namespace DonghanEngine.Core.Health;
 /// 纯领域服务：天子隐藏精气神、月度比例结算、临幸阳气换精力与寿命损耗引擎（单一职责）
 /// 支持 IInitializableBalance&lt;HealthBalanceConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class ImperialHealthService : IImperialHealthService, IInitializableBalance<HealthBalanceConfig>
+public sealed class ImperialHealthService : IImperialHealthService, IInitializableBalance<IHealthBalanceProvider>
 {
-    private HealthBalanceConfig _config;
+    private IHealthBalanceProvider _config;
 
-    public ImperialHealthService(HealthBalanceConfig? config = null)
+    public ImperialHealthService(IHealthBalanceProvider? config = null)
     {
         _config = config ?? new HealthBalanceConfig();
     }
 
-    public void InitializeConfig(HealthBalanceConfig config)
+    public void InitializeConfig(IHealthBalanceProvider config)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
     }
 
-    public HealthBalanceConfig GetConfig() => _config;
+    public IHealthBalanceProvider GetConfig() => _config;
 
     public ImperialHealthDiagnosisReport AdvanceXunHealthSettlement(GameState state)
     {

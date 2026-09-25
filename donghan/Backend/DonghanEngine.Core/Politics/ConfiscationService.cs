@@ -9,21 +9,21 @@ namespace DonghanEngine.Core.Politics;
 /// 纯领域服务：执行抄家断案与关联关系网络惩罚（单一职责）
 /// 支持 IInitializableBalance&lt;ConfiscationBalanceConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class ConfiscationService : IConfiscationService, IInitializableBalance<ConfiscationBalanceConfig>
+public sealed class ConfiscationService : IConfiscationService, IInitializableBalance<IConfiscationBalanceProvider>
 {
-    private ConfiscationBalanceConfig _config;
+    private IConfiscationBalanceProvider _config;
 
-    public ConfiscationService(ConfiscationBalanceConfig? config = null)
+    public ConfiscationService(IConfiscationBalanceProvider? config = null)
     {
         _config = config ?? new ConfiscationBalanceConfig();
     }
 
-    public void InitializeConfig(ConfiscationBalanceConfig config)
+    public void InitializeConfig(IConfiscationBalanceProvider config)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
     }
 
-    public ConfiscationBalanceConfig GetConfig() => _config;
+    public IConfiscationBalanceProvider GetConfig() => _config;
 
     public ConfiscationExecutionResult ConfiscateTarget(GameState state, string targetNpcId)
     {

@@ -1,6 +1,8 @@
+using DonghanEngine.Core.Balance;
+
 namespace DonghanEngine.Core.Economy;
 
-public sealed class AgriculturalCarryingBalanceConfig
+public sealed class AgriculturalCarryingBalanceConfig : IAgriculturalCarryingBalanceProvider
 {
     public double MaxWeatherPenalty { get; set; } = 0.60;
     public double WeatherSeverityScale { get; set; } = 0.015;

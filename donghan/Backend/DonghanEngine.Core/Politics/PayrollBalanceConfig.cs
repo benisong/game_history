@@ -1,6 +1,8 @@
+using DonghanEngine.Core.Balance;
+
 namespace DonghanEngine.Core.Politics;
 
-public sealed class PayrollBalanceConfig
+public sealed class PayrollBalanceConfig : IPayrollBalanceProvider
 {
     public int BaseCostPerThousandSoldiers { get; set; } = 150; // 每1000兵每旬常规军饷
     public int BonusCostPerThousandSoldiers { get; set; } = 250; // 每1000兵额外犒赏开销

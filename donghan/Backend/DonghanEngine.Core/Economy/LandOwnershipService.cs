@@ -8,21 +8,21 @@ namespace DonghanEngine.Core.Economy;
 /// 纯领域服务：国家/世家土地产权、战乱焦土与世家出资赎田系统（单一职责）
 /// 支持 IInitializableBalance&lt;LandBalanceConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class LandOwnershipService : ILandOwnershipService, IInitializableBalance<LandBalanceConfig>
+public sealed class LandOwnershipService : ILandOwnershipService, IInitializableBalance<ILandBalanceProvider>
 {
-    private LandBalanceConfig _config;
+    private ILandBalanceProvider _config;
 
-    public LandOwnershipService(LandBalanceConfig? config = null)
+    public LandOwnershipService(ILandBalanceProvider? config = null)
     {
         _config = config ?? new LandBalanceConfig();
     }
 
-    public void InitializeConfig(LandBalanceConfig config)
+    public void InitializeConfig(ILandBalanceProvider config)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
     }
 
-    public LandBalanceConfig GetConfig() => _config;
+    public ILandBalanceProvider GetConfig() => _config;
 
     public PostWarLandResolutionResult ResolveWarLandScorching(GameState state, string provinceId, string victorFactionId, bool isImperialDirectArmy)
     {

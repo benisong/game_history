@@ -9,21 +9,21 @@ namespace DonghanEngine.Core.Politics;
 /// 纯领域服务：天子威望非线性政治力学评估器（紧凑黄金区 46~60，单一职责）
 /// 支持 IInitializableBalance&lt;ImperialPrestigeBalanceConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class ImperialPrestigeEvaluator : IImperialPrestigeEvaluator, IInitializableBalance<ImperialPrestigeBalanceConfig>
+public sealed class ImperialPrestigeEvaluator : IImperialPrestigeEvaluator, IInitializableBalance<IImperialPrestigeBalanceProvider>
 {
-    private ImperialPrestigeBalanceConfig _config;
+    private IImperialPrestigeBalanceProvider _config;
 
-    public ImperialPrestigeEvaluator(ImperialPrestigeBalanceConfig? config = null)
+    public ImperialPrestigeEvaluator(IImperialPrestigeBalanceProvider? config = null)
     {
         _config = config ?? new ImperialPrestigeBalanceConfig();
     }
 
-    public void InitializeConfig(ImperialPrestigeBalanceConfig config)
+    public void InitializeConfig(IImperialPrestigeBalanceProvider config)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
     }
 
-    public ImperialPrestigeBalanceConfig GetConfig() => _config;
+    public IImperialPrestigeBalanceProvider GetConfig() => _config;
 
     public PrestigeEvaluationResult Evaluate(int currentPrestige)
     {

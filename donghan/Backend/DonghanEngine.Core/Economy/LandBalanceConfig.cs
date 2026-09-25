@@ -1,6 +1,8 @@
+using DonghanEngine.Core.Balance;
+
 namespace DonghanEngine.Core.Economy;
 
-public sealed class LandBalanceConfig
+public sealed class LandBalanceConfig : ILandBalanceProvider
 {
     public int WarGentryLossRatioPercent { get; set; } = 35; // 战后世家私田沦为焦土比例 (35%)
     public int ScorchedMonthsDuration { get; set; } = 6;      // 焦土休耕持续月数 (6个月)

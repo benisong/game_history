@@ -1,6 +1,8 @@
+using DonghanEngine.Core.Balance;
+
 namespace DonghanEngine.Core.Politics;
 
-public sealed class ConfiscationBalanceConfig
+public sealed class ConfiscationBalanceConfig : IConfiscationBalanceProvider
 {
     public int MinBaseStash { get; set; } = 500;
     public int CorruptionGoldMultiplier { get; set; } = 80;

@@ -10,21 +10,21 @@ namespace DonghanEngine.Core.Politics;
 /// 纯领域服务：世家察举荐辟、天子御批任免与名士流向诸侯系统（单一职责）
 /// 支持 IInitializableBalance&lt;TalentNominationBalanceConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class TalentNominationService : ITalentNominationService, IInitializableBalance<TalentNominationBalanceConfig>
+public sealed class TalentNominationService : ITalentNominationService, IInitializableBalance<ITalentNominationBalanceProvider>
 {
-    private TalentNominationBalanceConfig _config;
+    private ITalentNominationBalanceProvider _config;
 
-    public TalentNominationService(TalentNominationBalanceConfig? config = null)
+    public TalentNominationService(ITalentNominationBalanceProvider? config = null)
     {
         _config = config ?? new TalentNominationBalanceConfig();
     }
 
-    public void InitializeConfig(TalentNominationBalanceConfig config)
+    public void InitializeConfig(ITalentNominationBalanceProvider config)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
     }
 
-    public TalentNominationBalanceConfig GetConfig() => _config;
+    public ITalentNominationBalanceProvider GetConfig() => _config;
 
     private static readonly List<AristocratFamily> DefaultFamilies = new()
     {

@@ -1,6 +1,8 @@
+using DonghanEngine.Core.Balance;
+
 namespace DonghanEngine.Core.Politics;
 
-public sealed class OfficialRankBalanceConfig
+public sealed class OfficialRankBalanceConfig : IOfficialRankBalanceProvider
 {
     public int MaxPromotionStepAllowance { get; set; } = 3;      // 正规升迁单次最大超擢跨度 (3级)
     public int ExtraordinaryPromotionStepThreshold { get; set; } = 2; // 判定为超擢拔擢的级数门槛 (>=2级)

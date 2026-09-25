@@ -10,21 +10,21 @@ namespace DonghanEngine.Core.Politics;
 /// 纯领域服务：文武官阶九品梯队、正道阶梯升迁（限超擢3级）与西园通天卖官系统（单一职责）
 /// 支持 IInitializableBalance&lt;OfficialRankBalanceConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class OfficialRankService : IOfficialRankService, IInitializableBalance<OfficialRankBalanceConfig>
+public sealed class OfficialRankService : IOfficialRankService, IInitializableBalance<IOfficialRankBalanceProvider>
 {
-    private OfficialRankBalanceConfig _config;
+    private IOfficialRankBalanceProvider _config;
 
-    public OfficialRankService(OfficialRankBalanceConfig? config = null)
+    public OfficialRankService(IOfficialRankBalanceProvider? config = null)
     {
         _config = config ?? new OfficialRankBalanceConfig();
     }
 
-    public void InitializeConfig(OfficialRankBalanceConfig config)
+    public void InitializeConfig(IOfficialRankBalanceProvider config)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
     }
 
-    public OfficialRankBalanceConfig GetConfig() => _config;
+    public IOfficialRankBalanceProvider GetConfig() => _config;
 
     private static readonly List<OfficialPosition> Positions = new()
     {

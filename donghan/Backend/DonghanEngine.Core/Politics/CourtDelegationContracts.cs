@@ -58,7 +58,7 @@ public sealed record BatchDelegationResult(
 /// <summary>
 /// 廷议代办可配置参数矩阵（数值完全不写死，支持运行时与配置文件大幅微调）
 /// </summary>
-public sealed class DelegationConfig
+public sealed class DelegationConfig : DonghanEngine.Core.Balance.IDelegationBalanceProvider
 {
     public int BatchDelegationEnergyCost { get; set; } = 2; // 一揽子批复固定精力消耗 (预设 2)
     public double AbilityEfficiencyWeight { get; set; } = 1.0; // 能力对成效的加权系数

@@ -1,6 +1,8 @@
+using DonghanEngine.Core.Balance;
+
 namespace DonghanEngine.Core.Politics;
 
-public sealed class TalentNominationBalanceConfig
+public sealed class TalentNominationBalanceConfig : ITalentNominationBalanceProvider
 {
     public int AppointFamilyLoyaltyGain { get; set; } = 15;
     public int AppointFamilyPowerGain { get; set; } = 10;

@@ -8,21 +8,21 @@ namespace DonghanEngine.Core.Economy;
 /// 纯领域服务：度田令丈量土地、清查隐匿田产与水利官修工程（单一职责）
 /// 支持 IInitializableBalance&lt;CadastralAndIrrigationBalanceConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class CadastralAndIrrigationService : ICadastralSurveyService, IIrrigationService, IInitializableBalance<CadastralAndIrrigationBalanceConfig>
+public sealed class CadastralAndIrrigationService : ICadastralSurveyService, IIrrigationService, IInitializableBalance<ICadastralAndIrrigationBalanceProvider>
 {
-    private CadastralAndIrrigationBalanceConfig _config;
+    private ICadastralAndIrrigationBalanceProvider _config;
 
-    public CadastralAndIrrigationService(CadastralAndIrrigationBalanceConfig? config = null)
+    public CadastralAndIrrigationService(ICadastralAndIrrigationBalanceProvider? config = null)
     {
         _config = config ?? new CadastralAndIrrigationBalanceConfig();
     }
 
-    public void InitializeConfig(CadastralAndIrrigationBalanceConfig config)
+    public void InitializeConfig(ICadastralAndIrrigationBalanceProvider config)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
     }
 
-    public CadastralAndIrrigationBalanceConfig GetConfig() => _config;
+    public ICadastralAndIrrigationBalanceProvider GetConfig() => _config;
 
     public CadastralSurveyResult ExecuteCadastralSurvey(GameState state, string provinceId, CadastralSurveyIntensity intensity)
     {
