@@ -1,13 +1,29 @@
 using System;
 using DonghanEngine.Core;
+using DonghanEngine.Core.Balance;
 
 namespace DonghanEngine.Core.Economy;
 
 /// <summary>
 /// 纯领域服务：流民转化流寇、反哺地缘军阀收编部曲引擎（单一职责）
+/// 支持 IInitializableBalance&lt;BanditBalanceConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class BanditWarlordSymbiosisEngine : IBanditWarlordSymbiosisEngine
+public sealed class BanditWarlordSymbiosisEngine : IBanditWarlordSymbiosisEngine, IInitializableBalance<BanditBalanceConfig>
 {
+    private BanditBalanceConfig _config;
+
+    public BanditWarlordSymbiosisEngine(BanditBalanceConfig? config = null)
+    {
+        _config = config ?? new BanditBalanceConfig();
+    }
+
+    public void InitializeConfig(BanditBalanceConfig config)
+    {
+        _config = config ?? throw new ArgumentNullException(nameof(config));
+    }
+
+    public BanditBalanceConfig GetConfig() => _config;
+
     public BanditSpilloverResult EvaluateBanditSpillover(GameState state, string provinceId, int displacedRefugees)
     {
         if (displacedRefugees <= 0)
@@ -23,7 +39,6 @@ public sealed class BanditWarlordSymbiosisEngine : IBanditWarlordSymbiosisEngine
                 ChronicleText: "境内晏然。");
         }
 
-        // 根据省份地缘匹配潜在收编诸侯与精锐兵种
         string warlordId;
         string eliteTroopName;
         string provinceName = state.Provinces.TryGetValue(provinceId, out var p) ? p.Name : provinceId;
@@ -59,11 +74,9 @@ public sealed class BanditWarlordSymbiosisEngine : IBanditWarlordSymbiosisEngine
                 break;
         }
 
-        // 收编精壮比例：约 35% 流民被军阀收编为精锐部曲，其余散落为流寇贼众
-        int absorbedTroops = (displacedRefugees * 35) / 100;
-        int powerGained = Math.Max(5, absorbedTroops / 200);
+        int absorbedTroops = (displacedRefugees * _config.AbsorbedTroopsPercent) / 100;
+        int powerGained = Math.Max(_config.MinPowerGain, absorbedTroops / _config.PowerGainDivisor);
 
-        // 若诸侯在朝野谱系中，提升其权势
         string warlordDisplayName = warlordId;
         if (state.Npcs.TryGetValue(warlordId, out var warlord))
         {

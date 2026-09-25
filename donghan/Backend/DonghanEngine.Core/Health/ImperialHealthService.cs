@@ -1,23 +1,33 @@
 using System;
 using DonghanEngine.Core;
+using DonghanEngine.Core.Balance;
 
 namespace DonghanEngine.Core.Health;
 
 /// <summary>
 /// 纯领域服务：天子隐藏精气神、月度比例结算、临幸阳气换精力与寿命损耗引擎（单一职责）
+/// 支持 IInitializableBalance&lt;HealthBalanceConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class ImperialHealthService : IImperialHealthService
+public sealed class ImperialHealthService : IImperialHealthService, IInitializableBalance<HealthBalanceConfig>
 {
-    // 规则 3：阳气每一旬自动恢复 1-2 点 (默认 2 点基准，可配置)
-    public const int DefaultYangRecoveryPerXun = 2;
+    private HealthBalanceConfig _config;
 
-    // 规则 3：临幸后宫按照一点阳气换 3-5 点精力 (默认 4 点基准，可配置)
-    public const int DefaultEnergyPerYangPoint = 4;
+    public ImperialHealthService(HealthBalanceConfig? config = null)
+    {
+        _config = config ?? new HealthBalanceConfig();
+    }
+
+    public void InitializeConfig(HealthBalanceConfig config)
+    {
+        _config = config ?? throw new ArgumentNullException(nameof(config));
+    }
+
+    public HealthBalanceConfig GetConfig() => _config;
 
     public ImperialHealthDiagnosisReport AdvanceXunHealthSettlement(GameState state)
     {
-        // 1. 阳气随着时间缓慢恢复（每一旬自然恢复 1-2 点，上限 100）
-        int yangRecover = DefaultYangRecoveryPerXun;
+        // 规则 1：阳气随着时间缓慢恢复（每一旬自然恢复 1-2 点，上限 100）
+        int yangRecover = _config.YangRecoveryPerXun;
         if (state.ChiefPhysicianId != null)
         {
             yangRecover = (int)Math.Round(yangRecover * 1.15); // 名医在朝增益 15%
@@ -32,14 +42,14 @@ public sealed class ImperialHealthService : IImperialHealthService
         // 规则 1：精力按月进行结算恢复
         // 规则 2：每次节点恢复精力的时候，恢复的是当前剩余精力的 40%
         // 规则 4：阳气低于 50 恢复效率变成一半即 20%，低于 20 回复率变成 10%
-        double recoveryRate = 0.40;
-        if (state.HiddenYangVitality < 20)
+        double recoveryRate = _config.MonthlyRecoveryRate;
+        if (state.HiddenYangVitality < _config.LowYangRecoveryThreshold2)
         {
-            recoveryRate = 0.10;
+            recoveryRate = _config.LowYangRecoveryRate2;
         }
-        else if (state.HiddenYangVitality < 50)
+        else if (state.HiddenYangVitality < _config.LowYangRecoveryThreshold1)
         {
-            recoveryRate = 0.20;
+            recoveryRate = _config.LowYangRecoveryRate1;
         }
 
         // 名医（华佗/张仲景）辅助恢复提升 15%
@@ -55,11 +65,11 @@ public sealed class ImperialHealthService : IImperialHealthService
 
         // 规则 3：结算时当前精力低于 40 则永久减少一点最大值，低于 20 永久减少 2 点
         int maxEnergyLoss = 0;
-        if (state.HiddenCurrentEnergy < 20)
+        if (state.HiddenCurrentEnergy < _config.LowEnergyThreshold2)
         {
             maxEnergyLoss = 2;
         }
-        else if (state.HiddenCurrentEnergy < 40)
+        else if (state.HiddenCurrentEnergy < _config.LowEnergyThreshold1)
         {
             maxEnergyLoss = 1;
         }
@@ -83,7 +93,7 @@ public sealed class ImperialHealthService : IImperialHealthService
     public HealthActionResolutionResult IndulgeInHarem(GameState state)
     {
         // 规则：每次临幸后宫阳气减少 5 点
-        const int yangCost = 5;
+        int yangCost = _config.YangHaremDrain;
         if (state.HiddenYangVitality < yangCost)
         {
             return new HealthActionResolutionResult(
@@ -93,22 +103,22 @@ public sealed class ImperialHealthService : IImperialHealthService
                 YangDelta: 0,
                 NewMentalState: GetPhysicianDiagnosis(state).MentalState,
                 NarrativeTitle: "【阳气衰竭 · 难近声色】",
-                ChronicleText: "天子真阳亏虚不足（少于5点），四肢畏寒神怠，已无力临幸后宫，切须清心养元！");
+                ChronicleText: $"天子真阳亏虚不足（少于{yangCost}点），四肢畏寒神怠，已无力临幸后宫，切须清心养元！");
         }
 
         // 规则：阳气 80 以上每点换 5 点精力，70 以上换 4 点，70 以下换 3 点
         int ratePerPoint;
-        if (state.HiddenYangVitality >= 80)
+        if (state.HiddenYangVitality >= _config.YangHighRateThreshold)
         {
-            ratePerPoint = 5;
+            ratePerPoint = _config.EnergyPerYangHighRate;
         }
-        else if (state.HiddenYangVitality >= 70)
+        else if (state.HiddenYangVitality >= _config.YangMidRateThreshold)
         {
-            ratePerPoint = 4;
+            ratePerPoint = _config.EnergyPerYangMidRate;
         }
         else
         {
-            ratePerPoint = 3;
+            ratePerPoint = _config.EnergyPerYangLowRate;
         }
 
         int energyGained = yangCost * ratePerPoint;
@@ -119,7 +129,7 @@ public sealed class ImperialHealthService : IImperialHealthService
         int realGained = state.HiddenCurrentEnergy - oldEnergy;
 
         var diag = GetPhysicianDiagnosis(state);
-        string warning = state.HiddenYangVitality < 50 ? "（太医令密奏：真阳已跌破半数，畏寒面青，月末精力恢复效率将折半！）" : "";
+        string warning = state.HiddenYangVitality < _config.LowYangRecoveryThreshold1 ? "（太医令密奏：真阳已跌破半数，畏寒面青，月末精力恢复效率将折半！）" : "";
         string chronicle = $"【临幸后宫】天子驻跸后宫温德欢宴。阳气折损{yangCost}点，借阳化精提振精神{warning}。";
         state.AddToChronicle(chronicle);
 
@@ -136,14 +146,14 @@ public sealed class ImperialHealthService : IImperialHealthService
     public HealthActionResolutionResult RestAtWendePalace(GameState state)
     {
         // 温德殿静养：本旬息政，额外提前获得一次当月剩余精力 40% 的休整恢复
-        double recoveryRate = 0.40;
-        if (state.HiddenYangVitality < 20)
+        double recoveryRate = _config.MonthlyRecoveryRate;
+        if (state.HiddenYangVitality < _config.LowYangRecoveryThreshold2)
         {
-            recoveryRate = 0.10;
+            recoveryRate = _config.LowYangRecoveryRate2;
         }
-        else if (state.HiddenYangVitality < 50)
+        else if (state.HiddenYangVitality < _config.LowYangRecoveryThreshold1)
         {
-            recoveryRate = 0.20;
+            recoveryRate = _config.LowYangRecoveryRate1;
         }
 
         if (state.ChiefPhysicianId == "hua_tuo" || state.ChiefPhysicianId == "zhang_zhongjing")
@@ -178,9 +188,9 @@ public sealed class ImperialHealthService : IImperialHealthService
         double multiplier = 1.0;
 
         // 规则：阳气低于 30，则处理政务 150% 精力消耗，变相生病虚耗
-        if (state.HiddenYangVitality < 30)
+        if (state.HiddenYangVitality < _config.LowYangAffairPenaltyThreshold)
         {
-            multiplier *= 1.50;
+            multiplier *= _config.LowYangAffairCostMultiplier;
         }
 
         // 名医在朝减免 15% 损耗
@@ -196,12 +206,12 @@ public sealed class ImperialHealthService : IImperialHealthService
     public ImperialHealthDiagnosisReport GetPhysicianDiagnosis(GameState state)
     {
         // 规则 5：精力最大值低于 80，开始生病，每少 10 点生命力少 10 年寿数（以 70 岁大寿为基准）
-        bool isDiseased = state.HiddenMaxEnergy < 80;
+        bool isDiseased = state.HiddenMaxEnergy < _config.MaxEnergyDiseaseThreshold;
         int yearsLost = 0;
         if (isDiseased)
         {
-            int gap = 80 - state.HiddenMaxEnergy;
-            yearsLost = (int)Math.Ceiling(gap / 10.0) * 10;
+            int gap = _config.MaxEnergyDiseaseThreshold - state.HiddenMaxEnergy;
+            yearsLost = (int)Math.Ceiling(gap / _config.DiseaseStepSize) * _config.LifespanYearsPerStep;
         }
 
         // 规则 2：精力不显示，以古典精神状态来暗示
@@ -224,14 +234,14 @@ public sealed class ImperialHealthService : IImperialHealthService
             pulse = "脉象浮大无力，弦紧兼数，气血两亏。";
             advice = "太医院急奏：精亏血耗，已逼近沉疴之坎，月末结算恐永久损耗寿命元气！";
         }
-        else if (state.HiddenYangVitality < 30)
+        else if (state.HiddenYangVitality < _config.LowYangAffairPenaltyThreshold)
         {
             mentalState = ImperialMentalState.YangDeficient;
             stateDesc = "🟣 虚阳浮越 · 畏寒面青(阳气衰竭)";
             pulse = "尺脉沉微，真阳衰竭，动则气喘，畏寒神怠。";
-            advice = "太医令急奏：真阳已跌破三成，政务劳形损耗剧增五成(150%)，月末恢复仅剩一成，切勿再临外朝！";
+            advice = $"太医令急奏：真阳已跌破三成，政务劳形损耗剧增五成({(int)(_config.LowYangAffairCostMultiplier * 100)}%)，月末恢复仅剩一成，切勿再临外朝！";
         }
-        else if (state.HiddenYangVitality < 50)
+        else if (state.HiddenYangVitality < _config.LowYangRecoveryThreshold1)
         {
             mentalState = ImperialMentalState.YangDeficient;
             stateDesc = "🟣 虚阳浮越 · 畏寒神怠";

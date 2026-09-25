@@ -2,14 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DonghanEngine.Core;
+using DonghanEngine.Core.Balance;
 using DonghanEngine.Core.Health;
 
 namespace DonghanEngine.Core.Politics;
 
 /// <summary>
 /// 纯领域服务：朝堂廷议分权代办、大臣属性扭曲与精力平衡引擎（单一职责）
+/// 支持 IInitializableBalance&lt;DelegationConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class CourtDelegationService : ICourtDelegationService
+public sealed class CourtDelegationService : ICourtDelegationService, IInitializableBalance<DelegationConfig>
 {
     private DelegationConfig _config;
     private readonly IImperialHealthService _healthService;
@@ -21,6 +23,8 @@ public sealed class CourtDelegationService : ICourtDelegationService
         _config = config ?? new DelegationConfig();
         _healthService = healthService ?? new ImperialHealthService();
     }
+
+    public void InitializeConfig(DelegationConfig config) => UpdateConfig(config);
 
     public void UpdateConfig(DelegationConfig config) => _config = config ?? throw new ArgumentNullException(nameof(config));
     public DelegationConfig GetConfig() => _config;

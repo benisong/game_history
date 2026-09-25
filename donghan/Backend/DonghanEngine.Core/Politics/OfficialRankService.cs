@@ -2,14 +2,30 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DonghanEngine.Core;
+using DonghanEngine.Core.Balance;
 
 namespace DonghanEngine.Core.Politics;
 
 /// <summary>
 /// 纯领域服务：文武官阶九品梯队、正道阶梯升迁（限超擢3级）与西园通天卖官系统（单一职责）
+/// 支持 IInitializableBalance&lt;OfficialRankBalanceConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class OfficialRankService : IOfficialRankService
+public sealed class OfficialRankService : IOfficialRankService, IInitializableBalance<OfficialRankBalanceConfig>
 {
+    private OfficialRankBalanceConfig _config;
+
+    public OfficialRankService(OfficialRankBalanceConfig? config = null)
+    {
+        _config = config ?? new OfficialRankBalanceConfig();
+    }
+
+    public void InitializeConfig(OfficialRankBalanceConfig config)
+    {
+        _config = config ?? throw new ArgumentNullException(nameof(config));
+    }
+
+    public OfficialRankBalanceConfig GetConfig() => _config;
+
     private static readonly List<OfficialPosition> Positions = new()
     {
         // 9品
@@ -121,8 +137,8 @@ public sealed class OfficialRankService : IOfficialRankService
                 ErrorCode: "NotPromotion");
         }
 
-        // 2. 正规升迁铁律：一次最多不得超擢超过 3 级！
-        if (promotionSteps > 3)
+        // 2. 正规升迁铁律：一次最多不得超擢超过配置级数（默认3级）
+        if (promotionSteps > _config.MaxPromotionStepAllowance)
         {
             string blockedChronicle = $"【封驳】天子欲直拔【{npc.Name}】为【{targetTitle}】（超擢{promotionSteps}级）。尚书台与三公执奏封驳：“名位僭越，逾越祖宗三级考课成宪，伏请收回成命！”";
             state.AddToChronicle(blockedChronicle);
@@ -144,9 +160,9 @@ public sealed class OfficialRankService : IOfficialRankService
         }
 
         // 3. 执行升迁结算
-        bool isExtraordinary = promotionSteps >= 2;
-        int loyaltyDelta = isExtraordinary ? 35 : 15; // 超擢获拔擢者大喜死忠
-        int scholarPenalty = isExtraordinary ? -10 : 0; // 朝中文官老臣因超擢轻微不满
+        bool isExtraordinary = promotionSteps >= _config.ExtraordinaryPromotionStepThreshold;
+        int loyaltyDelta = isExtraordinary ? _config.ExtraordinaryPromotionLoyaltyGain : _config.StandardPromotionLoyaltyGain;
+        int scholarPenalty = isExtraordinary ? _config.ExtraordinaryScholarLoyaltyPenalty : 0;
 
         string oldTitle = npc.Title;
         npc.Title = targetTitle;
@@ -229,7 +245,7 @@ public sealed class OfficialRankService : IOfficialRankService
         // 1. 西园卖官：无视品阶！哪怕是白丁，直接空降一品三公！
         buyer.Title = targetTitle;
         buyer.TitleTier = targetPos.RankTier;
-        buyer.AdjustFavorability(20);
+        buyer.AdjustFavorability(_config.OfficeSaleBuyerFavorabilityGain);
 
         // 2. 资金进入天子私库 (PrivateTreasury)
         state.PrivateTreasury = Math.Clamp(state.PrivateTreasury + price, 0, 999999);
@@ -237,15 +253,15 @@ public sealed class OfficialRankService : IOfficialRankService
         // 3. 剧烈的天下反噬
         int moralePenalty = targetPos.RankTier switch
         {
-            1 => -25, // 卖三公：民心暴跌
-            2 => -18, // 卖州牧
-            3 => -12, // 卖九卿
-            _ => -6
+            1 => _config.OfficeSaleTier1MoralePenalty, // 卖三公：民心暴跌
+            2 => _config.OfficeSaleTier2MoralePenalty, // 卖州牧
+            3 => _config.OfficeSaleTier3MoralePenalty, // 卖九卿
+            _ => _config.OfficeSaleDefaultMoralePenalty
         };
         state.PopularSupport = Math.Clamp(state.PopularSupport + moralePenalty, 0, 100);
 
         // 4. 清流名士与老臣耻与为伍，忠诚暴跌
-        int scholarPenalty = targetPos.RankTier <= 3 ? -20 : -8;
+        int scholarPenalty = targetPos.RankTier <= 3 ? _config.OfficeSaleHighRankScholarPenalty : _config.OfficeSaleLowRankScholarPenalty;
         foreach (var (_, otherNpc) in state.Npcs)
         {
             if (otherNpc.Id != buyerNpcId && otherNpc.IsActive && otherNpc.Faction == "清流派")

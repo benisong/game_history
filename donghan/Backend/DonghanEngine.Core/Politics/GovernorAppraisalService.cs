@@ -1,14 +1,30 @@
 using System;
 using System.Collections.Generic;
 using DonghanEngine.Core;
+using DonghanEngine.Core.Balance;
 
 namespace DonghanEngine.Core.Politics;
 
 /// <summary>
 /// 纯领域服务：刺史/州牧年终大考课与内调升迁博弈（单一职责）
+/// 支持 IInitializableBalance&lt;GovernorAppraisalBalanceConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class GovernorAppraisalService : IGovernorAppraisalService
+public sealed class GovernorAppraisalService : IGovernorAppraisalService, IInitializableBalance<GovernorAppraisalBalanceConfig>
 {
+    private GovernorAppraisalBalanceConfig _config;
+
+    public GovernorAppraisalService(GovernorAppraisalBalanceConfig? config = null)
+    {
+        _config = config ?? new GovernorAppraisalBalanceConfig();
+    }
+
+    public void InitializeConfig(GovernorAppraisalBalanceConfig config)
+    {
+        _config = config ?? throw new ArgumentNullException(nameof(config));
+    }
+
+    public GovernorAppraisalBalanceConfig GetConfig() => _config;
+
     public AnnualAppraisalReport EvaluateAnnualAppraisal(GameState state)
     {
         var records = new List<GovernorAppraisalRecord>();
@@ -35,13 +51,13 @@ public sealed class GovernorAppraisalService : IGovernorAppraisalService
             string recommendedAction;
             string evalReport;
 
-            if (prov.IsRebelling || support < 30 || (governor.Ambition >= 80 && governor.Favorability < 40))
+            if (prov.IsRebelling || support < _config.InferiorSupportThreshold || (governor.Ambition >= _config.InferiorAmbitionThreshold && governor.Favorability < _config.InferiorFavorabilityThreshold))
             {
                 grade = AppraisalGrade.Inferior;
                 recommendedAction = "宜下诏申饬，削减部曲，甚至遣御史收捕";
                 evalReport = $"【下考】{prov.Name}治下生乱，民心凋敝（{support}点）。刺史野心高企（{governor.Ambition}点），隐匿田赋，有跋扈不臣之势！";
             }
-            else if (support >= 60 && taxContribution >= 400 && governor.Favorability >= 60)
+            else if (support >= _config.SuperiorSupportThreshold && taxContribution >= _config.SuperiorTaxContributionThreshold && governor.Favorability >= _config.SuperiorFavorabilityThreshold)
             {
                 grade = AppraisalGrade.Superior;
                 recommendedAction = "政绩卓绝，宜召拜九卿/执金吾内调中枢辅政";
@@ -97,8 +113,7 @@ public sealed class GovernorAppraisalService : IGovernorAppraisalService
         string provinceName = state.Provinces.TryGetValue(provinceId, out var prov) ? prov.Name : "外郡";
 
         // 核心博弈力学：刺史是否遵旨奉召内调？
-        // 遵旨内调条件：(天子威望 >= 46 黄金区 或 忠诚 >= 70) 且 (野心 < 80)
-        bool willAcceptRecall = (state.ImperialPower >= 46 || governor.Favorability >= 70) && governor.Ambition < 80;
+        bool willAcceptRecall = (state.ImperialPower >= _config.PromotionImperialPowerThreshold || governor.Favorability >= _config.PromotionFavorabilityThreshold) && governor.Ambition < _config.PromotionMaxAmbitionThreshold;
 
         if (willAcceptRecall)
         {
@@ -111,13 +126,13 @@ public sealed class GovernorAppraisalService : IGovernorAppraisalService
 
             governor.Title = targetCourtTitle;
             governor.InitialLocation = "洛阳朝堂";
-            governor.AdjustFavorability(15);
-            governor.AdjustPower(10);
+            governor.AdjustFavorability(_config.PromotionFavorabilityGain);
+            governor.AdjustPower(_config.PromotionPowerGain);
 
-            state.ImperialPower = Math.Clamp(state.ImperialPower + 3, 0, 100);
+            state.ImperialPower = Math.Clamp(state.ImperialPower + _config.PromotionImperialPowerGain, 0, 100);
 
             string title = $"【征拜九卿 · 顺服还朝】天子征拜【{governor.Name}】为【{targetCourtTitle}】！{provinceName}军政大权顺利收归中央！";
-            string chronicle = $"【还朝】天子降明诏征拜{provinceName}太守【{governor.Name}】入朝担任【{targetCourtTitle}】。{governor.Name}恪守纯臣之节，奉诏交卸州印还京入阁，{provinceName}平稳重归朝廷直辖，皇权+3！";
+            string chronicle = $"【还朝】天子降明诏征拜{provinceName}太守【{governor.Name}】入朝担任【{targetCourtTitle}】。{governor.Name}恪守纯臣之节，奉诏交卸州印还京入阁，{provinceName}平稳重归朝廷直辖，皇权+{_config.PromotionImperialPowerGain}！";
 
             state.AddToChronicle(chronicle);
 
@@ -128,20 +143,20 @@ public sealed class GovernorAppraisalService : IGovernorAppraisalService
                 ProvinceId: provinceId,
                 AcceptedRecall: true,
                 TargetCourtTitle: targetCourtTitle,
-                ImperialPowerDelta: 3,
-                GentryLoyaltyDelta: 5,
+                ImperialPowerDelta: _config.PromotionImperialPowerGain,
+                GentryLoyaltyDelta: _config.PromotionGentryLoyaltyGain,
                 NarrativeTitle: title,
                 ChronicleText: chronicle);
         }
         else
         {
-            // 2. 封疆抗命（将在外君命有所不受）：野心大或朝廷弱，上表称病推诿
-            governor.AdjustFavorability(-15);
-            governor.AdjustPower(5);
-            state.ImperialPower = Math.Clamp(state.ImperialPower - 3, 0, 100);
+            // 2. 封疆抗命
+            governor.AdjustFavorability(_config.RefusalFavorabilityPenalty);
+            governor.AdjustPower(_config.RefusalPowerGain);
+            state.ImperialPower = Math.Clamp(state.ImperialPower + _config.RefusalImperialPowerPenalty, 0, 100);
 
             string title = $"【抗旨推诿 · 拥兵自重】{provinceName}太守【{governor.Name}】抗拒内调！上表称病留任！";
-            string chronicle = $"【抗命】天子欲征拜{provinceName}长吏【{governor.Name}】为【{targetCourtTitle}】内调回京。{governor.Name}自恃山高皇帝远、拥兵自重，托辞“边陲未靖、抱病难行”上表谢绝入朝，强行留据{provinceName}！朝野侧目，皇权-3！";
+            string chronicle = $"【抗命】天子欲征拜{provinceName}长吏【{governor.Name}】为【{targetCourtTitle}】内调回京。{governor.Name}自恃山高皇帝远、拥兵自重，托辞“边陲未靖、抱病难行”上表谢绝入朝，强行留据{provinceName}！朝野侧目，皇权{_config.RefusalImperialPowerPenalty}！";
 
             state.AddToChronicle(chronicle);
 
@@ -152,8 +167,8 @@ public sealed class GovernorAppraisalService : IGovernorAppraisalService
                 ProvinceId: provinceId,
                 AcceptedRecall: false,
                 TargetCourtTitle: targetCourtTitle,
-                ImperialPowerDelta: -3,
-                GentryLoyaltyDelta: -5,
+                ImperialPowerDelta: _config.RefusalImperialPowerPenalty,
+                GentryLoyaltyDelta: _config.RefusalGentryLoyaltyPenalty,
                 NarrativeTitle: title,
                 ChronicleText: chronicle,
                 ErrorCode: "GovernorRefusedRecall");

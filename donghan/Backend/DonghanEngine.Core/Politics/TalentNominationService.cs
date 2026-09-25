@@ -2,14 +2,30 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DonghanEngine.Core;
+using DonghanEngine.Core.Balance;
 
 namespace DonghanEngine.Core.Politics;
 
 /// <summary>
 /// 纯领域服务：世家察举荐辟、天子御批任免与名士流向诸侯系统（单一职责）
+/// 支持 IInitializableBalance&lt;TalentNominationBalanceConfig&gt; 接口，供超级控制工具动态调参
 /// </summary>
-public sealed class TalentNominationService : ITalentNominationService
+public sealed class TalentNominationService : ITalentNominationService, IInitializableBalance<TalentNominationBalanceConfig>
 {
+    private TalentNominationBalanceConfig _config;
+
+    public TalentNominationService(TalentNominationBalanceConfig? config = null)
+    {
+        _config = config ?? new TalentNominationBalanceConfig();
+    }
+
+    public void InitializeConfig(TalentNominationBalanceConfig config)
+    {
+        _config = config ?? throw new ArgumentNullException(nameof(config));
+    }
+
+    public TalentNominationBalanceConfig GetConfig() => _config;
+
     private static readonly List<AristocratFamily> DefaultFamilies = new()
     {
         new AristocratFamily(
@@ -154,9 +170,9 @@ public sealed class TalentNominationService : ITalentNominationService
         state.RegisterNpc(newNpc);
 
         // 2. 提升该世家忠诚度，微增其在朝廷权势
-        int familyLoyaltyDelta = 15;
-        int familyPowerDelta = 10;
-        int imperialPowerDelta = 3; // 广纳贤才提振皇权
+        int familyLoyaltyDelta = _config.AppointFamilyLoyaltyGain;
+        int familyPowerDelta = _config.AppointFamilyPowerGain;
+        int imperialPowerDelta = _config.AppointImperialPowerGain;
         state.ImperialPower = Math.Clamp(state.ImperialPower + imperialPowerDelta, 0, 100);
 
         string title = $"【御批除官 · 门阀归心】天子擢拜{candidate.Name}为{officeTitle}！{familyName}阖族称颂！";
@@ -182,11 +198,11 @@ public sealed class TalentNominationService : ITalentNominationService
         string familyName = family?.FamilyName ?? "名门世家";
 
         // 1. 被驳回后，世家忠诚度下降
-        int familyLoyaltyDelta = -20;
-        int familyPowerDelta = -5;
+        int familyLoyaltyDelta = _config.RejectFamilyLoyaltyPenalty;
+        int familyPowerDelta = _config.RejectFamilyPowerPenalty;
         int imperialPowerDelta = 0;
 
-        // 2. 判定人才外逃流向（根据家族地缘与名士特质）
+        // 2. 判定人才外逃流向
         string destinationFactionId = candidate.SponsoringFamilyId switch
         {
             "ru_nan_yuan" => "yuan_shao",
