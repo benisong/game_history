@@ -8,7 +8,7 @@ namespace DonghanEngine.Core;
 
 public partial class GameEngine : IGameEngine
 {
-    private readonly GameState _state;
+    private GameState _state;
     private readonly IAIScheduler _scheduler;
     private readonly IEventOracle _oracle;
     private readonly IMinisterAgent _ministerAgent;
@@ -28,6 +28,7 @@ public partial class GameEngine : IGameEngine
     private readonly DonghanEngine.Core.Politics.IGovernorAppraisalService _governorAppraisalService;
     private readonly DonghanEngine.Core.Health.IImperialHealthService _healthService;
     private readonly DonghanEngine.Core.Politics.ICourtDelegationService _courtDelegationService;
+    private readonly DonghanEngine.Core.Persistence.ISaveGameService _saveGameService;
     internal readonly Random _rng;
 
     public DonghanEngine.Core.Geopolitics.Contracts.IGeopoliticalSimulationEngine GeopoliticsEngine => _geopoliticsEngine;
@@ -53,7 +54,8 @@ public partial class GameEngine : IGameEngine
         DonghanEngine.Core.Economy.ILandOwnershipService? landOwnershipService = null,
         DonghanEngine.Core.Politics.IGovernorAppraisalService? governorAppraisalService = null,
         DonghanEngine.Core.Health.IImperialHealthService? healthService = null,
-        DonghanEngine.Core.Politics.ICourtDelegationService? courtDelegationService = null)
+        DonghanEngine.Core.Politics.ICourtDelegationService? courtDelegationService = null,
+        DonghanEngine.Core.Persistence.ISaveGameService? saveGameService = null)
     {
         _state = state;
         _scheduler = scheduler;
@@ -76,6 +78,7 @@ public partial class GameEngine : IGameEngine
         _governorAppraisalService = governorAppraisalService ?? new DonghanEngine.Core.Politics.GovernorAppraisalService();
         _healthService = healthService ?? new DonghanEngine.Core.Health.ImperialHealthService();
         _courtDelegationService = courtDelegationService ?? new DonghanEngine.Core.Politics.CourtDelegationService(healthService: _healthService);
+        _saveGameService = saveGameService ?? new DonghanEngine.Core.Persistence.SaveGameService(healthService: _healthService);
     }
 
     public GameState GetState() => _state;
@@ -340,6 +343,42 @@ public partial class GameEngine : IGameEngine
     public DonghanEngine.Core.Politics.AffairExecutionReport ExecuteDirectAffair(string affairId)
     {
         return _courtDelegationService.ExecuteDirectAffair(_state, affairId);
+    }
+
+    // 持久化存档/读档/自动存档领域实现
+    public DonghanEngine.Core.Persistence.SaveOperationResult SaveGame(int slotIndex, string? customSaveName = null)
+    {
+        return _saveGameService.SaveGame(_state, slotIndex, customSaveName);
+    }
+
+    public DonghanEngine.Core.Persistence.SaveOperationResult LoadGame(int slotIndex)
+    {
+        var result = _saveGameService.LoadGame(slotIndex);
+        if (result.Success && result.LoadedState != null)
+        {
+            _state = result.LoadedState;
+        }
+        return result;
+    }
+
+    public DonghanEngine.Core.Persistence.SaveOperationResult ExecuteAutoSave(string triggerReason = "每旬例行起居注")
+    {
+        return _saveGameService.ExecuteAutoSave(_state, triggerReason);
+    }
+
+    public IReadOnlyList<DonghanEngine.Core.Persistence.SaveSlotMetadata> ListSaveSlots()
+    {
+        return _saveGameService.ListAllSlots();
+    }
+
+    public bool DeleteSave(int slotIndex)
+    {
+        return _saveGameService.DeleteSave(slotIndex);
+    }
+
+    public bool HasAutoSave()
+    {
+        return _saveGameService.HasAutoSave();
     }
 
     public DonghanEngine.Core.Politics.BatchDelegationResult ExecuteBatchDelegation(IReadOnlyList<string>? affairIds = null)
@@ -628,6 +667,9 @@ public partial class GameEngine : IGameEngine
                 }
             }
         }
+
+        // 每旬结算完毕后：自动触发起居注（防断电与崩溃丢失）
+        _saveGameService.ExecuteAutoSave(_state, "每旬时钟更迭");
 
         // 189 年之后：开启天下诸侯宏观地缘推演（诸侯攻伐、战役步进与岁贡）
         if (_state.Year >= 189)

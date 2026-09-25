@@ -177,6 +177,16 @@ public interface ICourtDelegationUiService
     ActionResult ExecuteBatchDelegation(IReadOnlyList<string>? affairIds = null);
 }
 
+public interface IPersistenceUiService
+{
+    DonghanEngine.Core.Persistence.SaveOperationResult SaveGame(int slotIndex, string? customSaveName = null);
+    DonghanEngine.Core.Persistence.SaveOperationResult LoadGame(int slotIndex);
+    DonghanEngine.Core.Persistence.SaveOperationResult ExecuteAutoSave(string triggerReason = "每旬例行起居注");
+    IReadOnlyList<DonghanEngine.Core.Persistence.SaveSlotMetadata> ListSaveSlots();
+    bool DeleteSave(int slotIndex);
+    bool HasAutoSave();
+}
+
 public interface IEdictService : IGetPendingEdictsService, IResolveEdictService
 {
 }

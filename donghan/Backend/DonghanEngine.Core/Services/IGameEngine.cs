@@ -129,11 +129,22 @@ public interface IGeopoliticalDomainService
     DonghanEngine.Core.Geopolitics.Contracts.EdictExecutionResult ResolveGeopoliticalMemorial(string memorialId, string optionId);
 }
 
+public interface IPersistenceDomainService
+{
+    DonghanEngine.Core.Persistence.SaveOperationResult SaveGame(int slotIndex, string? customSaveName = null);
+    DonghanEngine.Core.Persistence.SaveOperationResult LoadGame(int slotIndex);
+    DonghanEngine.Core.Persistence.SaveOperationResult ExecuteAutoSave(string triggerReason = "每旬例行起居注");
+    IReadOnlyList<DonghanEngine.Core.Persistence.SaveSlotMetadata> ListSaveSlots();
+    bool DeleteSave(int slotIndex);
+    bool HasAutoSave();
+}
+
 /// <summary>
 /// 聚合核心引擎接口：完全由单职责领域接口组合而成
 /// </summary>
 public interface IGameEngine :
     IGameStateProvider,
+    IPersistenceDomainService,
     IGeopoliticalDomainService,
     ITravelDomainService,
     IDrillArmyDomainService,

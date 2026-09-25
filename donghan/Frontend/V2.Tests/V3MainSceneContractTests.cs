@@ -48,5 +48,16 @@ public class V3MainSceneContractTests
 
         var batchRes = runtime.Delegation.ExecuteBatchDelegation();
         Assert.True(batchRes.Success);
+
+        // 验证持久化存档与起居注槽位
+        var slots = runtime.Persistence.ListSaveSlots();
+        Assert.NotEmpty(slots);
+        Assert.True(slots.Count >= 7); // 1个自动存档 + 6个手动存档
+
+        var saveRes = runtime.Persistence.SaveGame(1, "【测试】御案起居注");
+        Assert.True(saveRes.Success);
+
+        var loadRes = runtime.Persistence.LoadGame(1);
+        Assert.True(loadRes.Success);
     }
 }

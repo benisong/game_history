@@ -33,6 +33,7 @@ public partial class MainSceneV3 : Control
     private VBoxContainer _ministerCardPanel = null!;
     private VBoxContainer _westGardenPanel = null!;
     private VBoxContainer _chroniclePanel = null!;
+    private VBoxContainer _saveLoadPanel = null!;
 
     // 选中的地块
     private string _currentSelectedProvinceId = "sili";
@@ -256,6 +257,11 @@ public partial class MainSceneV3 : Control
         _chroniclePanel = new VBoxContainer { Name = "起居注" };
         _chroniclePanel.AddThemeConstantOverride("separation", 8);
         _deskTabs.AddChild(_chroniclePanel);
+
+        // Tab 6: 存档与读档管理 (起居注封存与披阅)
+        _saveLoadPanel = new VBoxContainer { Name = "💾 存档与读档" };
+        _saveLoadPanel.AddThemeConstantOverride("separation", 8);
+        _deskTabs.AddChild(_saveLoadPanel);
     }
 
     private void RefreshUi()
@@ -291,6 +297,7 @@ public partial class MainSceneV3 : Control
         RenderMinisterCards();
         RenderWestGardenDesk();
         RenderChronicle();
+        RenderSaveLoadDesk();
     }
 
     private void RenderSandTableProvinces()
@@ -671,6 +678,83 @@ public partial class MainSceneV3 : Control
                 Text = entry,
                 AutowrapMode = TextServer.AutowrapMode.WordSmart
             });
+        }
+    }
+
+    private void RenderSaveLoadDesk()
+    {
+        foreach (var c in _saveLoadPanel.GetChildren()) c.QueueFree();
+
+        var header = new Label
+        {
+            Text = "📜 【太史令起居注 · 历史卷轴封存与披阅】",
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        _saveLoadPanel.AddChild(header);
+
+        var slots = _runtime.Persistence.ListSaveSlots();
+        var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
+        var listContainer = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        listContainer.AddThemeConstantOverride("separation", 8);
+        scroll.AddChild(listContainer);
+        _saveLoadPanel.AddChild(scroll);
+
+        foreach (var slot in slots)
+        {
+            var slotBox = new PanelContainer();
+            var row = new HBoxContainer();
+            row.AddThemeConstantOverride("separation", 10);
+            slotBox.AddChild(row);
+
+            var infoBox = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            string titleText = slot.IsAutoSave
+                ? (slot.Exists ? $"⚡ 【自动起居注】 {slot.CurrentDateText}" : "⚡ 【自动起居注】 (虚位以待)")
+                : (slot.Exists ? $"💾 【槽位 {slot.SlotIndex}】 {slot.SaveName}" : $"💾 【槽位 {slot.SlotIndex}】 (虚位以待)");
+
+            var titleLabel = new Label
+            {
+                Text = titleText,
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            };
+            var detailLabel = new Label
+            {
+                Text = slot.Exists ? $"   • {slot.SummaryPreview} ｜ 时间: {slot.Timestamp:yyyy-MM-dd HH:mm}" : "   • 点击右侧按钮封存当前起居注",
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            };
+            infoBox.AddChild(titleLabel);
+            infoBox.AddChild(detailLabel);
+            row.AddChild(infoBox);
+
+            // 操作按钮
+            if (slot.Exists)
+            {
+                var loadBtn = new Button { Text = "📖 披阅(读取)" };
+                DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(loadBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.PrimaryGold);
+                int sIndex = slot.SlotIndex;
+                loadBtn.Pressed += () =>
+                {
+                    var res = _runtime.Persistence.LoadGame(sIndex);
+                    ShowActionResult(new ActionResult(res.Success, res.Success ? "【披阅前事】" : "【读档受阻】", res.Message, res.Success ? ReportKind.Information : ReportKind.Warning, Array.Empty<StateChange>()));
+                    RefreshUi();
+                };
+                row.AddChild(loadBtn);
+            }
+
+            if (!slot.IsAutoSave)
+            {
+                var saveBtn = new Button { Text = slot.Exists ? "✍️ 覆写(保存)" : "✍️ 封存(保存)" };
+                DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(saveBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.DarkWood);
+                int sIndex = slot.SlotIndex;
+                saveBtn.Pressed += () =>
+                {
+                    var res = _runtime.Persistence.SaveGame(sIndex);
+                    ShowActionResult(new ActionResult(res.Success, res.Success ? "【封存起居注】" : "【存档受阻】", res.Message, res.Success ? ReportKind.Information : ReportKind.Warning, Array.Empty<StateChange>()));
+                    RefreshUi();
+                };
+                row.AddChild(saveBtn);
+            }
+
+            listContainer.AddChild(slotBox);
         }
     }
 
