@@ -45,7 +45,11 @@ public sealed class GameEngineSpecialActionService : ISpecialActionService
 
             if (command.ActionId == "confiscate_direct")
             {
-                var confiscateResult = _confiscationDomain.ExecuteConfiscateTarget(command.TargetNpcId);
+                var destEnum = command.Destination == "私库" 
+                    ? DonghanEngine.Core.Politics.ConfiscationDestination.PrivateTreasury 
+                    : DonghanEngine.Core.Politics.ConfiscationDestination.NationalTreasury;
+
+                var confiscateResult = _confiscationDomain.ExecuteConfiscateTarget(command.TargetNpcId, destEnum);
                 if (!confiscateResult.Success)
                 {
                     return ActionResult.Failure("籍没查抄回奏", confiscateResult.ChronicleText, ReportKind.Warning, "ConfiscationFailed");
@@ -54,7 +58,7 @@ public sealed class GameEngineSpecialActionService : ISpecialActionService
                 return new ActionResult(
                     true,
                     confiscateResult.NarrativeTitle,
-                    confiscateResult.ChronicleText,
+                    $"【籍没奏报】查抄【{confiscateResult.TargetName}】名下赃银共计 {confiscateResult.GoldSeized:N0} 万钱，粮草 {confiscateResult.GrainSeized:N0} 石，已尽数缴入{(destEnum == DonghanEngine.Core.Politics.ConfiscationDestination.PrivateTreasury ? "西园天子私库" : "太仓国库")}！\n\n{confiscateResult.ChronicleText}",
                     ReportKind.Information,
                     Array.Empty<StateChange>());
             }

@@ -292,13 +292,69 @@ public partial class MainScene : Control
         if (_westGardenActionsVBox == null || _gameState == null) return;
         ClearWestGardenChildren(_westGardenActionsVBox);
 
-        AddWestGardenSectionTitle("私库经营");
+        AddWestGardenSectionTitle("内廷特务暗署 (蹇硕督办)");
         _westGardenActionsVBox.AddChild(new Label
         {
-            Text = "预览：私库 +1000 万，皇权 -3。",
+            Text = "密令：刺探封疆刺史野心、盯梢京畿朝臣或暗查贪墨搜集铁证。",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
-        AddWestGardenActionButton("鬻官纳钱", DoWestGardenSellOfficeAction);
+
+        var spyTargetOption = new OptionButton();
+        var eligibleTargets = _gameState.Npcs.Values
+            .Where(n => n.Id != "jian_shuo")
+            .OrderByDescending(n => n.Corruption + n.Ambition)
+            .ToList();
+        for (int i = 0; i < eligibleTargets.Count; i++)
+        {
+            var t = eligibleTargets[i];
+            spyTargetOption.AddItem($"{t.Name}（{t.Title}｜{t.Faction}）", i);
+        }
+        StylePopupInput(spyTargetOption, PopupSkin.WestGarden);
+        _westGardenActionsVBox.AddChild(spyTargetOption);
+
+        AddWestGardenActionButton("🕵️ 密探封疆野心 (耗300万)", () =>
+        {
+            if (eligibleTargets.Count == 0) return;
+            var target = eligibleTargets[spyTargetOption.Selected];
+            var res = _gameEngine!.DispatchSpyMission(DonghanEngine.Core.Politics.SpyMissionType.InvestigateGovernorAmbition, target.Id);
+            ShowWestGardenReportPopup("西园特务密报", res.NarrativeReport);
+            UpdateUI();
+        }, disabled: eligibleTargets.Count == 0 || (_gameState.PrivateTreasury < 300 && _gameState.Treasury < 300));
+
+        AddWestGardenActionButton("👁️ 盯梢京官党羽 (耗300万)", () =>
+        {
+            if (eligibleTargets.Count == 0) return;
+            var target = eligibleTargets[spyTargetOption.Selected];
+            var res = _gameEngine!.DispatchSpyMission(DonghanEngine.Core.Politics.SpyMissionType.TailCourtOfficial, target.Id);
+            ShowWestGardenReportPopup("西园特务密报", res.NarrativeReport);
+            UpdateUI();
+        }, disabled: eligibleTargets.Count == 0 || (_gameState.PrivateTreasury < 300 && _gameState.Treasury < 300));
+
+        AddWestGardenActionButton("📜 暗查贪墨搜集罪证 (耗300万)", () =>
+        {
+            if (eligibleTargets.Count == 0) return;
+            var target = eligibleTargets[spyTargetOption.Selected];
+            var res = _gameEngine!.DispatchSpyMission(DonghanEngine.Core.Politics.SpyMissionType.GatherCorruptionEvidence, target.Id);
+            ShowWestGardenReportPopup("西园特务密报", res.NarrativeReport);
+            UpdateUI();
+        }, disabled: eligibleTargets.Count == 0 || (_gameState.PrivateTreasury < 300 && _gameState.Treasury < 300));
+
+        AddWestGardenSectionTitle("密诏查抄台 (查抄私产)");
+        AddWestGardenActionButton("⚖️ 密诏查抄·充入私库", () =>
+        {
+            if (eligibleTargets.Count == 0) return;
+            var target = eligibleTargets[spyTargetOption.Selected];
+            _currentDetailsMinisterId = target.Id;
+            ShowConfiscateConfirmAction("私库");
+        }, disabled: eligibleTargets.Count == 0);
+
+        AddWestGardenActionButton("⚖️ 密诏查抄·充入国库", () =>
+        {
+            if (eligibleTargets.Count == 0) return;
+            var target = eligibleTargets[spyTargetOption.Selected];
+            _currentDetailsMinisterId = target.Id;
+            ShowConfiscateConfirmAction("国库");
+        }, disabled: eligibleTargets.Count == 0);
 
         AddWestGardenSectionTitle("阅兵犒赏");
         var officerOption = new OptionButton();
@@ -367,11 +423,6 @@ public partial class MainScene : Control
         troopSpin.ValueChanged += RefreshRecruitPreview;
         RefreshRecruitPreview(troopSpin.Value);
         AddWestGardenActionButton("下诏募兵", () => DoWestGardenRecruitAction((int)troopSpin.Value), disabled: capacity <= 0);
-
-        AddWestGardenSectionTitle("召见校尉");
-        AddWestGardenActionButton("召见蹇硕", () => ShowMinisterDetails("jian_shuo"));
-        AddWestGardenActionButton("召见曹操", () => ShowMinisterDetails("cao_cao"));
-        AddWestGardenActionButton("召见张让", () => ShowMinisterDetails("zhang_rang"));
     }
 
     private void AddWestGardenSectionTitle(string text)

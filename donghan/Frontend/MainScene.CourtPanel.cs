@@ -626,12 +626,34 @@ public partial class MainScene : Control
                 RenderCourtDefaultDecisions();
                 if (_courtStageLabel != null) _courtStageLabel.Text = $"{FormatTimeLabel()}  ·  阶段：择议";
                 break;
+            case "court_confiscate_public":
+                ExecuteCourtImpeachment("国库");
+                break;
+            case "court_jail_private":
+                ExecuteCourtImpeachment("私库");
+                break;
             case "free_edict":
                 ShowFreeEdictBox();
                 break;
             default:
                 RunCourtCommand(decision.Id);
                 break;
+        }
+    }
+
+    private void ExecuteCourtImpeachment(string destination)
+    {
+        if (_gameState == null) return;
+        var targets = _gameState.Npcs.Values.Where(n => n.Id != "jian_shuo").OrderByDescending(n => n.Corruption).ToList();
+        var target = targets.FirstOrDefault(n => n.Corruption >= 50) ?? targets.FirstOrDefault();
+        if (target != null)
+        {
+            _currentDetailsMinisterId = target.Id;
+            ShowConfiscateConfirmAction(destination);
+        }
+        else
+        {
+            ShowCourtReportPopup("三法司奏报", "【三法司廷审】御史台巡查百官，当下并无显露巨贪大恶之官员，暂无需大举抄没。");
         }
     }
 

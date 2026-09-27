@@ -31,7 +31,7 @@ public interface IDisasterReliefDomainService
 public interface IConfiscationDomainService
 {
     TurnResult ExecuteConfiscationAction(string targetMinisterId, string destination);
-    DonghanEngine.Core.Politics.ConfiscationExecutionResult ExecuteConfiscateTarget(string targetNpcId);
+    DonghanEngine.Core.Politics.ConfiscationExecutionResult ExecuteConfiscateTarget(string targetNpcId, DonghanEngine.Core.Politics.ConfiscationDestination destination = DonghanEngine.Core.Politics.ConfiscationDestination.NationalTreasury);
 }
 
 public interface IMilitaryPayrollDomainService

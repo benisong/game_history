@@ -25,7 +25,7 @@ public sealed class ConfiscationService : IConfiscationService, IInitializableBa
 
     public IConfiscationBalanceProvider GetConfig() => _config;
 
-    public ConfiscationExecutionResult ConfiscateTarget(GameState state, string targetNpcId)
+    public ConfiscationExecutionResult ConfiscateTarget(GameState state, string targetNpcId, ConfiscationDestination destination = ConfiscationDestination.NationalTreasury)
     {
         if (string.IsNullOrWhiteSpace(targetNpcId) || !state.Npcs.TryGetValue(targetNpcId, out var targetNpc))
         {
@@ -49,18 +49,28 @@ public sealed class ConfiscationService : IConfiscationService, IInitializableBa
         int goldSeized = baseStash + corruptionBonus + powerBonus;
         int grainSeized = (targetNpc.Corruption * _config.CorruptionGrainMultiplier) + _config.BaseGrainSeized;
 
-        // 执行国库注入与目标注销/收监
-        state.Treasury = Math.Clamp(state.Treasury + goldSeized, 0, 999999);
+        // 执行资金注入（国库 vs 西园私库）与目标注销/收监
+        if (destination == ConfiscationDestination.PrivateTreasury)
+        {
+            state.PrivateTreasury = Math.Clamp(state.PrivateTreasury + goldSeized, 0, 999999);
+        }
+        else
+        {
+            state.Treasury = Math.Clamp(state.Treasury + goldSeized, 0, 999999);
+        }
+
         targetNpc.StashedWealth = 0;
         targetNpc.Power = 0;
         targetNpc.Favorability = 0;
         targetNpc.IsActive = false;
-        targetNpc.DeathReason = $"【籍没查抄】因巨贪弄权被天子下明诏籍没家产，收押廷尉。";
+        string destName = destination == ConfiscationDestination.PrivateTreasury ? "西园私库" : "太仓国库";
+        targetNpc.DeathReason = $"【籍没查抄】因巨贪弄权被天子下密诏/明旨籍没家产，赃银充入{destName}，收押诏狱。";
 
-        // 2. 皇权立威与民心提振
+        // 2. 皇权立威与民心提振（入私库民心不加，甚至微降）
         int imperialPowerDelta = _config.ImperialPowerGainOnConfiscation;
-        int publicMoraleDelta = _config.PublicMoraleGainOnConfiscation;
+        int publicMoraleDelta = destination == ConfiscationDestination.PrivateTreasury ? -2 : _config.PublicMoraleGainOnConfiscation;
         state.ImperialPower = Math.Clamp(state.ImperialPower + imperialPowerDelta, 0, 100);
+        state.PopularSupport = Math.Clamp(state.PopularSupport + publicMoraleDelta, 0, 100);
 
         // 3. 关联派系与关系网络惩罚 (Affiliated Loyalty Penalty)
         var penalties = new Dictionary<string, int>();

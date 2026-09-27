@@ -116,6 +116,25 @@ public partial class MainScene : Control
             },
             new CourtTopicViewModel
             {
+                Id = "impeachment",
+                Category = "廷审",
+                Title = "三法司廷审巨贪",
+                Summary = "御史中丞与司隶校尉联名上奏，弹劾朝中巨蠹弄权敛财、隐匿私财，请天子明谕处置。",
+                Speeches = new List<CourtSpeechViewModel>
+                {
+                    new() { MinisterId = "he_jin", MinisterName = "何进", Faction = "外戚武臣", Speech = "大汉律令森严，贪墨巨万者若不惩处，何以服天下人心？请廷尉严加鞫问！", Attitude = "主张明法严惩" },
+                    new() { MinisterId = "zhang_rang", MinisterName = "张让", Faction = "中官近侍", Speech = "朝臣所指，多捕风捉影。若轻动重臣，恐朝局动荡，伏乞圣裁详察。", Attitude = "自辩 / 缓争" },
+                    new() { MinisterId = "cao_cao", MinisterName = "曹操", Faction = "西园武臣", Speech = "有罪者必究，国法不可废；然宜抄其家赀以充军国，不可株连过广。", Attitude = "严核罪证 / 充公国库" }
+                },
+                Decisions = new List<CourtDecisionViewModel>
+                {
+                    new() { Id = "court_confiscate_public", Label = "⚖️ 廷尉明诏：削职抄家·充公太仓", Hint = "经三法司正规审判，籍没贪墨家财入太仓国库，大涨皇权与民心。" },
+                    new() { Id = "court_jail_private", Label = "⛓️ 圣谕严惩：打入诏狱·赃银入私库", Hint = "由西园特务押入诏狱严审，家资尽数充入天子私库。" },
+                    new() { Id = "back_topics", Label = "暂行留中批复", Hint = "回到今日常议。" }
+                }
+            },
+            new CourtTopicViewModel
+            {
                 Id = "free",
                 Category = "自由",
                 Title = "亲拟圣旨",

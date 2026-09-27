@@ -616,43 +616,99 @@ public partial class MainSceneV3 : Control
     {
         foreach (var c in _westGardenPanel.GetChildren()) c.QueueFree();
 
+        var snap = _runtime.State.GetSnapshot();
+
         _westGardenPanel.AddChild(new Label
         {
-            Text = "🏛️ 【西园万金堂 · 鬻官私库与禁军校场】\n" +
-                   "• 西园私库卖官明码标价：可直售【太尉 / 司徒 / 司空】一品三公官职入内帑（民心受损）。\n" +
-                   "• 禁军校场支持阅兵赏赐与大扩军。",
+            Text = "🗡️ 【西园内廷密署 · 天子私军八校尉与特务暗网】\n" +
+                   "• 蹇硕统领内廷特务：密探刺史野心、盯梢京畿朝臣或搜集贪腐罪证。\n" +
+                   "• 密诏查抄台：查抄巨贪私产，可充入太仓国库或收归天子私库。\n" +
+                   "• 禁军校场：发内帑犒赏三军以固皇权士气，或下诏扩募禁军。",
             AutowrapMode = TextServer.AutowrapMode.WordSmart
         });
+
+        var spyHeader = new Label { Text = "【🕵️ 西园特务机要密令】" };
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(new Button(), DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.PrimaryGold);
+        _westGardenPanel.AddChild(spyHeader);
+
+        var spyRow = new FlowContainer();
+        spyRow.AddThemeConstantOverride("separation", 8);
+        _westGardenPanel.AddChild(spyRow);
+
+        var eligibleTargets = _runtime.Spy.GetEligibleTargets();
+        var targetNpc = eligibleTargets.FirstOrDefault(n => n.Id == "he_jin") ?? eligibleTargets.FirstOrDefault();
+        string targetId = targetNpc?.Id ?? "he_jin";
+        string targetName = targetNpc?.Name ?? "何进";
+
+        var spyAmbitionBtn = new Button { Text = $"🕵️ 密探【{targetName}】野心 (耗300万)" };
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(spyAmbitionBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.TealPolicy);
+        spyAmbitionBtn.Pressed += () =>
+        {
+            var res = _runtime.Spy.DispatchMission(DonghanEngine.Core.Politics.SpyMissionType.InvestigateGovernorAmbition, targetId);
+            ShowActionResult(new ActionResult(res.Success, "【西园特务密报】", res.NarrativeReport, res.Success ? ReportKind.Information : ReportKind.Warning, Array.Empty<StateChange>()));
+            RefreshUi();
+        };
+        spyRow.AddChild(spyAmbitionBtn);
+
+        var spyEvidenceBtn = new Button { Text = $"📜 搜集【{targetName}】贪腐罪证 (耗300万)" };
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(spyEvidenceBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.TealPolicy);
+        spyEvidenceBtn.Pressed += () =>
+        {
+            var res = _runtime.Spy.DispatchMission(DonghanEngine.Core.Politics.SpyMissionType.GatherCorruptionEvidence, targetId);
+            ShowActionResult(new ActionResult(res.Success, "【西园特务密报】", res.NarrativeReport, res.Success ? ReportKind.Information : ReportKind.Warning, Array.Empty<StateChange>()));
+            RefreshUi();
+        };
+        spyRow.AddChild(spyEvidenceBtn);
+
+        var confiscateHeader = new Label { Text = "【⚖️ 西园密诏查抄台】" };
+        _westGardenPanel.AddChild(confiscateHeader);
+
+        var confRow = new FlowContainer();
+        confRow.AddThemeConstantOverride("separation", 8);
+        _westGardenPanel.AddChild(confRow);
+
+        var confPrivateBtn = new Button { Text = $"⚖️ 密诏查抄【{targetName}】· 充入私库" };
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(confPrivateBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.CrimsonWarning);
+        confPrivateBtn.Pressed += () =>
+        {
+            var res = _runtime.SpecialActions.Execute(new SpecialActionCommand("confiscate_direct", TargetNpcId: targetId, Destination: "私库"));
+            ShowActionResult(res);
+            RefreshUi();
+        };
+        confRow.AddChild(confPrivateBtn);
+
+        var confPublicBtn = new Button { Text = $"⚖️ 密诏查抄【{targetName}】· 充入国库" };
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(confPublicBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.DarkWood);
+        confPublicBtn.Pressed += () =>
+        {
+            var res = _runtime.SpecialActions.Execute(new SpecialActionCommand("confiscate_direct", TargetNpcId: targetId, Destination: "国库"));
+            ShowActionResult(res);
+            RefreshUi();
+        };
+        confRow.AddChild(confPublicBtn);
+
+        var armyHeader = new Label { Text = "【🚩 禁军校场与犒赏】" };
+        _westGardenPanel.AddChild(armyHeader);
 
         var btnRow = new FlowContainer();
         btnRow.AddThemeConstantOverride("separation", 8);
         _westGardenPanel.AddChild(btnRow);
 
-        var buyTaiweiBtn = new Button { Text = "💰 卖【太尉】官职（售金一亿入内帑）" };
-        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(buyTaiweiBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.PrimaryGold);
-        buyTaiweiBtn.Pressed += () =>
-        {
-            var res = _runtime.Ranks.SellOffice("cao_cao", "太尉");
-            ShowActionResult(res);
-            RefreshUi();
-        };
-        btnRow.AddChild(buyTaiweiBtn);
-
         var payArmyBtn = new Button { Text = "🎖️ 内帑犒赏西园三军（提振士气与皇权）" };
         DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(payArmyBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.DarkWood);
         payArmyBtn.Pressed += () =>
         {
-            var res = _runtime.WestGarden.PayArmy(new ArmyPayCommand(2000, "huangfu_song"));
+            var res = _runtime.WestGarden.PayArmy(new ArmyPayCommand(2000, "jian_shuo"));
             ShowActionResult(res);
             RefreshUi();
         };
         btnRow.AddChild(payArmyBtn);
 
-        var recruitBtn = new Button { Text = "🚩 募兵两千入西园" };
+        var recruitBtn = new Button { Text = "🚩 募兵两千入西园八校尉" };
         DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(recruitBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.DarkWood);
         recruitBtn.Pressed += () =>
         {
-            var res = _runtime.WestGarden.DrillArmy(new ArmyDrillCommand(2000, "huangfu_song"));
+            var res = _runtime.WestGarden.RecruitArmy(new RecruitArmyCommand(2000));
             ShowActionResult(res);
             RefreshUi();
         };

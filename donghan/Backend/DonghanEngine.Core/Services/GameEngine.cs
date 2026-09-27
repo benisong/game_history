@@ -232,12 +232,9 @@ public partial class GameEngine : IGameEngine
         return new TurnResult { StoryText = BuildConfiscationStory(settlement) };
     }
 
-    public DonghanEngine.Core.Politics.ConfiscationExecutionResult ExecuteConfiscateTarget(string targetNpcId)
+    public DonghanEngine.Core.Politics.ConfiscationExecutionResult ExecuteConfiscateTarget(string targetNpcId, DonghanEngine.Core.Politics.ConfiscationDestination destination = DonghanEngine.Core.Politics.ConfiscationDestination.NationalTreasury)
     {
-        if (_state.CurrentLocation != "宣政殿")
-            throw new InvalidOperationException("只有在宣政殿才能当朝宣布抄家圣旨！");
-
-        return _confiscationService.ConfiscateTarget(_state, targetNpcId);
+        return _confiscationService.ConfiscateTarget(_state, targetNpcId, destination);
     }
 
     public DonghanEngine.Core.Politics.MilitaryPayrollResult ExecuteGrantMilitaryBonus()
