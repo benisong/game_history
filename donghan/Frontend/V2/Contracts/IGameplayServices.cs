@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using DonghanEngine.Core;
 
 namespace DonghanFrontend.V2.Contracts;
 
@@ -185,6 +186,17 @@ public interface IPersistenceUiService
     IReadOnlyList<DonghanEngine.Core.Persistence.SaveSlotMetadata> ListSaveSlots();
     bool DeleteSave(int slotIndex);
     bool HasAutoSave();
+}
+
+public interface ISpyUiService
+{
+    DonghanEngine.Core.Politics.SpyMissionResult DispatchMission(DonghanEngine.Core.Politics.SpyMissionType missionType, string targetNpcId);
+    IReadOnlyList<NpcState> GetEligibleTargets();
+}
+
+public interface ITurnSettlementUiService
+{
+    DonghanEngine.Core.Settlement.TurnSettlementPackage CompileSettlementPackage();
 }
 
 public interface IEdictService : IGetPendingEdictsService, IResolveEdictService

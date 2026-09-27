@@ -17,7 +17,9 @@ public sealed class V2Runtime
         IGovernorAppraisalUiService appraisal,
         IImperialHealthUiService health,
         ICourtDelegationUiService delegation,
-        IPersistenceUiService persistence)
+        IPersistenceUiService persistence,
+        ISpyUiService spy,
+        ITurnSettlementUiService settlement)
     {
         State = state;
         Travel = travel;
@@ -34,6 +36,8 @@ public sealed class V2Runtime
         Health = health;
         Delegation = delegation;
         Persistence = persistence;
+        Spy = spy;
+        Settlement = settlement;
     }
 
     public IGameStateReader State { get; }
@@ -51,4 +55,6 @@ public sealed class V2Runtime
     public IImperialHealthUiService Health { get; }
     public ICourtDelegationUiService Delegation { get; }
     public IPersistenceUiService Persistence { get; }
+    public ISpyUiService Spy { get; }
+    public ITurnSettlementUiService Settlement { get; }
 }

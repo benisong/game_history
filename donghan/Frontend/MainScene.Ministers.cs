@@ -67,17 +67,9 @@ public partial class MainScene : Control
         dossierFrame.AddChild(dossier);
 
         var row = CreateActionPopupButtonRow();
-        var treasury = new Button { Text = "籍没入国库", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, Disabled = minister.StashedWealth <= 0 };
-        var privateTreasury = new Button { Text = "籍没入西园私库", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, Disabled = minister.StashedWealth <= 0 };
         var close = new Button { Text = "合上奏牍", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        StyleSceneActionButton(treasury, ActionButtonSkin.Warning);
-        StyleSceneActionButton(privateTreasury, ActionButtonSkin.Warning);
         StyleSceneActionButton(close, ActionButtonSkin.Document);
-        treasury.Pressed += () => ShowConfiscateConfirmAction("国库");
-        privateTreasury.Pressed += () => ShowConfiscateConfirmAction("私库");
         close.Pressed += _windowManager.PopWindow;
-        row.AddChild(treasury);
-        row.AddChild(privateTreasury);
         row.AddChild(close);
         root.AddChild(row);
 
@@ -92,8 +84,8 @@ public partial class MainScene : Control
             ? $"外任记录：{province.Name} 太守"
             : "任所记录：在京候旨";
         string confiscationHint = minister.StashedWealth > 0
-            ? "可由廷尉奏牍发起籍没，执行前仍需圣裁确认。"
-            : "暂无可籍赃银，强行籍没收益极低。";
+            ? "【御史与西园暗记】：私蓄颇丰，若有确凿罪证，可由大朝仪三法司明核或西园密署查办。"
+            : "【御史与西园暗记】：名下暂无明显隐匿巨资。";
 
         string riskLine = BuildNpcRiskLine(minister);
         string relationLine = BuildNpcRelationDossierText(minister.Id);
@@ -102,19 +94,19 @@ public partial class MainScene : Control
         string deathLine = minister.HistoricalDeathYear.HasValue ? $"史实卒年：{minister.HistoricalDeathYear.Value}（可因玩家干预改写）" : "史实卒年：暂无定论";
         string sourceNoteLine = string.IsNullOrWhiteSpace(minister.SourceNote) ? "来源说明：暂无" : $"来源说明：{minister.SourceNote}";
 
-        return $"[b]【身分】[/b]\n" +
+        return $"[b]【身分履历】[/b]\n" +
             $"姓名：{minister.Name}\n官职：{minister.Title}\n派系：{minister.Faction}\n{location}\n{sourceLine}\n{roleLine}\n{deathLine}\n{sourceNoteLine}\n\n" +
-            $"[b]【君臣与朝局】[/b]\n" +
+            $"[b]【朝野风评与圣眷】[/b]\n" +
             $"君臣情分：{DescribeAttitudeLevel(minister.Favorability)}（{minister.Favorability}/100）\n" +
             $"朝局分量：{DescribePowerLevel(minister.Power)}（{minister.Power}/100）\n" +
             $"廉污风评：{DescribeCorruptionLevel(minister.Corruption)}（{minister.Corruption}/100）\n" +
-            $"可籍赃银：{minister.StashedWealth} 万钱\n" +
-            $"风险札记：{riskLine}\n\n" +
-            $"[b]【五维摘录】[/b]\n" +
+            $"私蓄估量：{minister.StashedWealth} 万钱\n" +
+            $"品评札记：{riskLine}\n\n" +
+            $"[b]【才干与抱负】[/b]\n" +
             $"武略 {minister.Martial}｜统御 {minister.Leadership}｜政术 {minister.Politics}\n" +
             $"声望 {minister.Charisma}｜野心 {minister.Ambition}\n\n" +
-            $"[b]【关系札记】[/b]\n{relationLine}\n\n" +
-            $"[b]【廷尉提示】[/b]\n{confiscationHint}";
+            $"[b]【世家宗党关系】[/b]\n{relationLine}\n\n" +
+            $"[b]【暗察风评】[/b]\n{confiscationHint}";
     }
 
     private string BuildNpcRelationDossierText(string npcId)

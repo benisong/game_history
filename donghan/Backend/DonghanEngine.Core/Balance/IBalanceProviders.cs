@@ -218,3 +218,13 @@ public interface ICadastralAndIrrigationBalanceProvider
     int IrrigationCapacityIncrease { get; }
     int IrrigationMoraleBoost { get; }
 }
+
+/// <summary>
+/// 西园特务平衡常数接口
+/// </summary>
+public interface ISpyBalanceProvider
+{
+    int BaseMissionCost { get; }
+    int EvidenceSuccessRateBase { get; }
+    int DiscoveryAmbitionAccuracy { get; }
+}

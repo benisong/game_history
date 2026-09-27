@@ -59,5 +59,13 @@ public class V3MainSceneContractTests
 
         var loadRes = runtime.Persistence.LoadGame(1);
         Assert.True(loadRes.Success);
+
+        // 验证 Phase 1 新增特务服务与旬末结算服务
+        Assert.NotNull(runtime.Spy);
+        Assert.NotNull(runtime.Settlement);
+
+        var settlementPackage = runtime.Settlement.CompileSettlementPackage();
+        Assert.NotNull(settlementPackage);
+        Assert.NotEmpty(settlementPackage.Slides);
     }
 }

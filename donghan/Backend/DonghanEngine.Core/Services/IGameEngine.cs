@@ -129,6 +129,12 @@ public interface IGeopoliticalDomainService
     DonghanEngine.Core.Geopolitics.Contracts.EdictExecutionResult ResolveGeopoliticalMemorial(string memorialId, string optionId);
 }
 
+public interface ISpyDomainService
+{
+    DonghanEngine.Core.Politics.SpyMissionResult DispatchSpyMission(DonghanEngine.Core.Politics.SpyMissionType missionType, string targetNpcId);
+    IReadOnlyList<NpcState> GetEligibleSpyTargets();
+}
+
 public interface IPersistenceDomainService
 {
     DonghanEngine.Core.Persistence.SaveOperationResult SaveGame(int slotIndex, string? customSaveName = null);
@@ -145,6 +151,7 @@ public interface IPersistenceDomainService
 public interface IGameEngine :
     IGameStateProvider,
     IPersistenceDomainService,
+    ISpyDomainService,
     IGeopoliticalDomainService,
     ITravelDomainService,
     IDrillArmyDomainService,

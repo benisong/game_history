@@ -685,7 +685,7 @@ public partial class MainScene : Control
                 ImagePath = "res://Assets/UI/court_ritual/announce_court.png",
                 ImageText = "宣政殿外，黄门持诏立于丹陛之下。朱门缓启，金线御榜映出晨色。",
                 Caption = "内侍高唱：有事早奏，无事退朝。百官闻诏，自外朝趋入。",
-                PreloadHint = "天机演算：预载朝会议题、百官立场与本旬奏折摘要。",
+                PreloadHint = "太史令铺展奏牍，中书舍人呈递封驳。",
                 Seconds = 2.8f
             },
             new CourtRitualSlide
@@ -695,7 +695,7 @@ public partial class MainScene : Control
                 ImagePath = "res://Assets/UI/court_ritual/whip_silence.png",
                 ImageText = "殿前静鞭破空，赤黑宫墙间回声如雷。羽林宿卫执戟分列，群臣顿止。",
                 Caption = "一鞭止语，二鞭整冠，三鞭肃班。宣政殿内只余甲叶与玉佩轻响。",
-                PreloadHint = "天机演算：整理可行动作、风险提示与派系反应缓存。",
+                PreloadHint = "羽林执戟整肃仪仗，文武百官分列肃立。",
                 Seconds = 2.6f
             },
             new CourtRitualSlide
@@ -705,7 +705,7 @@ public partial class MainScene : Control
                 ImagePath = "res://Assets/UI/court_ritual/officials_enter.png",
                 ImageText = "高处御座隐于冕旒之后，黑金朱红的纵深殿宇中，百官剪影层层俯伏。",
                 Caption = "外戚、中官、西园校尉各归班列；天下奏牍，尽待天子一言。",
-                PreloadHint = "天机演算：完成预处理，等待陛下临朝裁断。",
+                PreloadHint = "金炉香袅，天子临轩，诸公卿俯伏候旨。",
                 Seconds = 3.0f
             }
         };
@@ -721,7 +721,7 @@ public partial class MainScene : Control
                 SceneName = "天子临殿",
                 ImageText = "钟磬齐鸣，丹陛下金声层叠。宿卫亲军移戟开道，御座前灯火如鳞。",
                 Caption = "黄门高唱：天子登临——百官跪迎——！",
-                PreloadHint = "天机演算：提交圣旨，后台推演朝臣应对。",
+                PreloadHint = "金声玉振，宣政殿前天子降诏。",
                 Seconds = 2.4f
             },
             new CourtRitualSlide
@@ -730,7 +730,7 @@ public partial class MainScene : Control
                 SceneName = "龙威压殿",
                 ImageText = "陛下御带冕旒，龙袍玄赤相间。玉旒遮面，殿中百官不敢仰视。",
                 Caption = "皇权虽衰，礼制犹在；一殿沉默，皆等御笔落下。",
-                PreloadHint = "天机演算：生成群臣奏对、规则结算与叙事回奏。",
+                PreloadHint = "尚书台捧朱批御卷，百官屏息肃听。",
                 Seconds = 2.4f
             },
             new CourtRitualSlide
@@ -739,7 +739,7 @@ public partial class MainScene : Control
                 SceneName = "黄绢展开",
                 ImageText = $"内侍缓缓展开黄绢，朱砂御印压住殿中暗流。\n\n『{edictText}』",
                 Caption = "众卿平身。圣旨既出，群臣或附和，或观望，或暗自盘算。",
-                PreloadHint = "天机演算中。",
+                PreloadHint = "玉玺钤印，天子诏命布于九卿。",
                 Seconds = 2.8f
             }
         };
@@ -756,7 +756,7 @@ public partial class MainScene : Control
                 ImagePath = "res://Assets/UI/court_ritual/dismiss_whip.png",
                 ImageText = "殿前静鞭再响，金阶上的争辩戛然而止。内侍收起奏牍，御案灯影微摇。",
                 Caption = "今日朝议暂歇，未决之事仍随百官袖中暗流带出宣政殿。",
-                PreloadHint = "天机演算：归档朝会记录，更新派系记忆。",
+                PreloadHint = "司礼收起御案奏牍，朝堂议题尘埃落定。",
                 Seconds = 2.4f
             },
             new CourtRitualSlide
@@ -766,7 +766,7 @@ public partial class MainScene : Control
                 ImagePath = "res://Assets/UI/court_ritual/officials_leave.png",
                 ImageText = "百官鱼贯退下，外戚与中官各自低语。朱门半掩，殿外天色晦暗。",
                 Caption = "宣政殿重归寂静；天下十三州，仍有烽烟与饥民等待下一道诏令。",
-                PreloadHint = "天机演算：预热下一旬情报、奏折与地方风险摘要。",
+                PreloadHint = "百官散班归省，起居注录今日圣断。",
                 Seconds = 2.8f
             }
         };
@@ -902,15 +902,6 @@ public partial class MainScene : Control
         root.AddChild(preload);
         _ritualPreloadHintLabel = preload; // P1-B2: 缓存引用
 
-        var lockLabel = new Label
-        {
-            Text = "大朝仪进行中：不可快进／不可点击／退出键无效",
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
-        lockLabel.AddThemeColorOverride("font_color", new Color(0.70f, 0.54f, 0.24f, 1.0f));
-        lockLabel.AddThemeFontSizeOverride("font_size", 14);
-        root.AddChild(lockLabel);
-
         AddChild(overlay);
         MoveChild(overlay, GetChildCount() - 1);
         overlay.Hide();
@@ -971,7 +962,7 @@ public partial class MainScene : Control
 
         // 先用 slide 数据填充各 label，再覆盖 preload hint
         RenderCourtRitualSlide(slide);
-        if (_ritualPreloadHintLabel != null) _ritualPreloadHintLabel.Text = "天机演算中。";
+        if (_ritualPreloadHintLabel != null) _ritualPreloadHintLabel.Text = "执金吾宿卫肃立，中书舍人谨候圣断。";
     }
 
     private static void ClearChildren(VBoxContainer box)

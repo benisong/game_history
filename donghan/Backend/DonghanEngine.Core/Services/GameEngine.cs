@@ -29,6 +29,7 @@ public partial class GameEngine : IGameEngine
     private readonly DonghanEngine.Core.Health.IImperialHealthService _healthService;
     private readonly DonghanEngine.Core.Politics.ICourtDelegationService _courtDelegationService;
     private readonly DonghanEngine.Core.Persistence.ISaveGameService _saveGameService;
+    private readonly DonghanEngine.Core.Politics.ISpyService _spyService;
     internal readonly Random _rng;
 
     public DonghanEngine.Core.Geopolitics.Contracts.IGeopoliticalSimulationEngine GeopoliticsEngine => _geopoliticsEngine;
@@ -55,7 +56,8 @@ public partial class GameEngine : IGameEngine
         DonghanEngine.Core.Politics.IGovernorAppraisalService? governorAppraisalService = null,
         DonghanEngine.Core.Health.IImperialHealthService? healthService = null,
         DonghanEngine.Core.Politics.ICourtDelegationService? courtDelegationService = null,
-        DonghanEngine.Core.Persistence.ISaveGameService? saveGameService = null)
+        DonghanEngine.Core.Persistence.ISaveGameService? saveGameService = null,
+        DonghanEngine.Core.Politics.ISpyService? spyService = null)
     {
         _state = state;
         _scheduler = scheduler;
@@ -79,6 +81,7 @@ public partial class GameEngine : IGameEngine
         _healthService = healthService ?? new DonghanEngine.Core.Health.ImperialHealthService();
         _courtDelegationService = courtDelegationService ?? new DonghanEngine.Core.Politics.CourtDelegationService(healthService: _healthService);
         _saveGameService = saveGameService ?? new DonghanEngine.Core.Persistence.SaveGameService(healthService: _healthService);
+        _spyService = spyService ?? new DonghanEngine.Core.Politics.SpyService();
     }
 
     public GameState GetState() => _state;
@@ -379,6 +382,17 @@ public partial class GameEngine : IGameEngine
     public bool HasAutoSave()
     {
         return _saveGameService.HasAutoSave();
+    }
+
+    // 西园特务暗署领域实现
+    public DonghanEngine.Core.Politics.SpyMissionResult DispatchSpyMission(DonghanEngine.Core.Politics.SpyMissionType missionType, string targetNpcId)
+    {
+        return _spyService.DispatchSpyMission(_state, missionType, targetNpcId);
+    }
+
+    public IReadOnlyList<NpcState> GetEligibleSpyTargets()
+    {
+        return _spyService.GetEligibleSpyTargets(_state);
     }
 
     public DonghanEngine.Core.Politics.BatchDelegationResult ExecuteBatchDelegation(IReadOnlyList<string>? affairIds = null)
