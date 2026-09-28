@@ -77,6 +77,7 @@ public class GameState
     private readonly List<ImperialEdict> _activeEdicts = new();
     private readonly Queue<CourtSpeech> _courtDebateQueue = new();
     private readonly List<DonghanEngine.Core.Geopolitics.Contracts.GeopoliticalMemorial> _pendingGeopoliticalMemorials = new();
+    private readonly HashSet<string> _resolvedAffairIds = new();
 
     public IReadOnlyDictionary<string, NpcState> Npcs => _npcs;
     public IReadOnlyList<NpcRelation> NpcRelations => _npcRelations;
@@ -87,6 +88,20 @@ public class GameState
     public IReadOnlyList<ImperialEdict> ActiveEdicts => _activeEdicts;
     public Queue<CourtSpeech> CourtDebateQueue => _courtDebateQueue;
     public IReadOnlyList<DonghanEngine.Core.Geopolitics.Contracts.GeopoliticalMemorial> PendingGeopoliticalMemorials => _pendingGeopoliticalMemorials;
+    public IReadOnlySet<string> ResolvedAffairIds => _resolvedAffairIds;
+
+    public void MarkAffairResolved(string affairId)
+    {
+        if (!string.IsNullOrWhiteSpace(affairId))
+        {
+            _resolvedAffairIds.Add(affairId);
+        }
+    }
+
+    public void ClearResolvedAffairsForNewTurn()
+    {
+        _resolvedAffairIds.Clear();
+    }
 
     // === 内部受控集合操作领域方法 ===
     public void RegisterNpc(NpcState npc)

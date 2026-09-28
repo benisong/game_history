@@ -194,15 +194,25 @@ public partial class MainSceneV3 : Control
         nextTurnBtn.Pressed += OnNextTurnPressed;
         deskHeader.AddChild(nextTurnBtn);
 
+        // 3. 限制起驾逻辑：大朝仪奏折与待办廷议未全部处置完毕前，禁止回宫沉湎/温德殿静养
+        var pendingAffairs = _runtime.Delegation.GetPendingAffairs();
+        bool courtFinished = pendingAffairs.Count == 0;
+
         // 温德殿静养按钮 (恢复当前精力40%)
         var restBtn = new Button
         {
-            Text = "🍵 温德殿静养",
-            CustomMinimumSize = new Vector2(120, 34)
+            Text = courtFinished ? "🍵 温德殿静养" : "🍵 温德殿(国事未毕)",
+            CustomMinimumSize = new Vector2(130, 34),
+            Disabled = !courtFinished
         };
-        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(restBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.DarkWood);
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(restBtn, courtFinished ? DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.DarkWood : DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.ActionWheel);
         restBtn.Pressed += () =>
         {
+            if (!courtFinished)
+            {
+                ShowActionResult(new ActionResult(false, "【内侍启奏】", "朝会御案尚有待决奏牍！请陛下先在【朝堂廷议待办】亲裁或一键分发群僚，方可起驾温德殿静养。", ReportKind.Warning, Array.Empty<StateChange>()));
+                return;
+            }
             var res = _runtime.Health.RestAtWendePalace();
             ShowActionResult(res);
             RefreshUi();
@@ -212,12 +222,18 @@ public partial class MainSceneV3 : Control
         // 临幸后宫按钮 (以阳气兑换精力，1点阳气换3-5点精力)
         var haremBtn = new Button
         {
-            Text = "🌸 临幸后宫",
-            CustomMinimumSize = new Vector2(110, 34)
+            Text = courtFinished ? "🌸 临幸后宫" : "🌸 后宫(国事未毕)",
+            CustomMinimumSize = new Vector2(120, 34),
+            Disabled = !courtFinished
         };
-        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(haremBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.DarkWood);
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(haremBtn, courtFinished ? DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.DarkWood : DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.ActionWheel);
         haremBtn.Pressed += () =>
         {
+            if (!courtFinished)
+            {
+                ShowActionResult(new ActionResult(false, "【尚书令劝谏】", "君王不可因后宫而废朝政！宣政殿奏牍未清，请陛下先处分廷议国事，退朝后方可起驾后宫。", ReportKind.Warning, Array.Empty<StateChange>()));
+                return;
+            }
             var res = _runtime.Health.IndulgeInHarem();
             ShowActionResult(res);
             RefreshUi();
@@ -816,6 +832,13 @@ public partial class MainSceneV3 : Control
 
     private async void OnNextTurnPressed()
     {
+        var pendingAffairs = _runtime.Delegation.GetPendingAffairs();
+        if (pendingAffairs.Count > 0)
+        {
+            ShowActionResult(new ActionResult(false, "【尚书台封驳】", $"宣政殿御案尚有 {pendingAffairs.Count} 件廷议奏牍未决！\n\n请陛下亲自批阅或点击【一键分交群僚代办】，退朝清案后方可推进时钟更迭。", ReportKind.Warning, Array.Empty<StateChange>()));
+            return;
+        }
+
         var res = await _runtime.Turns.AdvanceXunAsync();
         RefreshUi();
     }

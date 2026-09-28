@@ -31,14 +31,19 @@ public sealed class CourtDelegationService : ICourtDelegationService, IInitializ
 
     public IReadOnlyList<DelegationAffairItem> GetPendingAffairs(GameState state)
     {
-        // 动态生成当旬/当月待办政务池（亦可根据历史年份与局势扩展）
-        return new List<DelegationAffairItem>
+        // 动态生成当旬待办政务池，过滤已由天子亲裁或交办的事务
+        var pool = new List<DelegationAffairItem>
         {
             new("affair_irrigation_yuzhou", "修缮豫州河堤水利", "豫州淮泗河渠年久失修，司徒府呈请修葺以增官田承载。", CourtDelegationHubKind.ThreeExcellencies, BaseTreasuryCost: 500, BasePopularSupportDelta: 3, BaseStateLandDelta: 1200, BaseArmyMoraleDelta: 0, BaseDirectEnergyCost: 4),
             new("affair_west_garden_drill", "整肃西园禁军行阵", "大将军府请拨内库修缮校场、操练新募步骑士卒。", CourtDelegationHubKind.GrandGeneral, BaseTreasuryCost: 800, BasePopularSupportDelta: 0, BaseStateLandDelta: 0, BaseArmyMoraleDelta: 8, BaseDirectEnergyCost: 6),
             new("affair_tribute_audit", "清核中原各郡岁贡", "十常侍中常侍府呈请点验关东各郡入洛岁赋贡物入内帑。", CourtDelegationHubKind.PalaceAttendants, BaseTreasuryCost: -600, BasePopularSupportDelta: -2, BaseStateLandDelta: 0, BaseArmyMoraleDelta: 0, BaseDirectEnergyCost: 4),
             new("affair_governor_inspection", "台阁核验各州长吏考课", "尚书台汇总十三州刺史治绩，拟定褒贬黜陟条陈。", CourtDelegationHubKind.Secretariat, BaseTreasuryCost: 200, BasePopularSupportDelta: 2, BaseStateLandDelta: 500, BaseArmyMoraleDelta: 0, BaseDirectEnergyCost: 5)
-        }.AsReadOnly();
+        };
+
+        return pool
+            .Where(a => !state.ResolvedAffairIds.Contains(a.AffairId))
+            .ToList()
+            .AsReadOnly();
     }
 
     public AffairExecutionReport ExecuteDirectAffair(GameState state, string affairId)
@@ -51,6 +56,7 @@ public sealed class CourtDelegationService : ICourtDelegationService, IInitializ
 
         // 亲裁执行结果 100% 遵从天子意志，零贪腐私吞
         ApplyAffairImpact(state, affair.BaseTreasuryCost, affair.BasePopularSupportDelta, affair.BaseStateLandDelta, affair.BaseArmyMoraleDelta);
+        state.MarkAffairResolved(affair.AffairId);
 
         string narrative = $"【天子亲裁】天子御笔亲批【{affair.Title}】。乾纲独断，令行禁止，四海承风。";
         state.AddToChronicle(narrative);
@@ -117,6 +123,7 @@ public sealed class CourtDelegationService : ICourtDelegationService, IInitializ
 
             // 应用国库与国力变动
             ApplyAffairImpact(state, cost, popDelta, landDelta, moraleDelta);
+            state.MarkAffairResolved(affair.AffairId);
 
             // 4. 经办人权势提升 (朋党做大)
             if (handler != null)

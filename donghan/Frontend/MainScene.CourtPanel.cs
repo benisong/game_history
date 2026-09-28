@@ -49,6 +49,26 @@ public partial class MainScene : Control
         root.AddThemeConstantOverride("separation", 12);
         _courtPopup.AddChild(root);
 
+        // 3. 拦截 Esc 键：在朝会进行中不可按 Esc 直接退出朝会
+        _courtPopup.GuiInput += (InputEvent ev) =>
+        {
+            if (ev is InputEventKey k && k.Pressed && k.Keycode == Key.Escape)
+            {
+                if (_courtFreeEdictVBox != null && _courtFreeEdictVBox.Visible)
+                {
+                    _courtFreeEdictVBox.Hide();
+                }
+                else if (_courtDebateScroll != null && _courtDebateScroll.Visible)
+                {
+                    // 若在查看具体议题讨论，按 Esc 返回议题列表
+                    RenderCourtTopics();
+                    RenderCourtDefaultDecisions();
+                    if (_courtStageLabel != null) _courtStageLabel.Text = $"{FormatTimeLabel()}  ·  阶段：择议";
+                }
+                GetViewport().SetInputAsHandled();
+            }
+        };
+
         BuildCourtHeader(root);
         BuildCourtBody(root);
         AddChild(_courtPopup);
@@ -388,8 +408,9 @@ public partial class MainScene : Control
         _courtDebateScroll.Show();
         if (_courtStageLabel != null) _courtStageLabel.Text = $"{FormatTimeLabel()}  ·  阶段：群臣奏对";
 
-        // 清空旧卡片
+        // 清空旧卡片与确保容器干净独立
         ClearChildren(_courtDebateContent);
+        _courtDebateScroll.ScrollVertical = 0;
 
         // 议题标题 + 摘要
         var title = new Label();

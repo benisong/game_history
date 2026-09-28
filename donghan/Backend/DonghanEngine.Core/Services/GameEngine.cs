@@ -679,7 +679,9 @@ public partial class GameEngine : IGameEngine
             }
         }
 
-        // 每旬结算完毕后：自动触发起居注（防断电与崩溃丢失）
+        _state.ClearResolvedAffairsForNewTurn();
+
+        // 6. 自动持久化起居注存档（防断电与崩溃保护）
         _saveGameService.ExecuteAutoSave(_state, "每旬时钟更迭");
 
         // 189 年之后：开启天下诸侯宏观地缘推演（诸侯攻伐、战役步进与岁贡）
@@ -1016,7 +1018,7 @@ public partial class GameEngine : IGameEngine
     {
         if (_state.CurrentLocation != "宣政殿")
             throw new InvalidOperationException("未起驾宣政殿，不可开启大朝会！");
-
+        _state.ClearResolvedAffairsForNewTurn();
         _state.CourtDebateQueue.Clear();
 
         string primaryIssueText;
