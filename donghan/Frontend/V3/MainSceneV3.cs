@@ -43,6 +43,70 @@ public partial class MainSceneV3 : Control
         _runtime = V2RuntimeFactory.CreateDefault();
         BuildLayout();
         RefreshUi();
+        ShowStartupSplashScreen();
+    }
+
+    private void ShowStartupSplashScreen()
+    {
+        var splash = new PanelContainer
+        {
+            Name = "StartupSplash",
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill
+        };
+        splash.SetAnchorsPreset(LayoutPreset.FullRect);
+        var style = new StyleBoxFlat
+        {
+            BgColor = new Color(0.04f, 0.02f, 0.02f, 0.96f)
+        };
+        splash.AddThemeStyleboxOverride("panel", style);
+
+        var box = new VBoxContainer
+        {
+            Alignment = BoxContainer.AlignmentMode.Center,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill
+        };
+        box.AddThemeConstantOverride("separation", 16);
+        splash.AddChild(box);
+
+        var title = new Label
+        {
+            Text = "📜 【太史令铺卷 · 大汉全景推演】",
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        title.AddThemeFontSizeOverride("font_size", 24);
+        title.AddThemeColorOverride("font_color", new Color(0.95f, 0.77f, 0.28f));
+        box.AddChild(title);
+
+        var sub = new Label
+        {
+            Text = "正在起草建宁、光和年间天下地缘舆图、十三州官私田版籍与百官谱系...",
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        sub.AddThemeFontSizeOverride("font_size", 14);
+        box.AddChild(sub);
+
+        var bar = new ProgressBar
+        {
+            CustomMinimumSize = new Vector2(480, 24),
+            MinValue = 0,
+            MaxValue = 100,
+            Value = 100,
+            ShowPercentage = false
+        };
+        box.AddChild(bar);
+
+        var enterBtn = new Button
+        {
+            Text = "登殿临朝 · 听政天下 ▶",
+            CustomMinimumSize = new Vector2(220, 42)
+        };
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(enterBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.PrimaryGold);
+        enterBtn.Pressed += () => splash.QueueFree();
+        box.AddChild(enterBtn);
+
+        AddChild(splash);
     }
 
     private void BuildLayout()
@@ -402,18 +466,22 @@ public partial class MainSceneV3 : Control
         };
         _provinceQuickActionWheel.AddChild(irrBtn);
 
-        if (p.StateControlledLand >= 1000)
+        // 4. 岁终尚书台大考课内调按钮
+        var appraisalBtn = new Button { Text = "⚖️ 调阅刺史考课大考" };
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(appraisalBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.PrimaryGold);
+        appraisalBtn.Pressed += () =>
         {
-            var buyBtn = new Button { Text = "🪙 准世家赎田入库" };
-            DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(buyBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.ActionWheel);
-            buyBtn.Pressed += () =>
-            {
-                var res = _runtime.Agriculture.RepurchaseGentryLand(p.Id, 5000);
-                ShowActionResult(res);
-                RefreshUi();
-            };
-            _provinceQuickActionWheel.AddChild(buyBtn);
-        }
+            var res = _runtime.Appraisal.GetAnnualAppraisal();
+            var matched = res.Records.FirstOrDefault(a => a.ProvinceId == p.Id);
+            string appraisalTitle = matched != null ? $"【尚书台大考·定第：{matched.Grade}】" : "【尚书台大考：考评定第】";
+            string narrative = matched != null 
+                ? $"【刺史考课评语】\n• 经办长吏：{matched.GovernorName}\n• 考课定第：{matched.Grade} ｜ 民意治安：{matched.LocalSupport}\n• 上缴太仓：{matched.TaxContribution:N0} 万钱 ｜ 户口增殖：{matched.PopulationGrowth:N0}\n• 割据野心：{matched.Ambition} ｜ 忠诚圣眷：{matched.Favorability}\n• 台阁处置建议：{matched.RecommendedAction}\n\n{matched.EvaluationReport}"
+                : res.SummaryText;
+            bool eligible = matched != null && matched.Grade >= DonghanEngine.Core.Politics.AppraisalGrade.Superior;
+            ShowActionResult(new ActionResult(true, appraisalTitle, narrative, ReportKind.Information, Array.Empty<StateChange>()));
+            RefreshUi();
+        };
+        _provinceQuickActionWheel.AddChild(appraisalBtn);
 
         if (p.IsRebelling)
         {
@@ -841,6 +909,114 @@ public partial class MainSceneV3 : Control
 
         var res = await _runtime.Turns.AdvanceXunAsync();
         RefreshUi();
+
+        // 旬末起居注卡片放映
+        var package = _runtime.Settlement.CompileSettlementPackage();
+        ShowSettlementSlidesDialog(package);
+    }
+
+    private void ShowSettlementSlidesDialog(DonghanEngine.Core.Settlement.TurnSettlementPackage package)
+    {
+        if (package.Slides.Count == 0) return;
+
+        var popup = new Window
+        {
+            Title = $"【太史令起居注 · {package.DateText} 全景图卷】",
+            Size = new Vector2I(680, 480),
+            Exclusive = true,
+            Transient = true
+        };
+        popup.WrapControls = true;
+
+        var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
+        var root = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
+        root.AddThemeConstantOverride("separation", 12);
+        panel.AddChild(root);
+        popup.AddChild(panel);
+
+        int currentSlideIdx = 0;
+
+        var titleLabel = new Label();
+        titleLabel.AddThemeFontSizeOverride("font_size", 18);
+        titleLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        root.AddChild(titleLabel);
+
+        var subLabel = new Label();
+        subLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        root.AddChild(subLabel);
+
+        var bodyLabel = new Label
+        {
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            SizeFlagsVertical = SizeFlags.ExpandFill
+        };
+        root.AddChild(bodyLabel);
+
+        var bulletsBox = new VBoxContainer();
+        bulletsBox.AddThemeConstantOverride("separation", 4);
+        root.AddChild(bulletsBox);
+
+        var btnRow = new HBoxContainer();
+        btnRow.Alignment = BoxContainer.AlignmentMode.Center;
+        btnRow.AddThemeConstantOverride("separation", 12);
+        root.AddChild(btnRow);
+
+        var pageLabel = new Label();
+        var prevBtn = new Button { Text = "◀ 溯阅前页" };
+        var nextBtn = new Button { Text = "披阅下卷 ▶" };
+        var closeBtn = new Button { Text = "合卷 · 临朝听政" };
+
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(prevBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.DarkWood);
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(nextBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.PrimaryGold);
+        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(closeBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.CrimsonWarning);
+
+        btnRow.AddChild(prevBtn);
+        btnRow.AddChild(pageLabel);
+        btnRow.AddChild(nextBtn);
+        btnRow.AddChild(closeBtn);
+
+        void RenderSlide()
+        {
+            var slide = package.Slides[currentSlideIdx];
+            titleLabel.Text = slide.Title;
+            subLabel.Text = slide.HeaderSubtitle;
+            bodyLabel.Text = slide.BodyText;
+
+            foreach (var c in bulletsBox.GetChildren()) c.QueueFree();
+            foreach (var b in slide.BulletPoints)
+            {
+                bulletsBox.AddChild(new Label { Text = $"   • {b}" });
+            }
+
+            pageLabel.Text = $"第 {currentSlideIdx + 1} / {package.Slides.Count} 卷";
+            prevBtn.Disabled = currentSlideIdx == 0;
+            nextBtn.Disabled = currentSlideIdx == package.Slides.Count - 1;
+        }
+
+        prevBtn.Pressed += () =>
+        {
+            if (currentSlideIdx > 0)
+            {
+                currentSlideIdx--;
+                RenderSlide();
+            }
+        };
+
+        nextBtn.Pressed += () =>
+        {
+            if (currentSlideIdx < package.Slides.Count - 1)
+            {
+                currentSlideIdx++;
+                RenderSlide();
+            }
+        };
+
+        closeBtn.Pressed += () => popup.QueueFree();
+        popup.CloseRequested += () => popup.QueueFree();
+
+        RenderSlide();
+        AddChild(popup);
+        popup.PopupCentered();
     }
 
     private void ShowActionResult(ActionResult result)
