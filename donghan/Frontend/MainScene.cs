@@ -83,7 +83,8 @@ public partial class MainScene : Control
 
     public override void _Ready()
     {
-        ForceExclusiveFullscreen();
+        _forceFullscreen = false;
+        // ForceExclusiveFullscreen();
         EnsureOpaqueSceneBackground();
 
         // 1. 初始化 C# 面向对象后端游戏实例
@@ -178,12 +179,12 @@ public partial class MainScene : Control
         // 渲染初始界面状态
         UpdateUI();
         SetAnnualMajorEventBanner();
-        // P1-C1 开局新手引导（仅首次启动；DONGHAN_SKIP_TUTORIAL=1 可跳过）
-        if (OS.GetEnvironment("DONGHAN_SKIP_TUTORIAL") != "1" && !_openingTutorialShown)
+        // 允许直接进入主游戏，不再强制弹多层阻塞 Overlay
+        if (OS.GetEnvironment("DONGHAN_SHOW_TUTORIAL") == "1" && !_openingTutorialShown)
         {
             ShowOpeningTutorial();
         }
-        if (OS.GetEnvironment("DONGHAN_SKIP_OPENING") != "1")
+        if (OS.GetEnvironment("DONGHAN_SHOW_OPENING") == "1")
         {
             ShowOpeningOverlay();
         }
@@ -198,7 +199,8 @@ public partial class MainScene : Control
         if (!_forceFullscreen) return;
 
         var mode = DisplayServer.WindowGetMode();
-        if (mode != DisplayServer.WindowMode.ExclusiveFullscreen)
+        // 保持普通窗口模式，禁止强制抢占独占全屏导致界面假死
+        if (_forceFullscreen && mode != DisplayServer.WindowMode.ExclusiveFullscreen)
         {
             ForceExclusiveFullscreen();
         }

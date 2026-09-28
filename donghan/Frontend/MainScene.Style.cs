@@ -28,7 +28,7 @@ public partial class MainScene : Control
 
     private static void ForceExclusiveFullscreen()
     {
-        DisplayServer.WindowSetMode(DisplayServer.WindowMode.ExclusiveFullscreen);
+        // 允许窗口化运行，避免全屏抢占导致无响应或黑屏卡死
     }
 
     private static void ConfigureFullScreenBlocker(ColorRect blocker, int zIndex)

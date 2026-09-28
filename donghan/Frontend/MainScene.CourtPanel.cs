@@ -819,34 +819,33 @@ public partial class MainScene : Control
     {
         if (slides.Length == 0) return;
 
-        _isUnskippableTransitionActive = true;
+        // 优化：不再全局锁定输入事件，允许用户随时继续
         Task? backgroundWork = preloadTask ?? (runPreload ? SimulateCourtAiPreloadAsync() : null);
 
         EnsureCourtRitualOverlay();
         _courtRitualOverlay!.Show();
-        _courtRitualOverlay.GrabFocus();
 
         if (_transitionMask != null) _transitionMask.Hide();
 
+        // 快速过场播放，避免卡顿
         foreach (var slide in slides)
         {
             RenderCourtRitualSlide(slide);
-            await ToSignal(GetTree().CreateTimer(slide.Seconds), "timeout");
+            await ToSignal(GetTree().CreateTimer(Math.Min(0.5f, slide.Seconds)), "timeout");
         }
 
         if (backgroundWork != null && !backgroundWork.IsCompleted)
         {
             RenderCourtRitualWaitingSlide(slides[^1]);
-            await backgroundWork;
+            await Task.WhenAny(backgroundWork, Task.Delay(1000));
         }
 
         _courtRitualOverlay.Hide();
-        _isUnskippableTransitionActive = false;
     }
 
     private async Task SimulateCourtAiPreloadAsync()
     {
-        await ToSignal(GetTree().CreateTimer(0.8f), "timeout");
+        await Task.Delay(100);
     }
 
     private void EnsureCourtRitualOverlay()

@@ -43,7 +43,6 @@ public partial class MainSceneV3 : Control
         _runtime = V2RuntimeFactory.CreateDefault();
         BuildLayout();
         RefreshUi();
-        ShowStartupSplashScreen();
     }
 
     private void ShowStartupSplashScreen()
