@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="DonghanFrontend"
-run/main_scene="res://V3/MainSceneV3.tscn"
+run/main_scene="res://MainScene.tscn"
 config/features=PackedStringArray("4.3", "C#", "Forward Plus")
 
 [display]
