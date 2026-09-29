@@ -212,10 +212,31 @@ public partial class MainScene : Control
                 _chinaMapCanvas.DrawCircle((srcCenter + dstCenter) / 2f, 3.5f, new Color(0.85f, 0.70f, 0.42f, 0.85f));
             }
         }
+
+        // 3. 若有当前选中州郡，以醒目金色光圈连接其所有邻接州郡驿道
+        if (!string.IsNullOrEmpty(_currentSelectedProvinceId) && _gameState.Provinces.TryGetValue(_currentSelectedProvinceId, out var selProv))
+        {
+            if (_provinceMapButtons.TryGetValue(selProv.Id, out var selBtn))
+            {
+                Vector2 selCenter = selBtn.Position + selBtn.Size / 2f;
+                var highlightEdgeColor = new Color(1.0f, 0.88f, 0.35f, 0.90f);
+                foreach (var neighborId in selProv.Neighbors)
+                {
+                    if (_provinceMapButtons.TryGetValue(neighborId, out var nBtn))
+                    {
+                        Vector2 nCenter = nBtn.Position + nBtn.Size / 2f;
+                        _chinaMapCanvas.DrawLine(selCenter, nCenter, highlightEdgeColor, 3.5f, antialiased: true);
+                    }
+                }
+            }
+        }
     }
+
+    private string _currentSelectedProvinceId = string.Empty;
 
     private void HighlightSelectedMapProvince(string selectedId)
     {
+        _currentSelectedProvinceId = selectedId;
         foreach (var kvp in _provinceMapButtons)
         {
             string pId = kvp.Key;

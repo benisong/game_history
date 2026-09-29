@@ -54,6 +54,8 @@ public partial class MainScene : Control
         centerPanel.AddChild(_deskContainer);
         centerPanel.MoveChild(_deskContainer, 0);
 
+        EnsureHelpButton(centerPanel);
+
         _storyOutput = centerPanel.GetNodeOrNull<RichTextLabel>("StoryOutput");
         if (_storyOutput != null)
         {
@@ -95,6 +97,120 @@ public partial class MainScene : Control
         deskRow.AddChild(_btnIntelToken);
         deskRow.AddChild(_btnWestGardenPalace);
         deskRow.AddChild(_btnTravelCarriage);
+    }
+
+    private static Button? _helpButton;
+    private static Panel? _helpPopup;
+
+    private void EnsureHelpButton(Panel centerPanel)
+    {
+        if (_helpButton != null && IsInstanceValid(_helpButton)) return;
+
+        // 仅在右上角保留小“？”问号按钮
+        _helpButton = new Button();
+        _helpButton.Name = "HelpButton";
+        _helpButton.Text = "❓";
+        _helpButton.TooltipText = "查看玩法纲要与圣谕指引";
+        _helpButton.AnchorLeft = 1.0f;
+        _helpButton.AnchorTop = 0.0f;
+        _helpButton.AnchorRight = 1.0f;
+        _helpButton.AnchorBottom = 0.0f;
+        _helpButton.OffsetLeft = -70;
+        _helpButton.OffsetTop = 24;
+        _helpButton.OffsetRight = -24;
+        _helpButton.OffsetBottom = 70;
+        _helpButton.CustomMinimumSize = new Vector2(46, 46);
+
+        var helpBtnStyle = new StyleBoxFlat
+        {
+            BgColor = new Color(0.12f, 0.08f, 0.05f, 0.90f),
+            BorderColor = new Color(0.68f, 0.52f, 0.28f, 1.0f),
+            CornerRadiusBottomLeft = 23,
+            CornerRadiusBottomRight = 23,
+            CornerRadiusTopLeft = 23,
+            CornerRadiusTopRight = 23
+        };
+        helpBtnStyle.SetBorderWidthAll(2);
+        _helpButton.AddThemeStyleboxOverride("normal", helpBtnStyle);
+
+        var hoverStyle = (StyleBoxFlat)helpBtnStyle.Duplicate();
+        hoverStyle.BgColor = new Color(0.24f, 0.16f, 0.08f, 0.95f);
+        hoverStyle.BorderColor = new Color(0.95f, 0.82f, 0.44f, 1.0f);
+        _helpButton.AddThemeStyleboxOverride("hover", hoverStyle);
+
+        _helpButton.AddThemeFontSizeOverride("font_size", 20);
+        _helpButton.Pressed += ShowHelpPopup;
+        centerPanel.AddChild(_helpButton);
+    }
+
+    private void ShowHelpPopup()
+    {
+        if (_helpPopup != null && IsInstanceValid(_helpPopup))
+        {
+            _windowManager.PushWindow(_helpPopup);
+            return;
+        }
+
+        _helpPopup = new Panel();
+        _helpPopup.Name = "HelpPopup";
+        _helpPopup.Visible = false;
+        ConfigureCenteredPopupPanel(_helpPopup, PopupSkin.Document, new Vector2(1000, 720));
+
+        var root = new VBoxContainer();
+        SetFullRect(root);
+        root.OffsetLeft = 28;
+        root.OffsetTop = 24;
+        root.OffsetRight = -28;
+        root.OffsetBottom = -24;
+        root.AddThemeConstantOverride("separation", 16);
+        _helpPopup.AddChild(root);
+
+        var title = new Label();
+        title.Text = "📜 汉末灵帝 · 执政纲要与玩法指引";
+        title.HorizontalAlignment = HorizontalAlignment.Center;
+        title.AddThemeFontSizeOverride("font_size", 24);
+        title.AddThemeColorOverride("font_color", new Color(0.92f, 0.78f, 0.45f, 1.0f));
+        root.AddChild(title);
+
+        var scroll = new ScrollContainer();
+        scroll.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        root.AddChild(scroll);
+
+        var content = new RichTextLabel();
+        content.BbcodeEnabled = true;
+        content.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        content.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        content.CustomMinimumSize = new Vector2(0, 520);
+        content.AddThemeFontSizeOverride("normal_font_size", 16);
+        content.AddThemeColorOverride("default_color", new Color(0.92f, 0.88f, 0.80f, 1.0f));
+        content.Text =
+            "[b][color=gold]【大汉天子执政法则】[/color][/b]\n\n" +
+            "[b]一、 核心目标[/b]\n" +
+            "陛下执掌大汉神器，面对张角太平道起事与外戚何进、宦官张让的权势倾轧。\n" +
+            "首要之务：[color=yellow]平衡朝政、稳固四海，在天子寿元内平定叛乱、实现中兴之治[/color]。\n\n" +
+            "[b]二、 御案核心四大板块[/b]\n" +
+            "1. [color=gold]朝会（临朝听政）[/color]：召集群臣大朝议，针对开仓赈灾、三法司廷审巨贪、讨伐招安、派驻太守等天下大策做最终裁决。\n" +
+            "2. [color=gold]黄门密札（天下舆图）[/color]：调阅东汉十三州疆域全图。绿色代表富庶、黄色平稳、红色凋敝、紫色叛乱。点击各州可查看官私田地、民心、守军并直接下达针对性谕旨。\n" +
+            "3. [color=gold]西园（私军密署）[/color]：执掌西园禁卫新军与天子密诏查抄台。可阅兵犒赏、西园卖官增辟私帑，亦可密抄巨贪充实私库。\n" +
+            "4. [color=gold]起驾（巡幸移驾）[/color]：移驾宣政殿、西园别苑或后宫寝殿调养龙体。\n\n" +
+            "[b]三、 时间与推演机制[/b]\n" +
+            "- 游戏以[color=yellow]一旬（十日）[/color]为演进节奏，三旬为一月，十二月为一年。\n" +
+            "- 按 [color=yellow]N[/color] 键推进一旬，或在廷议中下达谕旨自动进入时钟结算。期间将自动判定天下民变、旱涝灾异与历史动态因果。\n\n" +
+            "[b]四、 忠告与提示[/b]\n" +
+            "- 切勿盲目无休止抄家！抄家虽快，但过频动用密诏将严重损耗皇权声望并引发世家反扑。\n" +
+            "- 重点关注民心低于 30 的凋敝州郡，提前委派能臣太守并开仓赈济，防患于未然。";
+        scroll.AddChild(content);
+
+        var closeBtn = new Button();
+        closeBtn.Text = "遵旨收阅 (ESC)";
+        closeBtn.CustomMinimumSize = new Vector2(200, 48);
+        closeBtn.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
+        StyleSceneActionButton(closeBtn, ActionButtonSkin.Document);
+        closeBtn.Pressed += _windowManager.PopWindow;
+        root.AddChild(closeBtn);
+
+        AddChild(_helpPopup);
+        _windowManager.PushWindow(_helpPopup);
     }
 
     private Button CreateMainEntryCard(string title, string subtitle, string texturePath, Action pressedCallback)

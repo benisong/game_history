@@ -50,7 +50,8 @@ public partial class MainScene : Control
             _ => $"第{_gameState.Xun}旬"
         };
 
-        return $"{_gameState.ReignTitle}{_gameState.ReignYear}年 · {_gameState.Year}年{_gameState.Month}月{xunName}";
+        string yearStr = _gameState.ReignYear == 1 ? "元年" : $"{_gameState.ReignYear}年";
+        return $"{_gameState.ReignTitle}{yearStr} · {_gameState.Month}月{xunName}";
     }
 
     private void HideMainSceneStatusAndNpcChrome()
@@ -531,6 +532,7 @@ public partial class MainScene : Control
         StylePopupTitle(title, PopupSkin.Court);
         vBox.AddChild(title);
 
+        string yearStr = _gameState.ReignYear == 1 ? "元年" : $"{_gameState.ReignYear}年";
         var desc = new Label
         {
             Text = $"将连续推进 N 旬（1-30）。\n" +
@@ -540,7 +542,7 @@ public partial class MainScene : Control
                    $"  · 国帑枯竭（国库 ≤ 1000 万钱）\n" +
                    $"  · 触发重大历史事件\n" +
                    $"  · 灵帝崩殂 / 亡国 / 中兴 / 续命\n\n" +
-                   $"当前：{_gameState.ReignTitle}{_gameState.ReignYear}年 {_gameState.Year}年{_gameState.Month}月"
+                   $"当前：{_gameState.ReignTitle}{yearStr} {_gameState.Month}月{(_gameState.Xun == 1 ? "上" : _gameState.Xun == 2 ? "中" : "下")}旬"
         };
         desc.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         StylePopupBodyText(desc, PopupSkin.Court);
@@ -687,11 +689,11 @@ public partial class MainScene : Control
                 await ToSignal(GetTree().CreateTimer(0.05), SceneTreeTimer.SignalName.Timeout);
             }
 
-            // 构造奏报
+            string yearStr = _gameState.ReignYear == 1 ? "元年" : $"{_gameState.ReignYear}年";
             var sb = new System.Text.StringBuilder();
             sb.AppendLine($"【快进 {ran} 旬完毕】");
-            sb.AppendLine($"当前：{_gameState.ReignTitle}{_gameState.ReignYear}年 {_gameState.Year}年{_gameState.Month}月{(_gameState.Xun == 1 ? "上" : _gameState.Xun == 2 ? "中" : "下")}旬");
-            sb.AppendLine($"皇权：{_gameState.ImperialPower}  健康：{_gameState.Health}  民心：{_gameState.PopularSupport}  国库：{_gameState.Treasury} 万钱");
+            sb.AppendLine($"当前：{_gameState.ReignTitle}{yearStr} {_gameState.Month}月{(_gameState.Xun == 1 ? "上" : _gameState.Xun == 2 ? "中" : "下")}旬");
+            sb.AppendLine($"皇权：{_gameState.ImperialPower}  健康：{_gameState.Health}  民心：{_gameState.PopularSupport}  国库：{_gameState.Treasury:N0} 万钱");
             if (newRebellions > 0)
             {
                 sb.AppendLine();
@@ -1041,15 +1043,15 @@ public partial class MainScene : Control
     private string BuildOutcomeSummary()
     {
         if (_gameState == null) return string.Empty;
+        string yearStr = _gameState.ReignYear == 1 ? "元年" : $"{_gameState.ReignYear}年";
         return $"— 史官终录 —\n" +
-               $"年号：{_gameState.ReignTitle}{_gameState.ReignYear}年\n" +
-               $"公元：{_gameState.Year}年{_gameState.Month}月{(_gameState.Xun == 1 ? "上" : _gameState.Xun == 2 ? "中" : "下")}旬\n" +
+               $"年号：{_gameState.ReignTitle}{yearStr} · {_gameState.Month}月{(_gameState.Xun == 1 ? "上" : _gameState.Xun == 2 ? "中" : "下")}旬\n" +
                $"灵帝春秋：{_gameState.GetEmperorAge()} 岁\n" +
                $"皇权终值：{_gameState.ImperialPower} / 100\n" +
                $"天下民心：{_gameState.PopularSupport} / 100\n" +
                $"皇帝健康：{_gameState.Health} / 100\n" +
-               $"国帑结余：{_gameState.Treasury} 万钱\n" +
-               $"西园私帑：{_gameState.PrivateTreasury} 万钱\n" +
+               $"国帑结余：{_gameState.Treasury:N0} 万钱\n" +
+               $"西园私帑：{_gameState.PrivateTreasury:N0} 万钱\n" +
                $"叛郡计数：{CountRebellingProvinces()} / {_gameState.Provinces.Count}";
     }
 
