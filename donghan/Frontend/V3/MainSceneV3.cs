@@ -45,69 +45,6 @@ public partial class MainSceneV3 : Control
         RefreshUi();
     }
 
-    private void ShowStartupSplashScreen()
-    {
-        var splash = new PanelContainer
-        {
-            Name = "StartupSplash",
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill
-        };
-        splash.SetAnchorsPreset(LayoutPreset.FullRect);
-        var style = new StyleBoxFlat
-        {
-            BgColor = new Color(0.04f, 0.02f, 0.02f, 0.96f)
-        };
-        splash.AddThemeStyleboxOverride("panel", style);
-
-        var box = new VBoxContainer
-        {
-            Alignment = BoxContainer.AlignmentMode.Center,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill
-        };
-        box.AddThemeConstantOverride("separation", 16);
-        splash.AddChild(box);
-
-        var title = new Label
-        {
-            Text = "📜 【太史令铺卷 · 大汉全景推演】",
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
-        title.AddThemeFontSizeOverride("font_size", 24);
-        title.AddThemeColorOverride("font_color", new Color(0.95f, 0.77f, 0.28f));
-        box.AddChild(title);
-
-        var sub = new Label
-        {
-            Text = "正在起草建宁、光和年间天下地缘舆图、十三州官私田版籍与百官谱系...",
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
-        sub.AddThemeFontSizeOverride("font_size", 14);
-        box.AddChild(sub);
-
-        var bar = new ProgressBar
-        {
-            CustomMinimumSize = new Vector2(480, 24),
-            MinValue = 0,
-            MaxValue = 100,
-            Value = 100,
-            ShowPercentage = false
-        };
-        box.AddChild(bar);
-
-        var enterBtn = new Button
-        {
-            Text = "登殿临朝 · 听政天下 ▶",
-            CustomMinimumSize = new Vector2(220, 42)
-        };
-        DonghanFrontend.Common.ImperialUiThemeHelper.ApplyInteractiveFeedback(enterBtn, DonghanFrontend.Common.ImperialUiThemeHelper.ButtonSkin.PrimaryGold);
-        enterBtn.Pressed += () => splash.QueueFree();
-        box.AddChild(enterBtn);
-
-        AddChild(splash);
-    }
-
     private void BuildLayout()
     {
         // 根全屏布局
