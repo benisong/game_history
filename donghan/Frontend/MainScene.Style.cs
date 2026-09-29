@@ -315,15 +315,20 @@ public partial class MainScene : Control
 
     private static void ConfigureCenteredPopupPanel(Panel panel, PopupSkin skin, Vector2 size)
     {
-        panel.CustomMinimumSize = size;
+        // 限制弹窗最大尺寸不超过 1240 x 680，确保在 1280x720 视口下有安全的留白，绝不超出屏幕
+        float clampedWidth = Math.Min(size.X, 1220);
+        float clampedHeight = Math.Min(size.Y, 660);
+        Vector2 clampedSize = new Vector2(clampedWidth, clampedHeight);
+
+        panel.CustomMinimumSize = clampedSize;
         panel.AnchorLeft = 0.5f;
         panel.AnchorTop = 0.5f;
         panel.AnchorRight = 0.5f;
         panel.AnchorBottom = 0.5f;
-        panel.OffsetLeft = -size.X / 2.0f;
-        panel.OffsetTop = -size.Y / 2.0f;
-        panel.OffsetRight = size.X / 2.0f;
-        panel.OffsetBottom = size.Y / 2.0f;
+        panel.OffsetLeft = -clampedSize.X / 2.0f;
+        panel.OffsetTop = -clampedSize.Y / 2.0f;
+        panel.OffsetRight = clampedSize.X / 2.0f;
+        panel.OffsetBottom = clampedSize.Y / 2.0f;
         panel.MouseFilter = Control.MouseFilterEnum.Stop;
         panel.AddThemeStyleboxOverride("panel", CreatePopupPanelStyle(skin));
     }

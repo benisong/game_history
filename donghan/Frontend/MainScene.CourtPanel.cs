@@ -29,16 +29,7 @@ public partial class MainScene : Control
         _courtPopup = new Panel();
         _courtPopup.Name = "CourtPopup";
         _courtPopup.Visible = false;
-        _courtPopup.CustomMinimumSize = new Vector2(1100, 640);
-        _courtPopup.AnchorLeft = 0.5f;
-        _courtPopup.AnchorTop = 0.5f;
-        _courtPopup.AnchorRight = 0.5f;
-        _courtPopup.AnchorBottom = 0.5f;
-        _courtPopup.OffsetLeft = -550;
-        _courtPopup.OffsetTop = -320;
-        _courtPopup.OffsetRight = 550;
-        _courtPopup.OffsetBottom = 320;
-        _courtPopup.AddThemeStyleboxOverride("panel", CreatePopupPanelStyle(PopupSkin.Court));
+        ConfigureCenteredPopupPanel(_courtPopup, PopupSkin.Court, new Vector2(1180, 640));
 
         var root = new VBoxContainer();
         SetFullRect(root);

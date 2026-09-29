@@ -21,16 +21,7 @@ public partial class MainScene : Control
         _westGardenPopup = new Panel();
         _westGardenPopup.Name = "WestGardenPopup";
         _westGardenPopup.Visible = false;
-        _westGardenPopup.CustomMinimumSize = new Vector2(1100, 640);
-        _westGardenPopup.AnchorLeft = 0.5f;
-        _westGardenPopup.AnchorTop = 0.5f;
-        _westGardenPopup.AnchorRight = 0.5f;
-        _westGardenPopup.AnchorBottom = 0.5f;
-        _westGardenPopup.OffsetLeft = -550;
-        _westGardenPopup.OffsetTop = -320;
-        _westGardenPopup.OffsetRight = 550;
-        _westGardenPopup.OffsetBottom = 320;
-        _westGardenPopup.AddThemeStyleboxOverride("panel", CreatePopupPanelStyle(PopupSkin.WestGarden));
+        ConfigureCenteredPopupPanel(_westGardenPopup, PopupSkin.WestGarden, new Vector2(1180, 640));
 
         var root = new VBoxContainer();
         SetFullRect(root);

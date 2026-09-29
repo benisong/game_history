@@ -20,19 +20,27 @@ public partial class WindowManager : Node
 
         GetViewport().GuiReleaseFocus();
 
-        // 1. 创建全屏模态防穿透点击拦截器
+        // 1. 创建全屏模态防穿透点击拦截器 (半透明黑纱层，清晰区隔上下层)
         var blocker = new ColorRect();
         blocker.Name = $"{window.Name}_Blocker";
-        blocker.Color = new Color(0.04f, 0.035f, 0.03f, 1.0f); // 100% 不透明，底层完全不可见不可点
+        blocker.Color = new Color(0.01f, 0.01f, 0.01f, 0.78f);
         blocker.MouseFilter = Control.MouseFilterEnum.Stop; // 拦截所有事件，彻底不漏点
         blocker.ZIndex = ModalBaseZIndex + _windowStack.Count * 2;
         SetFullRect(blocker);
+
+        // 如果已有下层弹窗，降低下层弹窗的视觉亮度，避免层叠杂乱
+        if (_windowStack.Count > 0)
+        {
+            var prevWindow = _windowStack.Peek();
+            prevWindow.Modulate = new Color(0.6f, 0.6f, 0.6f, 0.85f);
+        }
 
         // 2. 将遮蔽阻断器动态加入场景，正好垫在弹窗下方
         window.GetParent().AddChild(blocker);
         window.GetParent().MoveChild(blocker, window.GetIndex());
 
-        // 3. 弹窗自身只接管输入与层级；视觉皮肤由各弹窗的 PopupSkin 保留
+        // 3. 弹窗自身只接管输入与层级
+        window.Modulate = new Color(1f, 1f, 1f, 1f);
         window.MouseFilter = Control.MouseFilterEnum.Stop;
         window.FocusMode = Control.FocusModeEnum.All;
         window.ZIndex = blocker.ZIndex + 1;
@@ -67,6 +75,14 @@ public partial class WindowManager : Node
             if (freeOnClose)
             {
                 topWindow.QueueFree();
+            }
+
+            // 恢复当前最上层弹窗的正常亮度
+            if (_windowStack.Count > 0)
+            {
+                var currentTop = _windowStack.Peek();
+                currentTop.Modulate = new Color(1f, 1f, 1f, 1f);
+                currentTop.GrabFocus();
             }
 
             GD.Print($"[WindowManager]: 已关闭弹窗 {topWindow.Name} 并解冻一层遮挡。");

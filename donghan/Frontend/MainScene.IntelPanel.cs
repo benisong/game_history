@@ -21,16 +21,7 @@ public partial class MainScene : Control
         _intelPopup = new Panel();
         _intelPopup.Name = "IntelPopup";
         _intelPopup.Visible = false;
-        _intelPopup.CustomMinimumSize = new Vector2(1100, 640);
-        _intelPopup.AnchorLeft = 0.5f;
-        _intelPopup.AnchorTop = 0.5f;
-        _intelPopup.AnchorRight = 0.5f;
-        _intelPopup.AnchorBottom = 0.5f;
-        _intelPopup.OffsetLeft = -550;
-        _intelPopup.OffsetTop = -320;
-        _intelPopup.OffsetRight = 550;
-        _intelPopup.OffsetBottom = 320;
-        _intelPopup.AddThemeStyleboxOverride("panel", CreatePopupPanelStyle(PopupSkin.Intel));
+        ConfigureCenteredPopupPanel(_intelPopup, PopupSkin.Intel, new Vector2(1200, 650));
 
         var root = new VBoxContainer();
         SetFullRect(root);
@@ -90,6 +81,7 @@ public partial class MainScene : Control
 
         _chinaMapCanvas = new Control();
         _chinaMapCanvas.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        _chinaMapCanvas.Draw += OnDrawChinaMapTopologyLines;
         mapPanel.AddChild(_chinaMapCanvas);
 
         BuildChinaMapButtons(_chinaMapCanvas);
@@ -132,19 +124,19 @@ public partial class MainScene : Control
         // 东汉十三州相对中国地图地理经纬度布局坐标 [X, Y, Width, Height]
         var layout = new Dictionary<string, (int x, int y, int w, int h)>
         {
-            { ProvinceCatalog.Youzhou,   (360, 40, 110, 50) },  // 幽州 (东北)
-            { ProvinceCatalog.Bingzhou,  (230, 80, 100, 60) },  // 并州 (北部)
-            { ProvinceCatalog.Jizhou,    (340, 110, 110, 60) }, // 冀州 (华北)
-            { ProvinceCatalog.Liangzhou, (60, 130, 130, 70) },  // 凉州 (西北)
-            { ProvinceCatalog.Sili,      (220, 160, 105, 65) }, // 司隶 (京畿洛阳)
-            { ProvinceCatalog.Yanzhou,   (340, 180, 95, 55) },  // 兖州 (中原)
-            { ProvinceCatalog.Qingzhou,  (445, 160, 95, 55) },  // 青州 (山东半岛)
-            { ProvinceCatalog.Yuzhou,    (320, 245, 105, 55) }, // 豫州 (淮汝)
-            { ProvinceCatalog.Xuzhou,    (435, 225, 95, 55) },  // 徐州 (淮东海岱)
-            { ProvinceCatalog.Yizhou,    (100, 240, 140, 90) }, // 益州 (西南巴蜀)
-            { ProvinceCatalog.Jingzhou,  (260, 310, 120, 75) }, // 荆州 (荆襄两湖)
-            { ProvinceCatalog.Yangzhou,  (400, 290, 130, 80) }, // 扬州 (江东江南)
-            { ProvinceCatalog.Jiaozhou,  (230, 395, 180, 50) }  // 交州 (岭南南部)
+            { ProvinceCatalog.Youzhou,   (370, 35, 110, 48) },  // 幽州 (东北·燕赵幽蓟)
+            { ProvinceCatalog.Bingzhou,  (235, 75, 105, 54) },  // 并州 (北方·太原上党)
+            { ProvinceCatalog.Jizhou,    (355, 100, 110, 55) }, // 冀州 (华北·邺城巨鹿)
+            { ProvinceCatalog.Liangzhou, (50, 120, 135, 65) },  // 凉州 (西北·西凉金城)
+            { ProvinceCatalog.Sili,      (225, 150, 110, 60) }, // 司隶 (京畿·洛阳长安)
+            { ProvinceCatalog.Yanzhou,   (350, 170, 100, 52) },  // 兖州 (中原·东郡濮阳)
+            { ProvinceCatalog.Qingzhou,  (460, 155, 95, 52) },  // 青州 (半岛·齐鲁临淄)
+            { ProvinceCatalog.Yuzhou,    (330, 235, 110, 52) }, // 豫州 (淮汝·汝南颖川)
+            { ProvinceCatalog.Xuzhou,    (450, 220, 100, 52) }, // 徐州 (海岱·彭城下邳)
+            { ProvinceCatalog.Yizhou,    (85, 225, 145, 85) },  // 益州 (西南·巴蜀成都)
+            { ProvinceCatalog.Jingzhou,  (260, 295, 125, 70) }, // 荆州 (两湖·荆襄南阳)
+            { ProvinceCatalog.Yangzhou,  (400, 280, 135, 75) }, // 扬州 (江东·建业吴会)
+            { ProvinceCatalog.Jiaozhou,  (220, 380, 185, 46) }  // 交州 (岭南·南海交趾)
         };
 
         foreach (var kvp in layout)
@@ -173,6 +165,54 @@ public partial class MainScene : Control
         HighlightSelectedMapProvince(provinceId);
     }
 
+    private void OnDrawChinaMapTopologyLines()
+    {
+        if (_chinaMapCanvas == null || _gameState == null) return;
+
+        // 绘制地理驿道/地缘邻接拓扑连线
+        var drawnEdges = new HashSet<string>();
+        var lineColor = new Color(0.48f, 0.36f, 0.22f, 0.65f);
+        var borderLineColor = new Color(0.28f, 0.22f, 0.16f, 0.40f);
+
+        // 1. 绘制中国汉代疆域底图轮廓骨架线
+        Vector2[] coastLine = new Vector2[]
+        {
+            new(460, 45),   // 辽东/幽州东
+            new(500, 140),  // 渤海湾
+            new(550, 170),  // 山东半岛东角
+            new(530, 220),  // 淮东海岸
+            new(525, 290),  // 长江口
+            new(515, 340),  // 浙闽沿海
+            new(400, 415),  // 岭南南海
+            new(220, 420),  // 交趾北部湾
+        };
+        for (int i = 0; i < coastLine.Length - 1; i++)
+        {
+            _chinaMapCanvas.DrawLine(coastLine[i], coastLine[i + 1], borderLineColor, 2.5f, antialiased: true);
+        }
+
+        // 2. 绘制十三州之间邻接驿道网络
+        foreach (var p in _gameState.Provinces.Values)
+        {
+            if (!_provinceMapButtons.TryGetValue(p.Id, out var srcBtn)) continue;
+            Vector2 srcCenter = srcBtn.Position + srcBtn.Size / 2f;
+
+            foreach (var nId in p.Neighbors)
+            {
+                if (!_provinceMapButtons.TryGetValue(nId, out var dstBtn)) continue;
+                string edgeKey = string.CompareOrdinal(p.Id, nId) < 0 ? $"{p.Id}_{nId}" : $"{nId}_{p.Id}";
+                if (drawnEdges.Contains(edgeKey)) continue;
+                drawnEdges.Add(edgeKey);
+
+                Vector2 dstCenter = dstBtn.Position + dstBtn.Size / 2f;
+                // 绘制古代驿道交通线
+                _chinaMapCanvas.DrawLine(srcCenter, dstCenter, lineColor, 1.8f, antialiased: true);
+                // 驿道节点小圆点
+                _chinaMapCanvas.DrawCircle((srcCenter + dstCenter) / 2f, 2.2f, new Color(0.75f, 0.60f, 0.35f, 0.75f));
+            }
+        }
+    }
+
     private void HighlightSelectedMapProvince(string selectedId)
     {
         foreach (var kvp in _provinceMapButtons)
@@ -184,6 +224,7 @@ public partial class MainScene : Control
                 ApplyMapButtonStyling(btn, p, isSelected: pId == selectedId);
             }
         }
+        _chinaMapCanvas?.QueueRedraw();
     }
 
     private void ApplyMapButtonStyling(Button btn, Province p, bool isSelected)
