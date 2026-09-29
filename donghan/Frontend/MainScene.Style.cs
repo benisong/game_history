@@ -116,18 +116,30 @@ public partial class MainScene : Control
 
     private static Texture2D? LoadTextureFromProjectFile(string resourcePath)
     {
-        var importedTexture = GD.Load<Texture2D>(resourcePath);
-        if (importedTexture != null) return importedTexture;
-
-        string filePath = ProjectSettings.GlobalizePath(resourcePath);
-        var image = Image.LoadFromFile(filePath);
-        if (image == null || image.IsEmpty())
+        try
         {
-            GD.PrintErr($"无法载入图片资源：{resourcePath}");
-            return null;
+            string filePath = ProjectSettings.GlobalizePath(resourcePath);
+            if (System.IO.File.Exists(filePath))
+            {
+                var image = Image.LoadFromFile(filePath);
+                if (image != null && !image.IsEmpty())
+                {
+                    return ImageTexture.CreateFromImage(image);
+                }
+            }
+
+            if (ResourceLoader.Exists(resourcePath))
+            {
+                var imported = GD.Load<Texture2D>(resourcePath);
+                if (imported != null) return imported;
+            }
+        }
+        catch (Exception ex)
+        {
+            GD.PrintErr($"LoadTextureFromProjectFile 容错忽略：{resourcePath}, err: {ex.Message}");
         }
 
-        return ImageTexture.CreateFromImage(image);
+        return null;
     }
 
     private static void ApplyOpaquePanelTheme(Node root)

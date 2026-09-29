@@ -17,7 +17,6 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 config/name="DonghanFrontend"
 run/main_scene="res://V3/MainSceneV3.tscn"
 config/features=PackedStringArray("4.3", "C#", "Forward Plus")
-config/icon="res://icon.svg"
 
 [display]
 
