@@ -315,10 +315,16 @@ public partial class MainScene : Control
 
     private static void ConfigureCenteredPopupPanel(Panel panel, PopupSkin skin, Vector2 size)
     {
-        // 限制弹窗最大尺寸不超过 1240 x 680，确保在 1280x720 视口下有安全的留白，绝不超出屏幕
-        float clampedWidth = Math.Min(size.X, 1220);
-        float clampedHeight = Math.Min(size.Y, 660);
-        Vector2 clampedSize = new Vector2(clampedWidth, clampedHeight);
+        // 绝对分辨率模式：根据当前视口自动计算合适的相对缩放尺寸，留出安全边距
+        Vector2 viewportSize = DisplayServer.WindowGetSize();
+        if (viewportSize.X <= 0 || viewportSize.Y <= 0)
+        {
+            viewportSize = new Vector2(1920, 1080);
+        }
+
+        float maxWidth = Math.Min(size.X, viewportSize.X - 80);
+        float maxHeight = Math.Min(size.Y, viewportSize.Y - 80);
+        Vector2 clampedSize = new Vector2(Math.Max(600, maxWidth), Math.Max(400, maxHeight));
 
         panel.CustomMinimumSize = clampedSize;
         panel.AnchorLeft = 0.5f;

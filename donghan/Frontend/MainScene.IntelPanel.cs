@@ -21,7 +21,7 @@ public partial class MainScene : Control
         _intelPopup = new Panel();
         _intelPopup.Name = "IntelPopup";
         _intelPopup.Visible = false;
-        ConfigureCenteredPopupPanel(_intelPopup, PopupSkin.Intel, new Vector2(1200, 650));
+        ConfigureCenteredPopupPanel(_intelPopup, PopupSkin.Intel, new Vector2(1780, 880));
 
         var root = new VBoxContainer();
         SetFullRect(root);
@@ -46,7 +46,8 @@ public partial class MainScene : Control
 
         _intelGlobalStatsLabel = new RichTextLabel();
         _intelGlobalStatsLabel.BbcodeEnabled = true;
-        _intelGlobalStatsLabel.CustomMinimumSize = new Vector2(0, 72);
+        _intelGlobalStatsLabel.CustomMinimumSize = new Vector2(0, 84);
+        _intelGlobalStatsLabel.AddThemeFontSizeOverride("normal_font_size", 16);
         root.AddChild(_intelGlobalStatsLabel);
     }
 
@@ -60,20 +61,20 @@ public partial class MainScene : Control
         body.AddThemeConstantOverride("separation", 12);
         root.AddChild(body);
 
-        // 左侧：东汉十三州疆域全图 (根据地理位置分布)
-        var mapColumn = CreateIntelColumn(body, "🗺️ 大汉十三州舆图 (绿色=富庶/黄色=中等/红色=凋敝/紫色=叛乱)", 580);
+        // 左侧：东汉十三州疆域全图 (根据地理位置分布，适配 1920x1080 宏伟版面)
+        var mapColumn = CreateIntelColumn(body, "🗺️ 大汉十三州疆域全图 (翠绿=富庶 ｜ 琥珀=平稳 ｜ 赤红=凋敝 ｜ 紫红=叛乱)", 1050);
         
         var mapPanel = new Panel();
-        mapPanel.CustomMinimumSize = new Vector2(560, 430);
+        mapPanel.CustomMinimumSize = new Vector2(1020, 680);
         mapPanel.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         var mapStyle = new StyleBoxFlat
         {
-            BgColor = new Color(0.08f, 0.055f, 0.04f, 0.95f),
-            BorderColor = new Color(0.42f, 0.28f, 0.16f, 1f),
-            CornerRadiusBottomLeft = 6,
-            CornerRadiusBottomRight = 6,
-            CornerRadiusTopLeft = 6,
-            CornerRadiusTopRight = 6
+            BgColor = new Color(0.06f, 0.045f, 0.035f, 0.96f),
+            BorderColor = new Color(0.48f, 0.34f, 0.18f, 1f),
+            CornerRadiusBottomLeft = 8,
+            CornerRadiusBottomRight = 8,
+            CornerRadiusTopLeft = 8,
+            CornerRadiusTopRight = 8
         };
         mapStyle.SetBorderWidthAll(2);
         mapPanel.AddThemeStyleboxOverride("panel", mapStyle);
@@ -87,20 +88,20 @@ public partial class MainScene : Control
         BuildChinaMapButtons(_chinaMapCanvas);
 
         var closeButton = new Button();
-        closeButton.Text = "收起密札";
+        closeButton.Text = "收起密札 (ESC)";
         StyleSceneActionButton(closeButton, ActionButtonSkin.Document);
         closeButton.Pressed += _windowManager.PopWindow;
         mapColumn.AddChild(closeButton);
 
         // 中间：州郡详情与研判
-        var detailColumn = CreateIntelColumn(body, "详情与研判", 320, expand: true);
+        var detailColumn = CreateIntelColumn(body, "州郡详情与研判", 400, expand: true);
         _intelProvinceDetailsLabel = new RichTextLabel();
         _intelProvinceDetailsLabel.BbcodeEnabled = true;
         _intelProvinceDetailsLabel.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         detailColumn.AddChild(_intelProvinceDetailsLabel);
 
         // 右侧：可行处置
-        var actionColumn = CreateIntelColumn(body, "可行处置", 220);
+        var actionColumn = CreateIntelColumn(body, "可行处置", 280);
         _intelActionsTitleLabel = new Label();
         _intelActionsTitleLabel.Text = "先点击地图州郡";
         _intelActionsTitleLabel.HorizontalAlignment = HorizontalAlignment.Center;
@@ -121,22 +122,22 @@ public partial class MainScene : Control
     {
         _provinceMapButtons.Clear();
 
-        // 东汉十三州相对中国地图地理经纬度布局坐标 [X, Y, Width, Height]
+        // 东汉十三州相对中国地图地理经纬度布局坐标 [X, Y, Width, Height] (适配 1920x1080 大画布 1020x680)
         var layout = new Dictionary<string, (int x, int y, int w, int h)>
         {
-            { ProvinceCatalog.Youzhou,   (370, 35, 110, 48) },  // 幽州 (东北·燕赵幽蓟)
-            { ProvinceCatalog.Bingzhou,  (235, 75, 105, 54) },  // 并州 (北方·太原上党)
-            { ProvinceCatalog.Jizhou,    (355, 100, 110, 55) }, // 冀州 (华北·邺城巨鹿)
-            { ProvinceCatalog.Liangzhou, (50, 120, 135, 65) },  // 凉州 (西北·西凉金城)
-            { ProvinceCatalog.Sili,      (225, 150, 110, 60) }, // 司隶 (京畿·洛阳长安)
-            { ProvinceCatalog.Yanzhou,   (350, 170, 100, 52) },  // 兖州 (中原·东郡濮阳)
-            { ProvinceCatalog.Qingzhou,  (460, 155, 95, 52) },  // 青州 (半岛·齐鲁临淄)
-            { ProvinceCatalog.Yuzhou,    (330, 235, 110, 52) }, // 豫州 (淮汝·汝南颖川)
-            { ProvinceCatalog.Xuzhou,    (450, 220, 100, 52) }, // 徐州 (海岱·彭城下邳)
-            { ProvinceCatalog.Yizhou,    (85, 225, 145, 85) },  // 益州 (西南·巴蜀成都)
-            { ProvinceCatalog.Jingzhou,  (260, 295, 125, 70) }, // 荆州 (两湖·荆襄南阳)
-            { ProvinceCatalog.Yangzhou,  (400, 280, 135, 75) }, // 扬州 (江东·建业吴会)
-            { ProvinceCatalog.Jiaozhou,  (220, 380, 185, 46) }  // 交州 (岭南·南海交趾)
+            { ProvinceCatalog.Youzhou,   (670, 50, 190, 75) },  // 幽州 (东北·燕赵幽蓟)
+            { ProvinceCatalog.Bingzhou,  (430, 110, 180, 85) }, // 并州 (北方·太原上党)
+            { ProvinceCatalog.Jizhou,    (640, 150, 190, 85) }, // 冀州 (华北·邺城巨鹿)
+            { ProvinceCatalog.Liangzhou, (80, 180, 230, 105) }, // 凉州 (西北·西凉金城)
+            { ProvinceCatalog.Sili,      (410, 230, 190, 95) }, // 司隶 (京畿·洛阳长安)
+            { ProvinceCatalog.Yanzhou,   (630, 260, 175, 80) }, // 兖州 (中原·东郡濮阳)
+            { ProvinceCatalog.Qingzhou,  (830, 240, 165, 80) }, // 青州 (半岛·齐鲁临淄)
+            { ProvinceCatalog.Yuzhou,    (590, 365, 190, 80) }, // 豫州 (淮汝·汝南颖川)
+            { ProvinceCatalog.Xuzhou,    (805, 345, 175, 80) }, // 徐州 (海岱·彭城下邳)
+            { ProvinceCatalog.Yizhou,    (150, 350, 245, 135) },// 益州 (西南·巴蜀成都)
+            { ProvinceCatalog.Jingzhou,  (460, 460, 215, 110) },// 荆州 (两湖·荆襄南阳)
+            { ProvinceCatalog.Yangzhou,  (720, 440, 240, 120) },// 扬州 (江东·建业吴会)
+            { ProvinceCatalog.Jiaozhou,  (390, 595, 310, 70) }  // 交州 (岭南·南海交趾)
         };
 
         foreach (var kvp in layout)
@@ -169,26 +170,26 @@ public partial class MainScene : Control
     {
         if (_chinaMapCanvas == null || _gameState == null) return;
 
-        // 绘制地理驿道/地缘邻接拓扑连线
+        // 绘制地理驿道/地缘邻接拓扑连线 (适配 1020x680 大画布)
         var drawnEdges = new HashSet<string>();
-        var lineColor = new Color(0.48f, 0.36f, 0.22f, 0.65f);
-        var borderLineColor = new Color(0.28f, 0.22f, 0.16f, 0.40f);
+        var lineColor = new Color(0.55f, 0.42f, 0.25f, 0.70f);
+        var borderLineColor = new Color(0.35f, 0.28f, 0.20f, 0.50f);
 
-        // 1. 绘制中国汉代疆域底图轮廓骨架线
+        // 1. 绘制中国汉代疆域东南海岸与边陲轮廓线
         Vector2[] coastLine = new Vector2[]
         {
-            new(460, 45),   // 辽东/幽州东
-            new(500, 140),  // 渤海湾
-            new(550, 170),  // 山东半岛东角
-            new(530, 220),  // 淮东海岸
-            new(525, 290),  // 长江口
-            new(515, 340),  // 浙闽沿海
-            new(400, 415),  // 岭南南海
-            new(220, 420),  // 交趾北部湾
+            new(860, 60),   // 辽东/幽州东
+            new(920, 220),  // 渤海湾
+            new(1000, 260), // 山东半岛东角
+            new(970, 340),  // 淮东海岸
+            new(960, 450),  // 长江口
+            new(940, 530),  // 浙闽沿海
+            new(720, 630),  // 岭南南海
+            new(390, 640),  // 交趾北部湾
         };
         for (int i = 0; i < coastLine.Length - 1; i++)
         {
-            _chinaMapCanvas.DrawLine(coastLine[i], coastLine[i + 1], borderLineColor, 2.5f, antialiased: true);
+            _chinaMapCanvas.DrawLine(coastLine[i], coastLine[i + 1], borderLineColor, 3.0f, antialiased: true);
         }
 
         // 2. 绘制十三州之间邻接驿道网络
@@ -206,9 +207,9 @@ public partial class MainScene : Control
 
                 Vector2 dstCenter = dstBtn.Position + dstBtn.Size / 2f;
                 // 绘制古代驿道交通线
-                _chinaMapCanvas.DrawLine(srcCenter, dstCenter, lineColor, 1.8f, antialiased: true);
+                _chinaMapCanvas.DrawLine(srcCenter, dstCenter, lineColor, 2.5f, antialiased: true);
                 // 驿道节点小圆点
-                _chinaMapCanvas.DrawCircle((srcCenter + dstCenter) / 2f, 2.2f, new Color(0.75f, 0.60f, 0.35f, 0.75f));
+                _chinaMapCanvas.DrawCircle((srcCenter + dstCenter) / 2f, 3.5f, new Color(0.85f, 0.70f, 0.42f, 0.85f));
             }
         }
     }
@@ -277,9 +278,9 @@ public partial class MainScene : Control
         btn.AddThemeStyleboxOverride("hover", hoverStyle);
 
         int stateRatio = (p.StateControlledLand * 100) / Math.Max(1, p.StateControlledLand + p.GentryControlledLand);
-        btn.Text = $"【{p.Name}】\n{statusTag} 官田{stateRatio}%\n民心{p.LocalSupport} 守军{p.Garrison}";
+        btn.Text = $"【{p.Name}】\n{statusTag} 官田{stateRatio}%\n民心{p.LocalSupport} 守军{p.Garrison:N0}";
         btn.AddThemeColorOverride("font_color", textColor);
-        btn.AddThemeFontSizeOverride("font_size", 11);
+        btn.AddThemeFontSizeOverride("font_size", 14);
     }
 
     private VBoxContainer CreateIntelColumn(HBoxContainer parent, string title, int width, bool expand = false)

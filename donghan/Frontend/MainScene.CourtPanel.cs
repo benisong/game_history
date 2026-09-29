@@ -29,7 +29,7 @@ public partial class MainScene : Control
         _courtPopup = new Panel();
         _courtPopup.Name = "CourtPopup";
         _courtPopup.Visible = false;
-        ConfigureCenteredPopupPanel(_courtPopup, PopupSkin.Court, new Vector2(1180, 640));
+        ConfigureCenteredPopupPanel(_courtPopup, PopupSkin.Court, new Vector2(1720, 880));
 
         var root = new VBoxContainer();
         SetFullRect(root);

@@ -15,7 +15,7 @@ public partial class MainScene : Control
 
         EnsureMainSceneImageBackground(centerPanel);
 
-        // 1. 顶部：年号与宏观信息栏 (留出 60px 高度)
+        // 1. 顶部：年号与宏观信息栏
         _mainTimeLabel = centerPanel.GetNodeOrNull<Label>("MainTimeLabel");
         if (_mainTimeLabel == null)
         {
@@ -25,32 +25,32 @@ public partial class MainScene : Control
             _mainTimeLabel.AnchorTop = 0.0f;
             _mainTimeLabel.AnchorRight = 0.5f;
             _mainTimeLabel.AnchorBottom = 0.0f;
-            _mainTimeLabel.OffsetLeft = -320;
-            _mainTimeLabel.OffsetTop = 14;
-            _mainTimeLabel.OffsetRight = 320;
-            _mainTimeLabel.OffsetBottom = 54;
+            _mainTimeLabel.OffsetLeft = -450;
+            _mainTimeLabel.OffsetTop = 32;
+            _mainTimeLabel.OffsetRight = 450;
+            _mainTimeLabel.OffsetBottom = 86;
             _mainTimeLabel.HorizontalAlignment = HorizontalAlignment.Center;
             _mainTimeLabel.VerticalAlignment = VerticalAlignment.Center;
-            _mainTimeLabel.AddThemeFontSizeOverride("font_size", 22);
+            _mainTimeLabel.AddThemeFontSizeOverride("font_size", 30);
             _mainTimeLabel.AddThemeColorOverride("font_color", new Color(0.95f, 0.82f, 0.44f, 1.0f));
             centerPanel.AddChild(_mainTimeLabel);
         }
 
-        // 2. 御案核心四卡片容器 (居中紧凑排列，严禁超出 1280x720 视口)
+        // 2. 御案核心四卡片容器 (1920x1080 绝对分辨率黄金比例排布)
         _deskContainer = new VBoxContainer();
         _deskContainer.Name = "EmperorsDesk";
         _deskContainer.AnchorLeft = 0.5f;
-        _deskContainer.AnchorTop = 0.0f;
+        _deskContainer.AnchorTop = 0.5f;
         _deskContainer.AnchorRight = 0.5f;
-        _deskContainer.AnchorBottom = 0.0f;
-        _deskContainer.OffsetLeft = -560;
-        _deskContainer.OffsetTop = 64;
-        _deskContainer.OffsetRight = 560;
-        _deskContainer.OffsetBottom = 530;
+        _deskContainer.AnchorBottom = 0.5f;
+        _deskContainer.OffsetLeft = -760;
+        _deskContainer.OffsetTop = -320;
+        _deskContainer.OffsetRight = 760;
+        _deskContainer.OffsetBottom = 320;
         _deskContainer.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
         _deskContainer.Alignment = BoxContainer.AlignmentMode.Center;
-        _deskContainer.CustomMinimumSize = new Vector2(1120, 460);
-        _deskContainer.AddThemeConstantOverride("separation", 10);
+        _deskContainer.CustomMinimumSize = new Vector2(1520, 640);
+        _deskContainer.AddThemeConstantOverride("separation", 16);
         centerPanel.AddChild(_deskContainer);
         centerPanel.MoveChild(_deskContainer, 0);
 
@@ -60,11 +60,14 @@ public partial class MainScene : Control
             _storyOutput.Visible = false;
         }
 
+        // 彻底隐藏 MainScene.tscn 中残留的旧左右侧边栏节点，保证界面绝对纯净
+        HideMainSceneStatusAndNpcChrome();
+
         var deskRow = new HBoxContainer();
         deskRow.Alignment = BoxContainer.AlignmentMode.Center;
         deskRow.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         deskRow.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
-        deskRow.AddThemeConstantOverride("separation", 20);
+        deskRow.AddThemeConstantOverride("separation", 36);
         _deskContainer.AddChild(deskRow);
 
         _btnCourtSeal = CreateMainEntryCard(
@@ -94,11 +97,11 @@ public partial class MainScene : Control
         deskRow.AddChild(_btnTravelCarriage);
     }
 
-private Button CreateMainEntryCard(string title, string subtitle, string texturePath, Action pressedCallback)
-{
-var btn = new Button();
-btn.Text = string.Empty;
-btn.CustomMinimumSize = new Vector2(255, 380);
+    private Button CreateMainEntryCard(string title, string subtitle, string texturePath, Action pressedCallback)
+    {
+        var btn = new Button();
+        btn.Text = string.Empty;
+        btn.CustomMinimumSize = new Vector2(330, 520);
         btn.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         btn.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         btn.MouseFilter = Control.MouseFilterEnum.Stop;

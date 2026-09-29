@@ -21,7 +21,7 @@ public partial class MainScene : Control
         _westGardenPopup = new Panel();
         _westGardenPopup.Name = "WestGardenPopup";
         _westGardenPopup.Visible = false;
-        ConfigureCenteredPopupPanel(_westGardenPopup, PopupSkin.WestGarden, new Vector2(1180, 640));
+        ConfigureCenteredPopupPanel(_westGardenPopup, PopupSkin.WestGarden, new Vector2(1720, 880));
 
         var root = new VBoxContainer();
         SetFullRect(root);
