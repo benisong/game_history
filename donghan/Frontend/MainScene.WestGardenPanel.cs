@@ -457,7 +457,7 @@ public partial class MainScene : Control
     {
         if (_gameState == null || !_gameState.Npcs.TryGetValue(officerId, out var npc)) return "未知";
         string level = npc.Corruption >= 70 ? "高" : npc.Corruption >= 40 ? "中" : "低";
-        return $"{level}（{npc.Name} 贪腐 {npc.Corruption}/100）";
+        return $"{level}（{npc.Name} 风评：{DescribeCorruptionLevel(npc.Corruption)}）";
     }
 
     private void DoWestGardenSellOfficeAction()

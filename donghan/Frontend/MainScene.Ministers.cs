@@ -81,32 +81,44 @@ public partial class MainScene : Control
         if (_gameState == null) return string.Empty;
 
         string location = minister.GovernedProvinceId != null && _gameState.Provinces.TryGetValue(minister.GovernedProvinceId, out var province)
-            ? $"外任记录：{province.Name} 太守"
-            : "任所记录：在京候旨";
-        string confiscationHint = minister.StashedWealth > 0
-            ? "【御史与西园暗记】：私蓄颇丰，若有确凿罪证，可由大朝仪三法司明核或西园密署查办。"
-            : "【御史与西园暗记】：名下暂无明显隐匿巨资。";
+            ? $"外任出处：{province.Name} 太守"
+            : "任所现状：在京听宣";
 
         string riskLine = BuildNpcRiskLine(minister);
         string relationLine = BuildNpcRelationDossierText(minister.Id);
-        string sourceLine = $"登场来源：{minister.InitialLocation}｜{minister.EntryCondition}";
-        string roleLine = string.IsNullOrWhiteSpace(minister.HistoricalRole) ? "史料定位：暂无" : $"史料定位：{minister.HistoricalRole}";
-        string deathLine = minister.HistoricalDeathYear.HasValue ? $"史实卒年：{minister.HistoricalDeathYear.Value}（可因玩家干预改写）" : "史实卒年：暂无定论";
-        string sourceNoteLine = string.IsNullOrWhiteSpace(minister.SourceNote) ? "来源说明：暂无" : $"来源说明：{minister.SourceNote}";
 
-        return $"[b]【身分履历】[/b]\n" +
-            $"姓名：{minister.Name}\n官职：{minister.Title}\n派系：{minister.Faction}\n{location}\n{sourceLine}\n{roleLine}\n{deathLine}\n{sourceNoteLine}\n\n" +
+        string talentLine = $"武略 {DescribeStatGrade(minister.Martial)} ｜ 统御 {DescribeStatGrade(minister.Leadership)} ｜ 政术 {DescribeStatGrade(minister.Politics)} ｜ 声望 {DescribeStatGrade(minister.Charisma)}";
+        string ambitionLine = DescribeAmbitionLevel(minister.Ambition);
+
+        return $"[b]【朝官履历】[/b]\n" +
+            $"姓名：{minister.Name}\n官职：{minister.Title}\n派系：{minister.Faction}\n{location}\n\n" +
             $"[b]【朝野风评与圣眷】[/b]\n" +
-            $"君臣情分：{DescribeAttitudeLevel(minister.Favorability)}（{minister.Favorability}/100）\n" +
-            $"朝局分量：{DescribePowerLevel(minister.Power)}（{minister.Power}/100）\n" +
-            $"廉污风评：{DescribeCorruptionLevel(minister.Corruption)}（{minister.Corruption}/100）\n" +
-            $"私蓄估量：{minister.StashedWealth} 万钱\n" +
-            $"品评札记：{riskLine}\n\n" +
-            $"[b]【才干与抱负】[/b]\n" +
-            $"武略 {minister.Martial}｜统御 {minister.Leadership}｜政术 {minister.Politics}\n" +
-            $"声望 {minister.Charisma}｜野心 {minister.Ambition}\n\n" +
-            $"[b]【世家宗党关系】[/b]\n{relationLine}\n\n" +
-            $"[b]【暗察风评】[/b]\n{confiscationHint}";
+            $"君臣情分：{DescribeAttitudeLevel(minister.Favorability)}\n" +
+            $"朝局分量：{DescribePowerLevel(minister.Power)}\n" +
+            $"廉吏风评：{DescribeCorruptionLevel(minister.Corruption)}\n" +
+            $"抱负意向：{ambitionLine}\n" +
+            $"机要评定：{riskLine}\n\n" +
+            $"[b]【经世才干】[/b]\n" +
+            $"{talentLine}\n\n" +
+            $"[b]【世家宗党与交往】[/b]\n{relationLine}";
+    }
+
+    private static string DescribeStatGrade(int value)
+    {
+        if (value >= 85) return "卓越";
+        if (value >= 70) return "练达";
+        if (value >= 50) return "平正";
+        if (value >= 35) return "凡庸";
+        return "拙劣";
+    }
+
+    private static string DescribeAmbitionLevel(int value)
+    {
+        if (value >= 80) return "觊觎神器，异志昭然";
+        if (value >= 65) return "自视甚高，图谋自立";
+        if (value >= 45) return "汲汲于功名利禄";
+        if (value >= 30) return "安分守己";
+        return "淡泊名利，忠贞恭谨";
     }
 
     private string BuildNpcRelationDossierText(string npcId)
