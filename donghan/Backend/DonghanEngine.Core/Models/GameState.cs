@@ -188,6 +188,10 @@ public class GameState
     // 219 年 10 月襄樊之战天子是否成功持节保全关羽
     public bool IsGuanYuSavedAtXiangfan { get; set; } = false;
 
+    // === 一旬一大朝会状态锁定 ===
+    // 标记当前旬的大朝会是否已经退朝散班。退朝后本旬不可再次入朝开大朝会，必须推进至下一旬。
+    public bool IsCourtConcludedThisXun { get; set; } = false;
+
     // 197 年 1 月袁术僭号是否被朝廷彻底剿灭 (默认 true 史实线已剿灭，避免影响 200 年默认独立单测)
     public bool IsYuanShuEliminatedEarly { get; set; } = true;
 

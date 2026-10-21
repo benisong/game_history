@@ -34,8 +34,26 @@ public partial class MainScene : Control
             }
         }
 
-        // 根据当前所在场景，动态控制右侧控制面板按钮的显示隐藏！
         UpdateSceneButtons();
+
+        // 更新御案【朝会】卡片状态（若本旬已退朝，卡片变暗提示"本旬已散班"）
+        UpdateCourtCardStatus();
+    }
+
+    private void UpdateCourtCardStatus()
+    {
+        if (_btnCourtSeal == null || _gameState == null) return;
+        var subtitle = _btnCourtSeal.GetNodeOrNull<Label>("LabelBox/CardSubtitle");
+        if (subtitle != null)
+        {
+            subtitle.Text = _gameState.IsCourtConcludedThisXun ? "本旬已退朝" : "临朝听政";
+            subtitle.AddThemeColorOverride("font_color", _gameState.IsCourtConcludedThisXun 
+                ? new Color(0.60f, 0.55f, 0.45f, 0.80f) 
+                : new Color(0.95f, 0.77f, 0.28f, 1.0f));
+        }
+        _btnCourtSeal.Modulate = _gameState.IsCourtConcludedThisXun 
+            ? new Color(0.70f, 0.68f, 0.65f, 0.85f) 
+            : new Color(1f, 1f, 1f, 1f);
     }
 
     private string FormatTimeLabel()

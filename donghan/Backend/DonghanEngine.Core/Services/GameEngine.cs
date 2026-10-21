@@ -622,6 +622,9 @@ public partial class GameEngine : IGameEngine
         // 按 Year/Month 实时推导年号（光和→184年底改元中平），取代旧的 ReignYear++ 逐年递增
         _state.RefreshReignEra();
 
+        // 旬日更迭：重置大朝会退朝锁定状态，新的一旬可开启新的大朝会
+        _state.IsCourtConcludedThisXun = false;
+
         _state.AddToChronicle($"【时间更迭】大汉历纪：{_state.Year}年{_state.Month}月 {(_state.Xun == 1 ? "上旬" : _state.Xun == 2 ? "中旬" : "下旬")}。");
 
         // 异步后台演进官员想法与天灾日常

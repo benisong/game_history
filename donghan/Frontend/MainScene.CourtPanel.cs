@@ -247,6 +247,14 @@ public partial class MainScene : Control
     private void OnCourtSealPressed()
     {
         if (_gameState == null) return;
+
+        // 检查本旬是否已退朝
+        if (_gameState.IsCourtConcludedThisXun)
+        {
+            ShowCourtReportPopup("宣政殿典仪", "【朝班已散】\n\n本旬大朝会业已退朝，百官各归省署视事。\n\n按照大汉典制，一旬仅开一场大朝仪。请陛下在御案批阅奏牍、巡幸西园别苑，或待下旬再行临朝召对。");
+            return;
+        }
+
         if (_gameState.CurrentLocation != "宣政殿")
         {
             ShowTravelToCourtPrompt();
@@ -623,8 +631,7 @@ public partial class MainScene : Control
     // 从朝会"御前裁断"进入御案折匣：先退出朝会弹窗，再开折匣（均为独占弹窗，不可叠加）。
     private void OpenAffairsFromCourt()
     {
-        _windowManager.PopWindow();
-        OnAffairsBoxPressed();
+        ShowCourtReportPopup("御前通报", "【朝仪未毕】\n\n大朝仪期间天子亲御前朝召集群臣，不可中途翻阅私案。请先完备朝堂裁断或点击【退朝】，退朝后回到御案方可开启折匣批阅奏牍。");
     }
 
     private void ExecuteCourtDecision(CourtDecisionViewModel decision)
@@ -632,11 +639,10 @@ public partial class MainScene : Control
         switch (decision.Id)
         {
             case "intel":
-                _windowManager.PopWindow();
-                OnIntelTokenPressed();
+                ShowCourtReportPopup("御前通报", "【朝仪未毕】\n\n大朝仪期间百官在列，不可擅离朝堂。请先处置朝议裁决或先行【退朝】，退朝后方可调阅黄门密札舆图。");
                 break;
             case "travel_garden":
-                DoTravel("西园");
+                ShowCourtReportPopup("御前通报", "【朝仪未毕】\n\n大朝仪期间天子正统临朝，不可擅自离席起驾。请先处理朝议或先行【退朝】，退朝后方可巡幸西园。");
                 break;
             case "show_cao":
                 ShowMinisterDetails("cao_cao");
@@ -689,9 +695,15 @@ public partial class MainScene : Control
 
     private async void CloseCourtSession()
     {
+        if (_gameState != null)
+        {
+            _gameState.IsCourtConcludedThisXun = true;
+        }
+
         _windowManager.PopWindow();
         await ShowCourtRitualSequenceAsync(BuildCourtDismissalRitualSlides(), runPreload: true);
-        ShowCourtReportPopup("退朝回奏", "【退朝 · 百官散班】\n\n静鞭三响，百官次第退出宣政殿。尚书台收起奏牍，中官与外戚各自低语退下。\n\n本次朝议暂歇，天下州郡、国库民心与朝中党争仍将在旬日之间继续发酵。");
+        ShowCourtReportPopup("退朝回奏", "【退朝 · 百官散班】\n\n静鞭三响，百官次第退出宣政殿。尚书台收起奏牍，中官与外戚各自低语退下。\n\n本旬大朝会议程已毕，百官归署视事。天下州郡、国库民心与朝中党争仍将在旬日之间继续发酵。");
+        UpdateUI();
     }
 
     private async void OnConfirmCourtAssembly()
