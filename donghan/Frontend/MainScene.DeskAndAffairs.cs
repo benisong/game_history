@@ -568,14 +568,61 @@ public partial class MainScene : Control
             int optIndex = i;
             btn.Pressed += () =>
             {
-                _windowManager.PopWindow(); // 关闭尚书台弹窗
+                var (desc, consequences) = ResolveEdictConsequences(edict, option);
+                ShowDecisionConfirmDialog(
+                    "尚书台朱批前瞻",
+                    $"朱批 · {option.Description}",
+                    desc,
+                    consequences,
+                    () =>
+                    {
+                        _windowManager.PopWindow(); // 关闭尚书台弹窗
 
-                var result = _gameEngine!.ResolveEdictAction(edict.Id, optIndex);
-                ShowDocumentReportPopup("尚书台朱批回奏", result.StoryText);
-                UpdateUI();
+                        var result = _gameEngine!.ResolveEdictAction(edict.Id, optIndex);
+                        ShowDocumentReportPopup("尚书台朱批回奏", result.StoryText);
+                        UpdateUI();
+                    },
+                    PopupSkin.Document,
+                    "落墨朱批");
             };
             _edictOptionsVBox.AddChild(btn);
         }
+    }
+
+    private static (string desc, string[] consequences) ResolveEdictConsequences(ImperialEdict edict, EdictOption option)
+    {
+        string desc = $"针对【{edict.Title}】，天子御笔批复：『{option.Description}』。";
+        var list = new List<string>();
+
+        if (option.Description.Contains("开仓") || option.Description.Contains("赈济") || option.Description.Contains("赈灾"))
+        {
+            list.Add("预计动支太仓国库银两与常平仓粮秣，平抑地方饥馑");
+            list.Add("预计安抚灾区饥民、大幅提振天下民心，遏制民变滋生");
+            list.Add("若经办官吏贪腐，部分赈粮恐被沿途豪强剥削克扣");
+        }
+        else if (option.Description.Contains("严办") || option.Description.Contains("下狱") || option.Description.Contains("罢免") || option.Description.Contains("惩处"))
+        {
+            list.Add("预计彰显天子法度威严，申饬官场奢靡渎职之风");
+            list.Add("涉案官员及其党羽派系将心生怨恨，朝堂风声鹤唳");
+            list.Add("预计受到清流名士赞赏，士林公论略见好转");
+        }
+        else if (option.Description.Contains("封赏") || option.Description.Contains("重赏") || option.Description.Contains("嘉奖"))
+        {
+            list.Add("预计大幅提升受赏将领与官员忠诚，三军士气振奋");
+            list.Add("自国库拨发恩赏资财，加重财政负担");
+        }
+        else if (option.Description.Contains("搁置") || option.Description.Contains("不准") || option.Description.Contains("驳回") || option.Description.Contains("留中"))
+        {
+            list.Add("暂时维持现状，不额外耗费朝廷库帑资财");
+            list.Add("上奏官员与地方百姓恐生被朝廷漠视之叹，累积暗怨");
+        }
+        else
+        {
+            list.Add("直接影响奏章所涉地方军政、太守履职与朝堂派系平衡");
+            list.Add("朱批一落，即成国典，请陛下明断利弊");
+        }
+
+        return (desc, list.ToArray());
     }
 
     private void ClearEdictOptions()

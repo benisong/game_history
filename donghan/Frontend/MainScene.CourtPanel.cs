@@ -665,9 +665,91 @@ public partial class MainScene : Control
                 ShowFreeEdictBox();
                 break;
             default:
-                RunCourtCommand(decision.Id);
+                // 为朝会裁断弹前瞻确认框
+                PromptCourtDecisionConfirmation(decision);
                 break;
         }
+    }
+
+    private void PromptCourtDecisionConfirmation(CourtDecisionViewModel decision)
+    {
+        var (desc, consequences) = ResolveCourtDecisionConsequences(decision.Id, decision.Label);
+        ShowDecisionConfirmDialog(
+            "朝廷圣谕前瞻",
+            decision.Label,
+            desc,
+            consequences,
+            () => RunCourtCommand(decision.Id),
+            PopupSkin.Court);
+    }
+
+    private static (string desc, string[] consequences) ResolveCourtDecisionConsequences(string decisionId, string label)
+    {
+        if (decisionId.Contains("何进") || label.Contains("何进"))
+        {
+            return (
+                "命大将军何进整饬京畿北军防务，拨付兵饷并下放临机调兵之权。",
+                new[]
+                {
+                    "预计提升大将军何进忠诚与外戚集团朝局威望",
+                    "京畿北军防务与备战态势增强，但会引发内廷中官强烈猜忌与制衡",
+                    "预计自太仓国库支拨军费粮饷"
+                }
+            );
+        }
+        if (decisionId.Contains("张让") || label.Contains("张让"))
+        {
+            if (label.Contains("训诫"))
+            {
+                return (
+                    "当朝申饬中常侍张让骄横弄权，稍抑中官嚣张气焰。",
+                    new[]
+                    {
+                        "预计抚慰外廷清流士大夫之心，天下风评略有好转",
+                        "张让及中官近侍忠诚恐受挫折，内廷侍从心生怨怼"
+                    }
+                );
+            }
+            if (label.Contains("安抚") || label.Contains("重赏"))
+            {
+                return (
+                    "降旨加赏中常侍张让，以天子圣眷平息内外攻讦。",
+                    new[]
+                    {
+                        "预计大幅稳固中常侍张让忠诚与内廷爪牙向心力",
+                        "预计引起清流名士与外朝公卿强烈反感，指责天子偏袒中官"
+                    }
+                );
+            }
+            return (
+                "敕令中常侍张让清核三军粮饷并多方筹措内帑资财。",
+                new[]
+                {
+                    "预计依靠内廷手段快速筹得钱粮以备急用",
+                    "预计引起清流士族反感与弹劾，指责内廷侵夺大司农与少府之权"
+                }
+            );
+        }
+        if (decisionId.Contains("曹操") || label.Contains("曹操"))
+        {
+            return (
+                "命典军校尉曹操统整西园新军，委以军务重任。",
+                new[]
+                {
+                    "预计提升曹操忠诚与立功建勋之志，西园军锐气大振",
+                    "曹操在军中威望渐长，外戚大将军派系或心存防备"
+                }
+            );
+        }
+
+        return (
+            $"落实朝议决定：【{label}】。",
+            new[]
+            {
+                "预计直接影响相关经办官员之向背与朝堂派系力量消长",
+                "请陛下明辨利害，乾纲独断"
+            }
+        );
     }
 
     private void ExecuteCourtImpeachment(string destination)

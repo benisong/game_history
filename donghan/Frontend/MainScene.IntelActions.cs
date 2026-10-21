@@ -64,10 +64,24 @@ public partial class MainScene : Control
             StyleSceneActionButton(recall, ActionButtonSkin.Document);
             recall.Pressed += () =>
             {
-                _windowManager.PopWindow();
-                var result = _gameEngine!.RecallGovernor(p.Id);
-                ShowIntelReportPopup("黄门召还密札", result.StoryText);
-                UpdateUI();
+                ShowDecisionConfirmDialog(
+                    "吏部除授前瞻",
+                    $"召还太守 · {governorName}",
+                    $"敕令【{governorName}】卸任【{p.Name}】太守一职，解印回京述职。",
+                    new[]
+                    {
+                        $"【{p.Name}】将暂时处于无主官镇抚状态，地方民心预计每月缓慢流失",
+                        $"【{governorName}】重归京畿中枢，其在朝堂上的派系权势将有所回升",
+                        "可空出太守职位，以便重新选派能臣清剿盗贼、整饬度田"
+                    },
+                    () =>
+                    {
+                        _windowManager.PopWindow();
+                        var result = _gameEngine!.RecallGovernor(p.Id);
+                        ShowIntelReportPopup("黄门召还密札", result.StoryText);
+                        UpdateUI();
+                    },
+                    PopupSkin.Intel);
             };
             cardRoot.AddChild(recall);
             return;
@@ -120,10 +134,26 @@ public partial class MainScene : Control
             string npcId = npc.Id;
             appoint.Pressed += () =>
             {
-                _windowManager.PopWindow();
-                var result = _gameEngine!.AssignGovernor(p.Id, npcId);
-                ShowIntelReportPopup("吏部外任密札", result.StoryText);
-                UpdateUI();
+                ShowDecisionConfirmDialog(
+                    "吏部除授前瞻",
+                    $"出牧授印 · {npc.Name}",
+                    $"敕拜【{npc.Name}】为【{p.Name}】太守，持节出京治理一方政务。",
+                    new[]
+                    {
+                        $"预计安定【{p.Name}】民心，地方治理成效取决于其政术才能",
+                        $"【{npc.Name}】离京赴任，其在京畿朝堂的直接权势将暂时削减",
+                        npc.Ambition >= 65 
+                            ? $"⚠️ 警示：【{npc.Name}】野心炽盛，若地方民心过低或天下大乱，恐有据地割据自雄之风险"
+                            : "该臣性情相对恭谨安分，暂无自立割据之忧"
+                    },
+                    () =>
+                    {
+                        _windowManager.PopWindow();
+                        var result = _gameEngine!.AssignGovernor(p.Id, npcId);
+                        ShowIntelReportPopup("黄门除授密札", result.StoryText);
+                        UpdateUI();
+                    },
+                    PopupSkin.Intel);
             };
             candidateBox.AddChild(appoint);
         }

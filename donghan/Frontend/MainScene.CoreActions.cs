@@ -978,6 +978,113 @@ public partial class MainScene : Control
         _windowManager.PushWindow(panel, freeOnClose: true);
     }
 
+    /// <summary>
+    /// 全局通用圣谕裁决前瞻确认弹窗（无裸露数值，仅展示政治后果预判）
+    /// </summary>
+    private void ShowDecisionConfirmDialog(
+        string title,
+        string actionName,
+        string description,
+        string[] consequences,
+        Action onConfirm,
+        PopupSkin skin = PopupSkin.Court,
+        string confirmBtnText = "乾纲独断 (确认下达)")
+    {
+        var panel = new Panel();
+        panel.Name = "DecisionConfirmPopup";
+        panel.Visible = false;
+        ConfigureCenteredPopupPanel(panel, skin, new Vector2(760, 480));
+
+        var root = new VBoxContainer();
+        SetFullRect(root);
+        root.OffsetLeft = 28;
+        root.OffsetTop = 24;
+        root.OffsetRight = -28;
+        root.OffsetBottom = -24;
+        root.AddThemeConstantOverride("separation", 14);
+        panel.AddChild(root);
+
+        var titleLabel = new Label();
+        titleLabel.Text = $"📜 圣谕裁决前瞻 · 【{actionName}】";
+        titleLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        titleLabel.AddThemeFontSizeOverride("font_size", 20);
+        titleLabel.AddThemeColorOverride("font_color", new Color(0.96f, 0.84f, 0.45f, 1.0f));
+        root.AddChild(titleLabel);
+
+        var innerFrame = new PanelContainer();
+        innerFrame.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        innerFrame.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        innerFrame.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(skin));
+        root.AddChild(innerFrame);
+
+        var scroll = new ScrollContainer();
+        scroll.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        scroll.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        scroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
+        scroll.VerticalScrollMode = ScrollContainer.ScrollMode.Auto;
+        innerFrame.AddChild(scroll);
+
+        var contentVBox = new VBoxContainer();
+        contentVBox.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        contentVBox.AddThemeConstantOverride("separation", 10);
+        scroll.AddChild(contentVBox);
+
+        // 谕旨概要
+        var descLabel = new RichTextLabel();
+        descLabel.BbcodeEnabled = true;
+        descLabel.FitContent = true;
+        descLabel.ScrollActive = false;
+        descLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        descLabel.Text = $"[b]【谕旨内容】[/b]\n{description}";
+        descLabel.AddThemeColorOverride("default_color", new Color(0.92f, 0.88f, 0.82f, 1.0f));
+        descLabel.AddThemeFontSizeOverride("normal_font_size", 14);
+        contentVBox.AddChild(descLabel);
+
+        var divider = new HSeparator();
+        contentVBox.AddChild(divider);
+
+        // 后果定性分析
+        var conseqTitle = new Label();
+        conseqTitle.Text = "⚠️【局势预期演变与后患】";
+        conseqTitle.AddThemeColorOverride("font_color", new Color(0.95f, 0.77f, 0.28f, 1.0f));
+        conseqTitle.AddThemeFontSizeOverride("font_size", 15);
+        contentVBox.AddChild(conseqTitle);
+
+        foreach (var c in consequences)
+        {
+            var item = new RichTextLabel();
+            item.BbcodeEnabled = true;
+            item.FitContent = true;
+            item.ScrollActive = false;
+            item.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            item.Text = $"● {c}";
+            item.AddThemeColorOverride("default_color", new Color(0.88f, 0.82f, 0.72f, 1.0f));
+            item.AddThemeFontSizeOverride("normal_font_size", 13);
+            contentVBox.AddChild(item);
+        }
+
+        var row = CreateActionPopupButtonRow();
+        var confirmBtn = new Button { Text = confirmBtnText, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 44) };
+        var cancelBtn = new Button { Text = "暂缓再议 (取消)", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, CustomMinimumSize = new Vector2(0, 44) };
+        
+        ActionButtonSkin btnSkin = skin == PopupSkin.WestGarden ? ActionButtonSkin.WestGarden : ActionButtonSkin.Court;
+        StyleSceneActionButton(confirmBtn, btnSkin);
+        StyleSceneActionButton(cancelBtn, btnSkin);
+
+        confirmBtn.Pressed += () =>
+        {
+            _windowManager.PopWindow();
+            onConfirm?.Invoke();
+        };
+        cancelBtn.Pressed += _windowManager.PopWindow;
+
+        row.AddChild(confirmBtn);
+        row.AddChild(cancelBtn);
+        root.AddChild(row);
+
+        PushTemporaryPopup(panel);
+    }
+
     // 执行开仓赈灾动作
     private void DoDisasterReliefAction(int amount, string officerId)
     {

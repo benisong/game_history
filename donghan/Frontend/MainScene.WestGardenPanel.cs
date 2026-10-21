@@ -462,53 +462,96 @@ public partial class MainScene : Control
 
     private void DoWestGardenSellOfficeAction()
     {
-        if (_gameEngine == null) return;
-        try
-        {
-            var result = _gameEngine.ExecuteQuickAction("sell_office");
-            ShowWestGardenReportPopup("西园鬻官回奏", result.StoryText);
-            UpdateUI();
-            RefreshWestGardenPanel();
-        }
-        catch (Exception ex)
-        {
-            GD.PrintErr(ex.Message);
-            ShowWarningReportPopup("西园军务未成", $"【西园军务未成】\n\n{ex.Message}");
-        }
+        if (_gameState == null) return;
+
+        ShowDecisionConfirmDialog(
+            "西园别苑圣谕",
+            "西园卖官鬻爵",
+            "开启西园崔烈等买官通道，以高额价码出让九卿、太守官职。",
+            new[]
+            {
+                "预计充实天子西园私库，蓄积内帑以备机要",
+                "预计引起清流名士与天下太学生强烈反感，指责朝廷鬻爵败德",
+                "民间买官官员赴任后恐加剧对百姓搜刮，地方民心动摇"
+            },
+            () =>
+            {
+                try
+                {
+                    var result = _gameEngine!.ExecuteQuickAction("sell_office");
+                    ShowCourtReportPopup("西园卖官奏报", result.StoryText);
+                    UpdateUI();
+                    RefreshWestGardenPanel();
+                }
+                catch (Exception ex)
+                {
+                    GD.PrintErr(ex.Message);
+                }
+            },
+            PopupSkin.WestGarden);
     }
 
     private void DoWestGardenDrillAction(int amount, string officerId)
     {
-        if (_gameEngine == null) return;
-        try
-        {
-            var result = _gameEngine.ExecuteDrillArmyActionWithOfficer(amount, officerId);
-            ShowWestGardenReportPopup("西园军报", result.StoryText);
-            UpdateUI();
-            RefreshWestGardenPanel();
-        }
-        catch (Exception ex)
-        {
-            GD.PrintErr(ex.Message);
-            ShowWarningReportPopup("阅兵未成", $"【阅兵未成】\n\n{ex.Message}");
-        }
+        if (_gameEngine == null || _gameState == null) return;
+        string officerName = _gameState.Npcs.TryGetValue(officerId, out var o) ? o.Name : "主将";
+
+        ShowDecisionConfirmDialog(
+            "西园军令前瞻",
+            $"发内帑犒赏三军 · {officerName}",
+            $"敕命【{officerName}】出面点验西园禁卫新军，并自天子私库拨发兵饷犒赏三军将士。",
+            new[]
+            {
+                "预计大幅提振西园禁卫军士气与天子忠诚，三军效命",
+                $"经办将领【{officerName}】在军中威信与对天子感戴显著上升",
+                "天子私库资财将随之拨付支销"
+            },
+            () =>
+            {
+                try
+                {
+                    var result = _gameEngine.ExecuteDrillArmyActionWithOfficer(amount, officerId);
+                    ShowCourtReportPopup("西园犒军奏报", result.StoryText);
+                    UpdateUI();
+                    RefreshWestGardenPanel();
+                }
+                catch (Exception ex)
+                {
+                    GD.PrintErr(ex.Message);
+                }
+            },
+            PopupSkin.WestGarden);
     }
 
     private void DoWestGardenRecruitAction(int troops)
     {
-        if (_gameEngine == null) return;
-        try
-        {
-            var result = _gameEngine.ExecuteRaiseWestGardenTroopsAction(troops);
-            ShowWestGardenReportPopup("西园军报", result.StoryText);
-            UpdateUI();
-            RefreshWestGardenPanel();
-        }
-        catch (Exception ex)
-        {
-            GD.PrintErr(ex.Message);
-            ShowWarningReportPopup("募兵未成", $"【募兵未成】\n\n{ex.Message}");
-        }
+        if (_gameEngine == null || _gameState == null) return;
+
+        ShowDecisionConfirmDialog(
+            "西园招募前瞻",
+            "密诏广募禁军",
+            "下发天子密诏，于京畿与关陇良家子中挑选精壮，扩充西园禁卫军建制规模。",
+            new[]
+            {
+                "预计显著壮大天子禁卫新军实力，增强皇权在京畿的话语权",
+                "军费与后续每旬例常兵饷开支将随之增长",
+                "外戚大将军派系将提高警惕，暗中防范西园军夺权"
+            },
+            () =>
+            {
+                try
+                {
+                    var result = _gameEngine.ExecuteRaiseWestGardenTroopsAction(troops);
+                    ShowCourtReportPopup("西园募兵奏报", result.StoryText);
+                    UpdateUI();
+                    RefreshWestGardenPanel();
+                }
+                catch (Exception ex)
+                {
+                    GD.PrintErr(ex.Message);
+                }
+            },
+            PopupSkin.WestGarden);
     }
 
     private static void ClearWestGardenChildren(VBoxContainer box)

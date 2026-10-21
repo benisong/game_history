@@ -212,71 +212,49 @@ public partial class MainScene : Control
         if (_gameState == null || string.IsNullOrEmpty(_currentDetailsMinisterId)) return;
         if (!_gameState.Npcs.TryGetValue(_currentDetailsMinisterId, out var target)) return;
 
-        var panel = new Panel();
-        panel.Name = "ConfiscationConfirmPopup";
-        panel.Visible = false;
-        ConfigureCenteredPopupPanel(panel, PopupSkin.Warning, new Vector2(620, 420));
+        bool isEunuch = target.Faction == FactionCatalog.EunuchFaction;
+        bool isImperialClan = target.Faction == FactionCatalog.ImperialClan;
+        bool isPureStream = target.Faction == FactionCatalog.PureStream;
 
-        var root = new VBoxContainer();
-        SetFullRect(root);
-        root.OffsetLeft = 24;
-        root.OffsetTop = 20;
-        root.OffsetRight = -24;
-        root.OffsetBottom = -20;
-        root.AddThemeConstantOverride("separation", 12);
-        panel.AddChild(root);
-
-        var title = new Label { Text = "廷尉奏牍 · 籍没家产" };
-        StylePopupTitle(title, PopupSkin.Warning);
-        root.AddChild(title);
-
-        var desc = new Label
+        string factionBacklash;
+        if (isPureStream)
         {
-            Text = $"目标朝臣：{target.Name} · {target.Title}\n朱批去向：{destination}\n此令一出，即为当朝籍没。若目标党羽炽盛或其人尚廉，可能激起朝臣反噬与民怨。"
-        };
-        StylePopupBodyText(desc, PopupSkin.Warning);
-        root.AddChild(desc);
-
-        var previewFrame = new Panel { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill, SizeFlagsVertical = Control.SizeFlags.ExpandFill };
-        previewFrame.AddThemeStyleboxOverride("panel", CreatePopupInnerPanelStyle(PopupSkin.Warning));
-        root.AddChild(previewFrame);
-
-        var preview = new Label
+            factionBacklash = "⚠️ 警示：目标在清流名士与天下太学生中名望极高，籍没恐引发朝臣死谏、清流反感与民怨沸腾";
+        }
+        else if (isImperialClan)
         {
-            Text = BuildConfiscationPreviewText(target, destination),
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            SizeFlagsVertical = Control.SizeFlags.ExpandFill
-        };
-        StylePopupBodyText(preview, PopupSkin.Warning);
-        SetFullRect(preview);
-        preview.OffsetLeft = 14;
-        preview.OffsetTop = 12;
-        preview.OffsetRight = -14;
-        preview.OffsetBottom = -12;
-        previewFrame.AddChild(preview);
-
-        var row = CreateActionPopupButtonRow();
-        var confirm = new Button
+            factionBacklash = "⚠️ 警示：目标为外戚重臣爪牙，籍没恐激化外戚大将军派系矛盾，导致内廷与外朝关系骤紧";
+        }
+        else if (isEunuch)
         {
-            Text = destination == "国库" ? "朱批籍没 · 入国库" : "朱批籍没 · 入西园私库",
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            Disabled = target.StashedWealth <= 0
-        };
-        var cancel = new Button { Text = "暂缓不发", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
-        StyleSceneActionButton(confirm, ActionButtonSkin.Warning);
-        StyleSceneActionButton(cancel, ActionButtonSkin.Warning);
-        row.AddChild(confirm);
-        row.AddChild(cancel);
-        root.AddChild(row);
-
-        confirm.Pressed += () =>
+            factionBacklash = "预计受到外廷清流公卿一致赞扬称颂，但内廷宦官近侍人人自危、心怀猜忌";
+        }
+        else
         {
-            _windowManager.PopWindow();
-            DoConfiscateAction(destination);
-        };
-        cancel.Pressed += _windowManager.PopWindow;
+            factionBacklash = "籍没将触动朝堂世家豪强之利益底线，恐招致朝臣暗中抵制与非议";
+        }
 
-        PushTemporaryPopup(panel);
+        string wealthDestination = destination == "国库" 
+            ? "抄家所得家私将充实大司农国库，用于平叛赈灾、补足军饷" 
+            : "抄家所得家私将悉数密入西园私库，归天子内帑调度";
+
+        ShowDecisionConfirmDialog(
+            "廷尉奏牍 · 籍没家产",
+            $"抄没私财 · {target.Name}",
+            $"降旨籍没【{target.Name}·{target.Title}】名下田宅、私蓄与家资，明正典刑。",
+            new[]
+            {
+                wealthDestination,
+                factionBacklash,
+                "被抄没官员将被革职下狱，其名下党羽势力将受重创"
+            },
+            () =>
+            {
+                _windowManager.PopWindow();
+                DoConfiscateAction(destination);
+            },
+            destination == "国库" ? PopupSkin.Court : PopupSkin.WestGarden,
+            "下诏抄没");
     }
 
     private string BuildConfiscationPreviewText(NpcState target, string destination)
