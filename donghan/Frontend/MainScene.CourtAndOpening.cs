@@ -20,7 +20,7 @@ public partial class MainScene : Control
         var panel = new Panel();
         panel.Name = "TravelChoicePopup";
         panel.Visible = false;
-        ConfigureCenteredPopupPanel(panel, PopupSkin.Travel, new Vector2(880, 560));
+        ConfigureCenteredPopupPanel(panel, PopupSkin.Travel, new Vector2(1480, 780));
 
         var root = new VBoxContainer();
         SetFullRect(root);

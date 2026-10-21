@@ -409,7 +409,7 @@ public partial class MainScene : Control
         _affairsPopup = new Panel();
         _affairsPopup.Name = "AffairsPopup";
         _affairsPopup.Visible = false;
-        ConfigureCenteredPopupPanel(_affairsPopup, PopupSkin.Document, new Vector2(920, 560));
+        ConfigureCenteredPopupPanel(_affairsPopup, PopupSkin.Document, new Vector2(1560, 840));
 
         var root = new VBoxContainer();
         SetFullRect(root);

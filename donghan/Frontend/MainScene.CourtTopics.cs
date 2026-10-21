@@ -51,10 +51,10 @@ public partial class MainScene : Control
                 },
                 Decisions = new List<CourtDecisionViewModel>
                 {
-                    new() { Id = "重赏何进，命其整军备寇", Label = "准何进整北军", Hint = "走现有朝会输入流程，增强外戚军务存在感。" },
-                    new() { Id = "travel_garden", Label = "命曹操整西园军", Hint = "转往西园，后续可阅兵或募兵。" },
-                    new() { Id = "命张让核查军费", Label = "令张让核军费", Hint = "走现有朝会输入流程，让中官介入财计。" },
-                    new() { Id = "intel", Label = "转黄门密札详查", Hint = "打开情报面板查看州郡与叛乱详情。" }
+                    new() { Id = "重赏何进，命其整军备寇", Label = "准何进整北军", Hint = "命大将军整饬北军防务，增强外戚军权。" },
+                    new() { Id = "travel_garden", Label = "命曹操整西园军", Hint = "转往西园别苑，阅兵并部署禁卫新军。" },
+                    new() { Id = "命张让核查军费", Label = "令张让核军费", Hint = "令中官清查三军开支，核实国帑亏空。" },
+                    new() { Id = "intel", Label = "转黄门密札详查", Hint = "调阅天下舆图，察看各州兵备与民变详情。" }
                 }
             },
             new CourtTopicViewModel
@@ -71,9 +71,9 @@ public partial class MainScene : Control
                 },
                 Decisions = new List<CourtDecisionViewModel>
                 {
-                    new() { Id = "命张让筹措国帑", Label = "令张让筹措内帑", Hint = "走现有朝会输入流程。" },
-                    new() { Id = "travel_garden", Label = "前往西园筹资", Hint = "转往西园处理私库、卖官与军务。" },
-                    new() { Id = "back_topics", Label = "暂缓筹措", Hint = "回到今日可议。" }
+                    new() { Id = "命张让筹措国帑", Label = "令张让筹措内帑", Hint = "命张让多方筹措钱粮，充盈府库。" },
+                    new() { Id = "travel_garden", Label = "前往西园筹资", Hint = "巡幸西园，处置私库、卖官与军政。" },
+                    new() { Id = "back_topics", Label = "暂缓筹措", Hint = "暂不决议，返回今日可议议题。" }
                 }
             },
             new CourtTopicViewModel
@@ -90,9 +90,9 @@ public partial class MainScene : Control
                 },
                 Decisions = new List<CourtDecisionViewModel>
                 {
-                    new() { Id = "训诫张让", Label = "训诫张让", Hint = "现有样例已支持该关键词。" },
-                    new() { Id = "重赏张让", Label = "安抚张让", Hint = "以圣眷压下外廷攻讦。" },
-                    new() { Id = "back_topics", Label = "暂不激化", Hint = "回到今日可议。" }
+                    new() { Id = "训诫张让", Label = "训诫张让", Hint = "申饬中官骄横之气，稍抚外臣人心。" },
+                    new() { Id = "重赏张让", Label = "安抚张让", Hint = "施以天子圣眷，平息内廷疑惧。" },
+                    new() { Id = "back_topics", Label = "暂不激化", Hint = "权衡局势，返回今日可议议题。" }
                 }
             },
             new CourtTopicViewModel

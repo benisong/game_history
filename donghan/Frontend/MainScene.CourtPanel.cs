@@ -54,7 +54,7 @@ public partial class MainScene : Control
                     // 若在查看具体议题讨论，按 Esc 返回议题列表
                     RenderCourtTopics();
                     RenderCourtDefaultDecisions();
-                    if (_courtStageLabel != null) _courtStageLabel.Text = $"{FormatTimeLabel()}  ·  阶段：择议";
+                    if (_courtStageLabel != null) _courtStageLabel.Text = $"{FormatTimeLabel()}  ·  当前阶段：择定议题";
                 }
                 GetViewport().SetInputAsHandled();
             }
@@ -77,20 +77,24 @@ public partial class MainScene : Control
     private void BuildCourtHeader(VBoxContainer root)
     {
         var header = new VBoxContainer();
-        header.AddThemeConstantOverride("separation", 3);
+        header.AddThemeConstantOverride("separation", 6);
         root.AddChild(header);
 
         var title = new Label();
         title.Text = "宣政殿 · 大朝会";
-        StylePopupTitle(title, PopupSkin.Court);
+        title.HorizontalAlignment = HorizontalAlignment.Center;
+        title.AddThemeFontSizeOverride("font_size", 24);
+        title.AddThemeColorOverride("font_color", new Color(0.96f, 0.84f, 0.45f, 1.0f));
         header.AddChild(title);
 
         _courtStageLabel = new Label();
         _courtStageLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        _courtStageLabel.Text = $"{FormatTimeLabel()}  ·  阶段：择议";
+        _courtStageLabel.Text = $"{FormatTimeLabel()}  ·  当前阶段：择定议题";
+        _courtStageLabel.AddThemeFontSizeOverride("font_size", 15);
+        _courtStageLabel.AddThemeColorOverride("font_color", new Color(0.85f, 0.78f, 0.65f, 1.0f));
         header.AddChild(_courtStageLabel);
 
-        // P2-2 主持人选择条：玩家点选 4 名主要 NPC 之一为主持人，影响 MockScheduler 发言顺序
+        // P2-2 主持人选择条
         BuildCourtHostSelector(header);
     }
 
@@ -140,12 +144,12 @@ public partial class MainScene : Control
     {
         var body = new HBoxContainer();
         body.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
-        body.AddThemeConstantOverride("separation", 12);
+        body.AddThemeConstantOverride("separation", 16);
         root.AddChild(body);
 
-        _courtOfficialsVBox = CreateScrollableCourtColumn(body, "百官班列", 230);
+        _courtOfficialsVBox = CreateScrollableCourtColumn(body, "百官班列", 320);
 
-        var middle = CreateCourtColumn(body, "今日廷议", 560, expand: true);
+        var middle = CreateCourtColumn(body, "今日廷议", 820, expand: true);
         _courtTopicsVBox = new VBoxContainer();
         _courtTopicsVBox.AddThemeConstantOverride("separation", 8);
         middle.AddChild(_courtTopicsVBox);
@@ -159,7 +163,7 @@ public partial class MainScene : Control
 
         _courtDebateContent = new VBoxContainer();
         _courtDebateContent.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        _courtDebateContent.AddThemeConstantOverride("separation", 10);
+        _courtDebateContent.AddThemeConstantOverride("separation", 14);
         _courtDebateScroll.AddChild(_courtDebateContent);
 
         _courtFreeEdictVBox = new VBoxContainer();
@@ -168,7 +172,7 @@ public partial class MainScene : Control
         middle.AddChild(_courtFreeEdictVBox);
         BuildFreeEdictBox();
 
-        _courtDecisionsVBox = CreateCourtColumn(body, "御前裁断", 250);
+        _courtDecisionsVBox = CreateCourtColumn(body, "御前裁断", 360);
     }
 
     private VBoxContainer CreateCourtColumn(HBoxContainer parent, string title, int width, bool expand = false)
@@ -259,7 +263,7 @@ public partial class MainScene : Control
         RenderCourtOfficials();
         RenderCourtTopics();
         RenderCourtDefaultDecisions();
-        if (_courtStageLabel != null) _courtStageLabel.Text = $"{FormatTimeLabel()}  ·  阶段：择议";
+        if (_courtStageLabel != null) _courtStageLabel.Text = $"{FormatTimeLabel()}  ·  当前阶段：择定议题";
         if (_courtInput != null) _courtInput.Text = "";
         _courtFreeEdictVBox?.Hide();
         _windowManager.PushWindow(_courtPopup!);
@@ -440,28 +444,28 @@ public partial class MainScene : Control
         if (bar != null) bar.Value = bar.MaxValue;
     }
 
-    // P2-视觉：朝会发言卡片
+    // P2-视觉：朝会发言卡片（采用 PanelContainer 自动计算内边距和自适应高度，彻底解决重叠）
     // 边框颜色 = 态度倾向：绿=赞同 / 红=反对 / 黄=中庸 / 灰=默认
     // 派系用 3 色 chip：外戚武臣=暗红 / 中官近侍=暗紫 / 西园武臣=暗青
-    private Panel BuildSpeechCard(CourtSpeechViewModel speech)
+    private PanelContainer BuildSpeechCard(CourtSpeechViewModel speech)
     {
-        var card = new Panel();
+        var card = new PanelContainer();
         card.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
 
         var stylebox = new StyleBoxFlat();
-        stylebox.BgColor = new Color(0.13f, 0.10f, 0.08f, 0.95f);
+        stylebox.BgColor = new Color(0.12f, 0.09f, 0.07f, 0.95f);
         stylebox.BorderColor = ResolveStanceBorderColor(speech.Attitude);
         stylebox.SetBorderWidthAll(2);
-        stylebox.SetCornerRadiusAll(4);
-        stylebox.ContentMarginLeft = 14;
-        stylebox.ContentMarginRight = 14;
-        stylebox.ContentMarginTop = 8;
-        stylebox.ContentMarginBottom = 10;
+        stylebox.SetCornerRadiusAll(6);
+        stylebox.ContentMarginLeft = 16;
+        stylebox.ContentMarginRight = 16;
+        stylebox.ContentMarginTop = 10;
+        stylebox.ContentMarginBottom = 12;
         card.AddThemeStyleboxOverride("panel", stylebox);
 
         var vbox = new VBoxContainer();
         vbox.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        vbox.AddThemeConstantOverride("separation", 5);
+        vbox.AddThemeConstantOverride("separation", 6);
         card.AddChild(vbox);
 
         // 头部行：名字 + 派系 chip + 态度
@@ -479,7 +483,7 @@ public partial class MainScene : Control
         var factionChip = new Label();
         factionChip.Text = $"【{speech.Faction}】";
         factionChip.AddThemeColorOverride("font_color", ResolveFactionChipColor(speech.Faction));
-        factionChip.AddThemeFontSizeOverride("font_size", 12);
+        factionChip.AddThemeFontSizeOverride("font_size", 13);
         headerRow.AddChild(factionChip);
 
         var spacer = new Control();
@@ -492,12 +496,15 @@ public partial class MainScene : Control
         attitudeLabel.AddThemeFontSizeOverride("font_size", 13);
         headerRow.AddChild(attitudeLabel);
 
-        // 台词正文
-        var speechText = new Label();
+        // 台词正文：采用 RichTextLabel 开启自适应高度与自动折行
+        var speechText = new RichTextLabel();
         speechText.Text = $"“{speech.Speech}”";
+        speechText.BbcodeEnabled = true;
+        speechText.FitContent = true;
+        speechText.ScrollActive = false;
         speechText.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        speechText.AddThemeColorOverride("font_color", new Color(0.94f, 0.92f, 0.86f));
-        speechText.AddThemeFontSizeOverride("font_size", 14);
+        speechText.AddThemeColorOverride("default_color", new Color(0.94f, 0.92f, 0.86f));
+        speechText.AddThemeFontSizeOverride("normal_font_size", 15);
         vbox.AddChild(speechText);
 
         return card;
@@ -553,20 +560,24 @@ public partial class MainScene : Control
 
     private void AddDecisionButton(string label, string hint, Action callback)
     {
-        if (_courtDecisionsVBox == null) return;
         var button = new Button();
         button.Text = label;
         button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        button.CustomMinimumSize = new Vector2(0, 48);
         StyleSceneActionButton(button, ActionButtonSkin.Court);
         button.Pressed += callback;
-        _courtDecisionsVBox.AddChild(button);
+        _courtDecisionsVBox!.AddChild(button);
 
         if (!string.IsNullOrWhiteSpace(hint))
         {
-            var hintLabel = new Label();
+            var hintLabel = new RichTextLabel();
             hintLabel.Text = hint;
+            hintLabel.BbcodeEnabled = true;
+            hintLabel.FitContent = true;
+            hintLabel.ScrollActive = false;
             hintLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-            hintLabel.AddThemeColorOverride("font_color", new Color(0.70f, 0.66f, 0.58f, 1.0f));
+            hintLabel.AddThemeColorOverride("default_color", new Color(0.70f, 0.66f, 0.58f, 1.0f));
+            hintLabel.AddThemeFontSizeOverride("normal_font_size", 13);
             _courtDecisionsVBox.AddChild(hintLabel);
         }
     }
@@ -636,7 +647,7 @@ public partial class MainScene : Control
             case "back_topics":
                 RenderCourtTopics();
                 RenderCourtDefaultDecisions();
-                if (_courtStageLabel != null) _courtStageLabel.Text = $"{FormatTimeLabel()}  ·  阶段：择议";
+                if (_courtStageLabel != null) _courtStageLabel.Text = $"{FormatTimeLabel()}  ·  当前阶段：择定议题";
                 break;
             case "court_confiscate_public":
                 ExecuteCourtImpeachment("国库");
