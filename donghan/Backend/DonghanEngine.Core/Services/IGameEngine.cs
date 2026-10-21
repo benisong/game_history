@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using DonghanEngine.Core.Politics;
 
 namespace DonghanEngine.Core;
 
@@ -145,6 +146,16 @@ public interface IPersistenceDomainService
     bool HasAutoSave();
 }
 
+public interface IDecisionPromptDomainService
+{
+    IDecisionPromptLibraryService DecisionPromptLibrary { get; }
+    DecisionConsequenceTemplate MatchDecisionPrompt(
+        DecisionActionType actionType,
+        string? targetNpcId = null,
+        string? targetLocation = null,
+        string? customActionLabel = null);
+}
+
 /// <summary>
 /// 聚合核心引擎接口：完全由单职责领域接口组合而成
 /// </summary>
@@ -166,6 +177,7 @@ public interface IGameEngine :
     IGovernorAppraisalDomainService,
     ICourtDelegationDomainService,
     IImperialHealthDomainService,
+    IDecisionPromptDomainService,
     IQuickActionDomainService,
     IResolveEdictDomainService,
     IGrandCourtDomainService,

@@ -30,6 +30,23 @@ public partial class GameEngine : IGameEngine
     private readonly DonghanEngine.Core.Politics.ICourtDelegationService _courtDelegationService;
     private readonly DonghanEngine.Core.Persistence.ISaveGameService _saveGameService;
     private readonly DonghanEngine.Core.Politics.ISpyService _spyService;
+    private readonly DonghanEngine.Core.Politics.IDecisionPromptLibraryService _decisionPromptLibrary;
+
+    public DonghanEngine.Core.Politics.IDecisionPromptLibraryService DecisionPromptLibrary => _decisionPromptLibrary;
+
+    public DonghanEngine.Core.Politics.DecisionConsequenceTemplate MatchDecisionPrompt(
+        DonghanEngine.Core.Politics.DecisionActionType actionType,
+        string? targetNpcId = null,
+        string? targetLocation = null,
+        string? customActionLabel = null)
+    {
+        NpcState? npc = null;
+        if (!string.IsNullOrEmpty(targetNpcId))
+        {
+            _state.Npcs.TryGetValue(targetNpcId, out npc);
+        }
+        return _decisionPromptLibrary.MatchConsequences(actionType, npc, targetLocation, customActionLabel);
+    }
     internal readonly Random _rng;
 
     public DonghanEngine.Core.Geopolitics.Contracts.IGeopoliticalSimulationEngine GeopoliticsEngine => _geopoliticsEngine;
@@ -57,7 +74,8 @@ public partial class GameEngine : IGameEngine
         DonghanEngine.Core.Health.IImperialHealthService? healthService = null,
         DonghanEngine.Core.Politics.ICourtDelegationService? courtDelegationService = null,
         DonghanEngine.Core.Persistence.ISaveGameService? saveGameService = null,
-        DonghanEngine.Core.Politics.ISpyService? spyService = null)
+        DonghanEngine.Core.Politics.ISpyService? spyService = null,
+        DonghanEngine.Core.Politics.IDecisionPromptLibraryService? decisionPromptLibrary = null)
     {
         _state = state;
         _scheduler = scheduler;
@@ -82,6 +100,8 @@ public partial class GameEngine : IGameEngine
         _courtDelegationService = courtDelegationService ?? new DonghanEngine.Core.Politics.CourtDelegationService(healthService: _healthService);
         _saveGameService = saveGameService ?? new DonghanEngine.Core.Persistence.SaveGameService(healthService: _healthService);
         _spyService = spyService ?? new DonghanEngine.Core.Politics.SpyService();
+        _decisionPromptLibrary = decisionPromptLibrary ?? new DonghanEngine.Core.Politics.DecisionPromptLibraryService();
+        _rng = rng ?? new Random();
     }
 
     public GameState GetState() => _state;
